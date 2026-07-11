@@ -1,0 +1,12 @@
+node_modules
+dist
+*.local
+.env
+.env.*
+!.env.example
+.DS_Store
+# 원본 미디어(대용량)는 커밋 제외
+증거 데이터/
+scratchpad/
+# 정적 증거 데이터·이미지 — 배포/커밋 제외(운영은 Supabase만 사용, PII 노출 방지)
+_local-data/
