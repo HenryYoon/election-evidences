@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import type { Evidence } from '../types/evidence';
 import { supabase } from './supabase';
-import { signEvidencePhotos } from './media';
 
 export interface GeoFeature {
   type: 'Feature';
@@ -27,8 +26,7 @@ async function loadEvidence(): Promise<Evidence[]> {
       .select('*')
       .eq('published', true)
       .order('num', { ascending: true });
-    // 비공개 버킷 대응: 사진 URL을 서명 URL로 치환 후 반환
-    if (!error && data) return signEvidencePhotos(data as Evidence[]);
+    if (!error && data) return data as Evidence[];
     if (error) console.warn('Supabase 조회 실패, 정적 폴백:', error.message);
   }
   const ev = await fetch(`${import.meta.env.BASE_URL}data/evidence.json`).then((r) => r.json());
