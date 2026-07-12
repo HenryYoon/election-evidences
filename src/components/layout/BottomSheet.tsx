@@ -53,14 +53,15 @@ export default function BottomSheet({ snap, onSnap, header, children }: Props) {
         top: topPx, transition: drag ? 'none' : 'top .28s cubic-bezier(.4,0,.2,1)',
         background: 'var(--surface)', borderRadius: '18px 18px 0 0',
         boxShadow: '0 -8px 30px rgba(20,28,60,.16)', display: 'flex', flexDirection: 'column',
-        zIndex: 20, touchAction: 'none',
+        zIndex: 20,
       }}
     >
-      <div onPointerDown={startDrag} style={{ padding: '8px 0 4px', flex: '0 0 auto', cursor: 'grab' }}>
+      {/* touch-action:none 은 드래그 핸들에만 — 시트 전체에 주면 목록 스크롤·카드 탭이 막힘 */}
+      <div onPointerDown={startDrag} style={{ padding: '8px 0 4px', flex: '0 0 auto', cursor: 'grab', touchAction: 'none' }}>
         <div style={{ width: 40, height: 5, borderRadius: 3, background: 'var(--line)', margin: '0 auto' }} />
       </div>
       <div style={{ flex: '0 0 auto', padding: '4px 14px 10px' }}>{header}</div>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 14px 20px' }}>{children}</div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', touchAction: 'pan-y', padding: '0 14px 20px' }}>{children}</div>
     </div>
   );
 }
