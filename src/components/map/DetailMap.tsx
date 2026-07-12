@@ -95,8 +95,6 @@ export default function DetailMap({ district, items, visibleIds, hoverId, onHove
       onMove={() => setVer((v) => v + 1)}
       dragRotate={false}
       touchZoomRotate={true}
-      dragRotate={false}
-      pitchWithRotate={false}
     >
       {district && (
         <Source id="district" type="geojson" data={district as any}>
