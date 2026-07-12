@@ -88,7 +88,9 @@ export default function EvidenceMap({ items, hoverId, onHover, onPick, onViewpor
       onMove={() => setVer((v) => v + 1)}
       onMoveEnd={report}
       dragRotate={false}
-      touchZoomRotate={false}
+      touchZoomRotate={true}
+      dragRotate={false}
+      pitchWithRotate={false}
     >
       {clusters.map((g, i) => {
         if (g.length > 1) {

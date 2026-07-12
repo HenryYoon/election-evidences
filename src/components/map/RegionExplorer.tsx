@@ -71,7 +71,9 @@ export default function RegionExplorer({ geo, onPick, pickable, fitOnlyCounted }
         }
       }}
       dragRotate={false}
-      touchZoomRotate={false}
+      touchZoomRotate={true}
+      dragRotate={false}
+      pitchWithRotate={false}
     >
       <Source id="regions" type="geojson" data={enriched as any}>
         <Layer id="region-fill" type="fill"
