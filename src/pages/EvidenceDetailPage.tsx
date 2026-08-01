@@ -47,7 +47,10 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
           {ev.withheld > 0 && (
             <div className="note" style={{ marginBottom: 20 }}>
               🔒 개인정보(서명·연락처·이름·대화 내용 등)가 담긴 자료 <b>{ev.withheld}건</b>은
-              보호를 위해 <b>비공개</b>했습니다. 물증 사진만 공개합니다.
+              보호를 위해 <b>비공개</b>했습니다.{' '}
+              {ev.photos.length > 0
+                ? '물증 사진만 공개합니다.'
+                : '이 제보는 공개 가능한 사진이 없어 텍스트 요약만 제공합니다.'}
             </div>
           )}
 
