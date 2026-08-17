@@ -20,6 +20,12 @@ export default function UnifiedMap({ ds }: { ds: Dataset }) {
   const [snap, setSnap] = useState<Snap>('half');
 
   const located = useMemo(() => ds.evidence.filter((e) => e.coordinates), [ds]);
+  // 장소가 "지역모름"인 제보는 좌표가 없어 지도에 못 띄운다. 그렇다고 화면 범위로
+  // 거르면 어디서도 볼 수 없으므로, 목록 끝에 미분류로 항상 남겨 둔다.
+  const unlocated = useMemo(() => {
+    const rest = ds.evidence.filter((e) => !e.coordinates);
+    return types.size ? rest.filter((e) => types.has(e.evidence_type)) : rest;
+  }, [ds, types]);
   const typeCounts = useMemo(() => {
     const m: Record<string, number> = {};
     for (const e of located) m[e.evidence_type] = (m[e.evidence_type] || 0) + 1;
@@ -93,7 +99,28 @@ export default function UnifiedMap({ ds }: { ds: Dataset }) {
             />
           </div>
         ))}
-        {!inView.length && <div className="empty">이 화면에는 표시할 증거가 없습니다.<br />지도를 이동하거나 축소해 보세요.</div>}
+        {!inView.length && !unlocated.length && (
+          <div className="empty">이 화면에는 표시할 증거가 없습니다.<br />지도를 이동하거나 축소해 보세요.</div>
+        )}
+        {unlocated.length > 0 && (
+          <>
+            <div className="list-head" style={{ marginTop: 14 }}>
+              <span className="n">장소 미상 <b>{unlocated.length}</b>건
+                <span style={{ color: 'var(--ink-3)' }}> · 지도 표시 불가</span></span>
+            </div>
+            {unlocated.map((e) => (
+              <div key={e.id} ref={(el) => (cardRefs.current[e.id] = el)}>
+                <EvidenceCard
+                  ev={e}
+                  active={hoverId === e.id}
+                  onClick={() => nav(`/e/${e.id}`)}
+                  onMouseEnter={() => setHover(e.id, 'card')}
+                  onMouseLeave={() => setHover(null, 'card')}
+                />
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
