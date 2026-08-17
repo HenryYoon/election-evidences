@@ -10,3 +10,10 @@ dist
 scratchpad/
 # 정적 증거 데이터·이미지 — 배포/커밋 제외(운영은 Supabase만 사용, PII 노출 방지)
 _local-data/
+# ETL 재실행 시 여기에 증거 이미지가 생성된다. 커밋되면 Vercel 로 그대로
+# 배포되어 비공개 처리한 자료까지 노출되므로 항상 제외한다.
+public/thumbs/
+public/view/
+public/data/
+__pycache__/
+.serena/
