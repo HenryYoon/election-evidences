@@ -38,10 +38,23 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
               )}
             </div>
           )}
-          {ev.media_other.length > 0 && (
+          {/* 영상·음성 — url 이 붙은 것만 재생, 나머지는 안내만 */}
+          {ev.media_other.some((m) => m.url) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, margin: '4px 0 20px' }}>
+              {ev.media_other.map((m, i) =>
+                !m.url ? null : m.kind === 'video' ? (
+                  <video key={i} src={m.url} controls preload="metadata" playsInline
+                    style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)', background: '#000' }} />
+                ) : (
+                  <audio key={i} src={m.url} controls preload="metadata" style={{ width: '100%' }} />
+                )
+              )}
+            </div>
+          )}
+          {ev.media_other.some((m) => !m.url) && (
             <div className="note" style={{ marginBottom: 12 }}>
-              {ev.media_other.map((m) => (m.kind === 'video' ? '🎬 영상' : '🎧 음성')).join(', ')}{' '}
-              원본 {ev.media_other.length}건 — 재생/열람은 미디어 호스팅 연동 후 제공됩니다.
+              {ev.media_other.filter((m) => !m.url).map((m) => (m.kind === 'video' ? '🎬 영상' : '🎧 음성')).join(', ')}{' '}
+              원본 {ev.media_other.filter((m) => !m.url).length}건 — 원본이 유실되어 재생할 수 없습니다.
             </div>
           )}
           {ev.withheld > 0 && (

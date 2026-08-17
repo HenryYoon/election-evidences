@@ -10,6 +10,7 @@ export interface EvidencePhoto {
 
 export interface EvidenceMediaOther {
   kind: 'video' | 'audio' | 'doc';
+  url?: string;  // 스토리지 공개 URL. 원본이 유실된 건은 없음
 }
 
 export interface Evidence {
