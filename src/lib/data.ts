@@ -1,6 +1,6 @@
 // 데이터 로드 · 밀도 집계 · 필터 유틸
 import { useEffect, useState } from 'react';
-import type { Evidence } from '../types/evidence';
+import type { EvidenceRow } from '../types/evidence';
 import { supabase } from './supabase';
 
 export interface GeoFeature {
@@ -13,24 +13,24 @@ export interface GeoCollection {
   features: GeoFeature[];
 }
 
-let _evidence: Evidence[] | null = null;
+let _evidence: EvidenceRow[] | null = null;
 let _provinces: GeoCollection | null = null;
 let _munis: GeoCollection | null = null;
 let _promise: Promise<void> | null = null;
 
 // 공개 증거 로드: Supabase 설정 시 published=true만 조회, 아니면 정적 JSON 폴백
-async function loadEvidence(): Promise<Evidence[]> {
+async function loadEvidence(): Promise<EvidenceRow[]> {
   if (supabase) {
     const { data, error } = await supabase
       .from('evidence')
       .select('*')
       .eq('published', true)
       .order('num', { ascending: true });
-    if (!error && data) return data as Evidence[];
+    if (!error && data) return data as EvidenceRow[];
     if (error) console.warn('Supabase 조회 실패, 정적 폴백:', error.message);
   }
   const ev = await fetch(`${import.meta.env.BASE_URL}data/evidence.json`).then((r) => r.json());
-  return (ev.evidence as Evidence[]).filter((e) => e.published !== false);
+  return (ev.evidence as EvidenceRow[]).filter((e) => e.published !== false);
 }
 
 async function loadAll() {
@@ -50,7 +50,7 @@ async function loadAll() {
 }
 
 export interface Dataset {
-  evidence: Evidence[];
+  evidence: EvidenceRow[];
   provinces: GeoCollection;
   municipalities: GeoCollection;
 }
@@ -79,13 +79,13 @@ export function munisForWide(municipalities: GeoCollection, wide: string): GeoCo
 }
 
 // ── 밀도 집계 ─────────────────────────────────────────────
-export function countByWide(evidence: Evidence[]): Record<string, number> {
+export function countByWide(evidence: EvidenceRow[]): Record<string, number> {
   const m: Record<string, number> = {};
   for (const e of evidence) if (e.region_wide) m[e.region_wide] = (m[e.region_wide] || 0) + 1;
   return m;
 }
 
-export function countByBasic(evidence: Evidence[], wide: string): Record<string, number> {
+export function countByBasic(evidence: EvidenceRow[], wide: string): Record<string, number> {
   const m: Record<string, number> = {};
   for (const e of evidence)
     if (e.region_wide === wide && e.region_basic) m[e.region_basic] = (m[e.region_basic] || 0) + 1;
@@ -118,7 +118,7 @@ export interface Filters {
   place: string | null;  // 투표소/장소 필터
 }
 
-export function applyFilters(list: Evidence[], f: Filters): Evidence[] {
+export function applyFilters(list: EvidenceRow[], f: Filters): EvidenceRow[] {
   return list.filter((e) => {
     if (f.types.size && !f.types.has(e.evidence_type)) return false;
     if (f.place && e.place !== f.place) return false;
@@ -126,10 +126,10 @@ export function applyFilters(list: Evidence[], f: Filters): Evidence[] {
   });
 }
 
-export function evidenceForWide(evidence: Evidence[], wide: string): Evidence[] {
+export function evidenceForWide(evidence: EvidenceRow[], wide: string): EvidenceRow[] {
   return evidence.filter((e) => e.region_wide === wide);
 }
 
-export function evidenceForBasic(evidence: Evidence[], wide: string, basic: string): Evidence[] {
+export function evidenceForBasic(evidence: EvidenceRow[], wide: string, basic: string): EvidenceRow[] {
   return evidence.filter((e) => e.region_wide === wide && e.region_basic === basic);
 }

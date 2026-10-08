@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Source, Layer, Marker, type MapRef } from 'react-map-gl/maplibre';
 import type { GeoFeature } from '../../lib/data';
-import type { Evidence } from '../../types/evidence';
+import type { EvidenceRow } from '../../types/evidence';
 import { jitter } from '../../lib/data';
 import { makeBaseStyle, bboxOfGeometry, bboxOfPoints, type BBox } from '../../lib/geo';
 import { typeIcon } from '../evidence/EvidenceCard';
@@ -11,14 +11,14 @@ const CLUSTER_PX = 46; // 이 픽셀 반경 내 마커는 하나로 묶음
 
 interface Props {
   district: GeoFeature | null;
-  items: Evidence[];          // 이 지역의 위치있는 제보 전체
+  items: EvidenceRow[];          // 이 지역의 위치있는 제보 전체
   visibleIds: Set<string>;    // 현재 필터로 보이는 id
   hoverId: string | null;
   onHover: (id: string | null) => void;
   onPickPlace: (place: string) => void;
 }
 
-interface MarkerPt { ev: Evidence; pos: [number, number] }
+interface MarkerPt { ev: EvidenceRow; pos: [number, number] }
 
 export default function DetailMap({ district, items, visibleIds, hoverId, onHover, onPickPlace }: Props) {
   const ref = useRef<MapRef | null>(null);

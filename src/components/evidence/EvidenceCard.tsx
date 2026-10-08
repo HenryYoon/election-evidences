@@ -1,4 +1,4 @@
-import type { Evidence } from '../../types/evidence';
+import type { EvidenceRow } from '../../types/evidence';
 
 const TYPE_ICON: Record<string, string> = { 사진: '🖼', 영상: '▶', 음성: '🎧', 문서: '📄' };
 
@@ -7,7 +7,7 @@ export function typeIcon(t: string) {
 }
 
 interface Props {
-  ev: Evidence;
+  ev: EvidenceRow;
   active?: boolean;
   onClick?: () => void;
   onMouseEnter?: () => void;

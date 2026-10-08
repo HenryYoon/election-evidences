@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import type { Evidence } from '../../types/evidence';
+import type { EvidenceRow } from '../../types/evidence';
 import type { Filters } from '../../lib/data';
 import { EVIDENCE_TYPES } from '../../types/evidence';
 import { typeIcon } from './EvidenceCard';
 
 interface Props {
-  all: Evidence[]; // 이 지역 전체(필터 전) — 유형/장소 목록 산출용
+  all: EvidenceRow[]; // 이 지역 전체(필터 전) — 유형/장소 목록 산출용
   filters: Filters;
   onChange: (f: Filters) => void;
 }

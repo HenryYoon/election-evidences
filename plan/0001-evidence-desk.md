@@ -41,6 +41,20 @@
    - `title` → `claim`, `occurred_raw` → `occurred_at`(파싱 실패 시 null), `coordinates` → `lat/lng`, `source/source_url` → `sources[0]`, `election='2026 지방선거'`
    - `--apply` 없이는 변경 내역만 출력한다. `add_missing_evidence.py`의 패턴을 따른다.
 
+#### 1단계 구현 결과 (플랜과 달라진 점)
+| 항목 | 구현 | 이유 |
+|---|---|---|
+| 타입 이름 | 기존 행 타입을 `EvidenceRow`로 바꾸고, `Evidence`는 명세 4장 원장 레코드로 새로 정의했다. `toEvidence(row)`가 행을 원장 레코드로 바꾼다 | DB 행은 snake_case다. 한 타입에 두 표기를 섞으면 타입이 실제 데이터와 어긋난다. 기존 페이지는 3단계까지 `EvidenceRow`를 쓴다 |
+| `lat`, `lng` | 새 컬럼을 만들지 않는다. `toEvidence`가 `coordinates`(`[lng, lat]`)에서 읽는다 | 좌표 원본을 한 곳에만 둔다 |
+| `sources[].url` | `string \| null` | 카카오톡 제보처럼 링크가 없는 출처가 있다 |
+| `occurred_at` | `text`. ISO 8601이고, 시각을 모르면 날짜만 쓴다. 연도가 없으면 null이다 | 날짜만 아는 건에 자정 시각을 붙이면 시각을 지어낸 셈이다. `occurred_raw`는 그대로 남긴다 |
+| `status` 컬럼 | 기본값 없이 추가한다. `migrate_to_ledger.py --apply` 뒤에 `not null`과 기본값 `allegation`을 건다(스키마 파일 주석) | 기본값을 먼저 걸면 기존 행이 모두 `allegation`이 되어 자료 유무 매핑이 불가능하다 |
+| 상태 미기재 행 | `toEvidence`가 `migrate_to_ledger.py`와 같은 규칙(`defaultEvidenceStatus`)으로 `reported`나 `allegation`을 채운다 | 정적 JSON 대체 경로와 마이그레이션 전 행도 상태를 가진다 |
+| `Analysis` | 명세 필드에 `title`, `question`을 더했다 | 명세 3장(H1은 분석 제목)과 5장(질문 하나)이 요구한다 |
+| `Tip.status` | 값은 `unverified` 하나다 | 명세가 정한 값이 하나뿐이다. 값을 더하려면 명세를 먼저 고친다 |
+| 통계 제외 항목 | `excluded`는 `feed`, `unverified_tip`, `no_coordinates`, `allegation_only` 키 배열이다. 라벨은 `src/lib/status.ts`에 있다 | 범례가 상수만 읽게 한다 |
+| 피드 발신처 | 스키마가 `olgung`, `jahyeok` 행을 넣는다. 채널 주소는 운영자가 채운다 | 명세 3장 초기값 |
+
 ### 2단계: 사전 렌더링 기반
 1. `src/entry-client.tsx`(hydrateRoot)와 `src/entry-server.tsx`(StaticRouter + renderToString)를 만든다.
 2. `scripts/prerender.ts`가 빌드 시 Supabase 공개 데이터를 읽고 `dist/<path>/index.html`을 쓴다.
