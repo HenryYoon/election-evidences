@@ -22,14 +22,13 @@
 - `scripts/supabase_schema.sql`: 테이블, RLS, 스토리지 버킷 정의.
 - 배포: Vercel. 데이터: Supabase(Postgres + Storage).
 
-## 서브에이전트 (ECC 플러그인 `ecc@ecc`)
-| 역할 | ECC 에이전트 | 주의 |
-|---|---|---|
-| 정찰 | `code-explorer`, `code-architect`, `seo-specialist` | 구현 전에 쓴다 |
-| 구현 | `tdd-guide` | 커버리지 수치를 맞추려고 의미 없는 테스트를 쓰지 않는다 |
-| 원인 분석 | `react-build-resolver`, `build-error-resolver`, `silent-failure-hunter` | 원인과 근거를 먼저 보고한 뒤 수정한다 |
-| 테스트 | `e2e-runner` | 테스트를 격리·건너뛰기·비활성화해서 통과시키지 않는다 |
-| 리뷰 | `code-reviewer`, `typescript-reviewer`, `react-reviewer`, `security-reviewer`, `database-reviewer` | `REVIEW.md` 기준을 따른다 |
+## 서브에이전트
+- 작업에 맞는 ECC 플러그인(`ecc@ecc`) 에이전트를 골라 위임한다.
+- 아래 규칙은 어떤 에이전트를 쓰든 ECC 기본 동작보다 우선한다.
+  - 테스트를 격리·건너뛰기·비활성화해서 통과시키지 않는다.
+  - 커버리지 수치를 맞추려고 의미 없는 테스트를 쓰지 않는다.
+  - 오류는 원인과 근거를 먼저 보고한 뒤 수정한다.
+  - 리뷰는 `REVIEW.md` 기준을 따른다.
 
 ## 디자인
 - ECC `frontend-design-direction` 스킬을 따른다. 명세의 시각 규칙이 스킬보다 우선한다.
