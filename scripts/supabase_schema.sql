@@ -39,7 +39,26 @@ drop trigger if exists evidence_touch on public.evidence;
 create trigger evidence_touch before update on public.evidence
   for each row execute function public.touch_updated_at();
 
--- 2) RLS: 공개는 published=true만 읽기, 쓰기는 로그인 관리자만 -----------
+-- 1b) 관리자 허용 목록 -------------------------------------------------
+--    로그인한 계정 전체가 아니라 admins에 있는 계정만 관리자로 본다.
+--    Auth 가입 설정이 나중에 켜져도 가입자는 관리자 권한을 얻지 못한다.
+--    관리자 추가: insert into public.admins (user_id)
+--                 select id from auth.users where email = '<관리자 이메일>';
+create table if not exists public.admins (
+  user_id     uuid primary key references auth.users (id) on delete cascade,
+  created_at  timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+revoke all on public.admins from anon, authenticated;
+
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.admins where user_id = auth.uid())
+$$;
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- 2) RLS: 공개는 published=true만 읽기, 쓰기는 관리자(admins)만 -----------
 --    공개 앱은 로그인 없음(비식별화로 보호). 관리자(/admin)만 로그인해 편집.
 alter table public.evidence enable row level security;
 
@@ -49,11 +68,11 @@ create policy evidence_public_read on public.evidence
 
 drop policy if exists evidence_admin_read on public.evidence;
 create policy evidence_admin_read on public.evidence
-  for select to authenticated using (true);            -- 관리자는 비공개도 조회
+  for select to authenticated using (public.is_admin());  -- 관리자는 비공개도 조회
 
 drop policy if exists evidence_admin_write on public.evidence;
 create policy evidence_admin_write on public.evidence
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- 3) 미디어 스토리지 버킷 (공개 읽기) -----------------------------------
 insert into storage.buckets (id, name, public)
@@ -75,7 +94,8 @@ create policy media_public_read on storage.objects
 drop policy if exists media_admin_write on storage.objects;
 create policy media_admin_write on storage.objects
   for all to authenticated
-  using (bucket_id = 'evidence-media') with check (bucket_id = 'evidence-media');
+  using (bucket_id = 'evidence-media' and public.is_admin())
+  with check (bucket_id = 'evidence-media' and public.is_admin());
 
 -- 4) 관리자 계정만 생성: 대시보드 → Authentication → Users → Add user.
 --    /admin 편집용. 공개 열람자는 계정 불필요(로그인 없음).
@@ -195,8 +215,8 @@ create trigger analyses_touch before update on public.analyses
   for each row execute function public.touch_updated_at();
 
 -- 10) RLS -------------------------------------------------------------
---    공개 테이블: 익명은 공개 행만 읽는다. 쓰기는 로그인 관리자만.
---    tip_contacts: 익명 정책을 두지 않는다. 관리자와 서버 함수(service_role)만 접근한다.
+--    공개 테이블: 익명은 공개 행만 읽는다. 쓰기는 관리자(admins)만.
+--    tip_contacts: 익명 정책을 두지 않는다. 관리자(admins)와 서버 함수(service_role)만 접근한다.
 alter table public.feed_sources  enable row level security;
 alter table public.feed_items    enable row level security;
 alter table public.tips          enable row level security;
@@ -209,25 +229,25 @@ create policy feed_sources_public_read on public.feed_sources
   for select using (true);
 drop policy if exists feed_sources_admin_write on public.feed_sources;
 create policy feed_sources_admin_write on public.feed_sources
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists feed_items_public_read on public.feed_items;
 create policy feed_items_public_read on public.feed_items
   for select using (published = true);
 drop policy if exists feed_items_admin_all on public.feed_items;
 create policy feed_items_admin_all on public.feed_items
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists tips_public_read on public.tips;
 create policy tips_public_read on public.tips
   for select using (published = true);
 drop policy if exists tips_admin_all on public.tips;
 create policy tips_admin_all on public.tips
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists tip_contacts_admin_all on public.tip_contacts;
 create policy tip_contacts_admin_all on public.tip_contacts
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 revoke all on public.tip_contacts from anon;
 
 drop policy if exists analyses_public_read on public.analyses;
@@ -235,7 +255,7 @@ create policy analyses_public_read on public.analyses
   for select using (published = true);
 drop policy if exists analyses_admin_all on public.analyses;
 create policy analyses_admin_all on public.analyses
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 drop policy if exists analysis_rows_public_read on public.analysis_rows;
 create policy analysis_rows_public_read on public.analysis_rows
@@ -244,7 +264,7 @@ create policy analysis_rows_public_read on public.analysis_rows
   );
 drop policy if exists analysis_rows_admin_all on public.analysis_rows;
 create policy analysis_rows_admin_all on public.analysis_rows
-  for all to authenticated using (true) with check (true);
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- 11) 피드 발신처 초기값. 발신처 추가는 이 테이블에 행을 넣는 것으로 끝난다.
 --     채널 주소는 운영자가 채운다.

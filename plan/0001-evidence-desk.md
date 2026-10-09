@@ -54,6 +54,8 @@
 | `Tip.status` | 값은 `unverified` 하나다 | 명세가 정한 값이 하나뿐이다. 값을 더하려면 명세를 먼저 고친다 |
 | 통계 제외 항목 | `excluded`는 `feed`, `unverified_tip`, `no_coordinates`, `allegation_only` 키 배열이다. 라벨은 `src/lib/status.ts`에 있다 | 범례가 상수만 읽게 한다 |
 | 피드 발신처 | 스키마가 `olgung`, `jahyeok` 행을 넣는다. 채널 주소는 운영자가 채운다 | 명세 3장 초기값 |
+| 관리자 판별 | `admins` 허용 목록과 `is_admin()` 함수를 둔다. 모든 관리자 정책(기존 `evidence`, 스토리지 포함)은 `authenticated` 전체가 아니라 `is_admin()`을 조건으로 쓴다 | 로그인 계정 전체를 관리자로 보면, Auth 가입 설정이 켜지는 순간 가입자가 `tip_contacts`를 읽는다 |
+| 운영 DB 적용 | 스키마 파일 전체가 아니라 `1b)`, 관리자 정책, `5)`~`11)`만 적용한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
 
 ### 2단계: 사전 렌더링 기반
 1. `src/entry-client.tsx`(hydrateRoot)와 `src/entry-server.tsx`(StaticRouter + renderToString)를 만든다.
