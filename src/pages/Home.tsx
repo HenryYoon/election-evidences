@@ -22,7 +22,8 @@ export default function Home({ ds }: { ds: Dataset }) {
   const day = ledger.map(dateOf).find(Boolean) ?? null;
   const today = day ? ledger.filter((e) => dateOf(e) === day) : [];
   const latest = (today.length ? today : ledger).slice(0, 3);
-  const points = today
+  // 지도에는 좌표가 있는 원장 카드를 모두 찍는다. 피드와 제보는 찍지 않는다.
+  const points = ledger
     .filter((e) => e.lat !== null && e.lng !== null)
     .map((e) => ({ id: e.id, lng: e.lng as number, lat: e.lat as number, label: `${e.placeName} · ${e.claim}` }));
   const newest = ledger[0];
@@ -36,9 +37,9 @@ export default function Home({ ds }: { ds: Dataset }) {
       </p>
 
       <div className="home-grid">
-        <section aria-label="최근 원장 지도">
-          <SvgMap points={points} title={day ? `${day} 원장 위치` : '원장 위치'} />
-          <p className="sub">점은 {day ?? '최근'} 원장 가운데 좌표가 있는 카드다. 피드와 제보는 찍지 않는다.</p>
+        <section aria-label="원장 지도">
+          <SvgMap points={points} title="원장 카드 위치" />
+          <p className="sub">점은 좌표가 있는 원장 카드다. 점을 누르면 카드로 간다. 피드와 제보는 찍지 않는다.</p>
         </section>
         <section aria-label="최근 원장">
           <h2>{day ? `${day} 원장` : '최근 원장'}</h2>
