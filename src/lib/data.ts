@@ -1,7 +1,6 @@
-// 데이터 로드 · 밀도 집계 · 필터 유틸
-import { useEffect, useState } from 'react';
-import type { Evidence } from '../types/evidence';
-import { supabase } from './supabase';
+// 공개 데이터 로드 · 필터 유틸
+// 사전 렌더링(node)과 브라우저가 같은 함수로 공개 레코드를 읽는다.
+import type { Evidence, EvidenceRow } from '../types/evidence';
 
 export interface GeoFeature {
   type: 'Feature';
@@ -13,94 +12,39 @@ export interface GeoCollection {
   features: GeoFeature[];
 }
 
-let _evidence: Evidence[] | null = null;
-let _provinces: GeoCollection | null = null;
-let _munis: GeoCollection | null = null;
-let _promise: Promise<void> | null = null;
+export interface Dataset {
+  evidence: EvidenceRow[];
+}
 
-// 공개 증거 로드: Supabase 설정 시 published=true만 조회, 아니면 정적 JSON 폴백
-async function loadEvidence(): Promise<Evidence[]> {
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('evidence')
-      .select('*')
-      .eq('published', true)
-      .order('num', { ascending: true });
-    if (!error && data) return data as Evidence[];
-    if (error) console.warn('Supabase 조회 실패, 정적 폴백:', error.message);
+export interface PublicSource {
+  supabaseUrl?: string;
+  anonKey?: string;
+}
+
+// Supabase REST로 공개 행(published=true)만 읽는다. supabase-js 없이 fetch만 써서
+// 사전 렌더링 스크립트에서도 그대로 돈다. 실패하면 예외를 던진다.
+export async function fetchPublicEvidence({ supabaseUrl, anonKey }: Required<PublicSource>): Promise<EvidenceRow[]> {
+  const res = await fetch(
+    `${supabaseUrl.replace(/\/$/, '')}/rest/v1/evidence?select=*&published=eq.true&order=num.asc`,
+    { headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` } }
+  );
+  if (!res.ok) throw new Error(`Supabase 조회 실패 HTTP ${res.status}`);
+  return (await res.json()) as EvidenceRow[];
+}
+
+// 브라우저용: Supabase 설정이 있으면 Supabase, 없거나 실패하면 정적 JSON.
+export async function loadPublicEvidence(): Promise<EvidenceRow[]> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (supabaseUrl && anonKey) {
+    try {
+      return await fetchPublicEvidence({ supabaseUrl, anonKey });
+    } catch (e) {
+      console.warn('Supabase 조회 실패, 정적 폴백:', e);
+    }
   }
   const ev = await fetch(`${import.meta.env.BASE_URL}data/evidence.json`).then((r) => r.json());
-  return (ev.evidence as Evidence[]).filter((e) => e.published !== false);
-}
-
-async function loadAll() {
-  if (_promise) return _promise;
-  _promise = (async () => {
-    const [ev, pv, mu] = await Promise.all([
-      loadEvidence(),
-      // 행정경계는 정적 참조 데이터라 그대로 사용
-      fetch(`${import.meta.env.BASE_URL}geo/provinces.geojson`).then((r) => r.json()),
-      fetch(`${import.meta.env.BASE_URL}geo/municipalities.geojson`).then((r) => r.json()),
-    ]);
-    _evidence = ev;
-    _provinces = pv as GeoCollection;
-    _munis = mu as GeoCollection;
-  })();
-  return _promise;
-}
-
-export interface Dataset {
-  evidence: Evidence[];
-  provinces: GeoCollection;
-  municipalities: GeoCollection;
-}
-
-export function useDataset(): Dataset | null {
-  const [ds, setDs] = useState<Dataset | null>(null);
-  useEffect(() => {
-    let alive = true;
-    loadAll().then(() => {
-      if (alive && _evidence && _provinces && _munis)
-        setDs({ evidence: _evidence, provinces: _provinces, municipalities: _munis });
-    });
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return ds;
-}
-
-// 특정 시도의 시군구만 추출
-export function munisForWide(municipalities: GeoCollection, wide: string): GeoCollection {
-  return {
-    type: 'FeatureCollection',
-    features: municipalities.features.filter((f) => f.properties.wide === wide),
-  };
-}
-
-// ── 밀도 집계 ─────────────────────────────────────────────
-export function countByWide(evidence: Evidence[]): Record<string, number> {
-  const m: Record<string, number> = {};
-  for (const e of evidence) if (e.region_wide) m[e.region_wide] = (m[e.region_wide] || 0) + 1;
-  return m;
-}
-
-export function countByBasic(evidence: Evidence[], wide: string): Record<string, number> {
-  const m: Record<string, number> = {};
-  for (const e of evidence)
-    if (e.region_wide === wide && e.region_basic) m[e.region_basic] = (m[e.region_basic] || 0) + 1;
-  return m;
-}
-
-// geojson 피처 properties에 count 주입 (data-driven 스타일용)
-export function withCounts(geo: GeoCollection, counts: Record<string, number>): GeoCollection {
-  return {
-    type: 'FeatureCollection',
-    features: geo.features.map((f) => ({
-      ...f,
-      properties: { ...f.properties, count: counts[f.properties.slug] || 0 },
-    })),
-  };
+  return (ev.evidence as EvidenceRow[]).filter((e) => e.published !== false);
 }
 
 // ── 마커 겹침 방지: id 기반 결정적 지터 ───────────────────
@@ -112,24 +56,22 @@ export function jitter(coord: [number, number], seed: string): [number, number] 
   return [coord[0] + Math.cos(a) * r, coord[1] + Math.sin(a) * r];
 }
 
-// ── 필터 ─────────────────────────────────────────────────
-export interface Filters {
-  types: Set<string>;    // 비어있으면 전체
-  place: string | null;  // 투표소/장소 필터
+// ── 원장 필터: 유형, 선거, 상태, 지역 ─────────────────────
+export interface LedgerFilters {
+  type: string;     // 빈 문자열이면 전체
+  election: string;
+  status: string;
+  region: string;   // 광역 라벨
 }
 
-export function applyFilters(list: Evidence[], f: Filters): Evidence[] {
-  return list.filter((e) => {
-    if (f.types.size && !f.types.has(e.evidence_type)) return false;
-    if (f.place && e.place !== f.place) return false;
-    return true;
-  });
-}
+export const NO_FILTERS: LedgerFilters = { type: '', election: '', status: '', region: '' };
 
-export function evidenceForWide(evidence: Evidence[], wide: string): Evidence[] {
-  return evidence.filter((e) => e.region_wide === wide);
-}
-
-export function evidenceForBasic(evidence: Evidence[], wide: string, basic: string): Evidence[] {
-  return evidence.filter((e) => e.region_wide === wide && e.region_basic === basic);
+export function applyFilters(list: Evidence[], f: LedgerFilters): Evidence[] {
+  return list.filter(
+    (e) =>
+      (!f.type || e.type === f.type) &&
+      (!f.election || e.election === f.election) &&
+      (!f.status || e.status === f.status) &&
+      (!f.region || e.regionWideLabel === f.region)
+  );
 }

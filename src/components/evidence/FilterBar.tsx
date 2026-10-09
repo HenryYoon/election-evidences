@@ -1,59 +1,52 @@
-import { useMemo } from 'react';
+// 원장 필터: 유형, 선거, 상태, 지역. 선택지는 원장에 실제로 있는 값만 보인다.
 import type { Evidence } from '../../types/evidence';
-import type { Filters } from '../../lib/data';
 import { EVIDENCE_TYPES } from '../../types/evidence';
-import { typeIcon } from './EvidenceCard';
+import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL } from '../../lib/status';
+import { NO_FILTERS, type LedgerFilters } from '../../lib/data';
 
 interface Props {
-  all: Evidence[]; // 이 지역 전체(필터 전) — 유형/장소 목록 산출용
-  filters: Filters;
-  onChange: (f: Filters) => void;
+  all: Evidence[];
+  value: LedgerFilters;
+  onChange: (f: LedgerFilters) => void;
 }
 
-export default function FilterBar({ all, filters, onChange }: Props) {
-  const typeCounts = useMemo(() => {
-    const m: Record<string, number> = {};
-    for (const e of all) m[e.evidence_type] = (m[e.evidence_type] || 0) + 1;
-    return m;
-  }, [all]);
+const uniq = (xs: (string | null)[]) => [...new Set(xs.filter((x): x is string => !!x))].sort((a, b) => a.localeCompare(b, 'ko'));
 
-  const places = useMemo(() => {
-    const m: Record<string, number> = {};
-    for (const e of all) m[e.place] = (m[e.place] || 0) + 1;
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  }, [all]);
-
-  const toggleType = (t: string) => {
-    const types = new Set(filters.types);
-    types.has(t) ? types.delete(t) : types.add(t);
-    onChange({ ...filters, types });
-  };
-  const pickPlace = (p: string) => {
-    onChange({ ...filters, place: filters.place === p ? null : p });
-  };
+export default function FilterBar({ all, value, onChange }: Props) {
+  const types = EVIDENCE_TYPES.filter((t) => all.some((e) => e.type === t));
+  const elections = uniq(all.map((e) => e.election));
+  const statuses = EVIDENCE_STATUSES.filter((s) => all.some((e) => e.status === s));
+  const regions = uniq(all.map((e) => e.regionWideLabel));
+  const set = (k: keyof LedgerFilters) => (ev: React.ChangeEvent<HTMLSelectElement>) => onChange({ ...value, [k]: ev.target.value });
+  const active = Object.values(value).some(Boolean);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div className="filterbar">
-        {EVIDENCE_TYPES.filter((t) => typeCounts[t]).map((t) => (
-          <button key={t} className={`chip${filters.types.has(t) ? ' on' : ''}`} onClick={() => toggleType(t)}>
-            {typeIcon(t)} {t} <span style={{ opacity: 0.6 }}>{typeCounts[t]}</span>
-          </button>
-        ))}
-      </div>
-      {places.length > 1 && (
-        <div className="filterbar">
-          {filters.place && (
-            <button className="chip place on" onClick={() => pickPlace(filters.place!)}>✕ {filters.place}</button>
-          )}
-          {!filters.place &&
-            places.map(([p, n]) => (
-              <button key={p} className="chip place" onClick={() => pickPlace(p)}>
-                {p} <span style={{ opacity: 0.6 }}>{n}</span>
-              </button>
-            ))}
-        </div>
-      )}
+    <div className="filters">
+      <label>유형
+        <select value={value.type} onChange={set('type')}>
+          <option value="">전체</option>
+          {types.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </label>
+      <label>선거
+        <select value={value.election} onChange={set('election')}>
+          <option value="">전체</option>
+          {elections.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </label>
+      <label>상태
+        <select value={value.status} onChange={set('status')}>
+          <option value="">전체</option>
+          {statuses.map((s) => <option key={s} value={s}>{EVIDENCE_STATUS_LABEL[s]}</option>)}
+        </select>
+      </label>
+      <label>지역
+        <select value={value.region} onChange={set('region')}>
+          <option value="">전체</option>
+          {regions.map((t) => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </label>
+      {active && <button type="button" onClick={() => onChange(NO_FILTERS)}>조건 지우기</button>}
     </div>
   );
 }

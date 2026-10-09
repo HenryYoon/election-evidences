@@ -1,102 +1,114 @@
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+// 증거 카드 상세(명세 5장 원장).
+// 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체와 아카이브 시각. 오른쪽: 상태, 좌표, 선거, 유형.
+// 그 아래 검증 네 줄과 출처 목록.
+import { Link, useParams } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
-import { typeIcon } from '../components/evidence/EvidenceCard';
+import { toEvidence, type EvidenceVerification } from '../types/evidence';
+import { formatOccurred, leadSentence } from '../lib/seo';
+import { EVIDENCE_STATUS_LEGEND } from '../lib/status';
+import DeskLayout from '../components/layout/DeskLayout';
+import { StatusMark } from '../components/evidence/StatusLegend';
+
+const VERIFICATION: [keyof EvidenceVerification, string][] = [
+  ['seen', '보인 것'],
+  ['where', '장소'],
+  ['when', '시각'],
+  ['notClaimed', '주장하지 않는 것'],
+];
 
 export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
   const { evidenceId } = useParams();
-  const nav = useNavigate();
-  const ev = ds.evidence.find((e) => e.id === evidenceId);
-  if (!ev) return <Navigate to="/" replace />;
-
-  const back = () => (window.history.length > 1 ? nav(-1) : nav('/'));
+  const row = ds.evidence.find((e) => e.id === evidenceId);
+  if (!row) {
+    return (
+      <DeskLayout>
+        <h1>카드를 찾을 수 없다</h1>
+        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/ledger">원장 목록</Link>에서 찾을 수 있다.</p>
+      </DeskLayout>
+    );
+  }
+  const ev = toEvidence(row);
+  const playable = ev.mediaOther.filter((m) => m.url);
+  const lost = ev.mediaOther.filter((m) => !m.url);
 
   return (
-    <div className="app" style={{ background: 'var(--bg)' }}>
-      <header className="appbar">
-        <button onClick={back} style={{ border: 0, background: 'transparent', color: '#fff', fontSize: 15, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-          ‹ 뒤로
-        </button>
-        <span className="brand" style={{ marginLeft: 4 }}>증거 상세</span>
-      </header>
+    <DeskLayout>
+      <h1>{ev.claim}</h1>
+      <p className="desk-lead">{leadSentence(ev)}</p>
 
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        <article style={{ maxWidth: 760, margin: '0 auto', padding: '20px 16px 60px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <span className={`badge ${ev.evidence_type}`}>{typeIcon(ev.evidence_type)} {ev.evidence_type}</span>
-            <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{ev.region_wide_label} · {ev.place}</span>
-          </div>
-          <h1 style={{ fontSize: 22, lineHeight: 1.35, margin: '0 0 14px', color: 'var(--ink)' }}>{ev.title}</h1>
+      <div className="detail-grid">
+        <section aria-label="매체" className="detail-media">
+          {ev.photos.map((p, i) => (p.view ? <img key={i} src={p.view} alt={`${ev.placeName} 사진 ${i + 1}`} loading="lazy" /> : null))}
+          {playable.map((m, i) =>
+            m.kind === 'video' ? (
+              <video key={i} src={m.url} controls preload="metadata" playsInline />
+            ) : (
+              <audio key={i} src={m.url} controls preload="metadata" style={{ width: '100%' }} />
+            )
+          )}
+          {lost.length > 0 && <p className="sub">원본이 유실되어 재생할 수 없는 매체 {lost.length}개.</p>}
+          {row.withheld > 0 && (
+            <p className="sub">개인정보(서명, 연락처, 이름, 대화 내용)가 담긴 자료 {row.withheld}개는 공개하지 않는다.</p>
+          )}
+          {!ev.photos.some((p) => p.view) && !playable.length && <p className="sub">공개한 매체가 없다.</p>}
+          <p className="sub">아카이브 시각 {ev.archivedAt ? formatOccurred(ev.archivedAt) : '미기재'}</p>
+        </section>
 
-          {/* 미디어 */}
-          {ev.photos.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, margin: '4px 0 20px' }}>
-              {ev.photos.map((p, i) =>
-                p.view ? (
-                  <img key={i} src={p.view} alt={ev.title}
-                    style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)', background: '#fff' }} loading="lazy" />
-                ) : null
-              )}
-            </div>
-          )}
-          {/* 영상·음성 — url 이 붙은 것만 재생, 나머지는 안내만 */}
-          {ev.media_other.some((m) => m.url) && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, margin: '4px 0 20px' }}>
-              {ev.media_other.map((m, i) =>
-                !m.url ? null : m.kind === 'video' ? (
-                  <video key={i} src={m.url} controls preload="metadata" playsInline
-                    style={{ width: '100%', borderRadius: 12, border: '1px solid var(--line)', background: '#000' }} />
-                ) : (
-                  <audio key={i} src={m.url} controls preload="metadata" style={{ width: '100%' }} />
-                )
-              )}
-            </div>
-          )}
-          {ev.media_other.some((m) => !m.url) && (
-            <div className="note" style={{ marginBottom: 12 }}>
-              {ev.media_other.filter((m) => !m.url).map((m) => (m.kind === 'video' ? '🎬 영상' : '🎧 음성')).join(', ')}{' '}
-              원본 {ev.media_other.filter((m) => !m.url).length}건 — 원본이 유실되어 재생할 수 없습니다.
-            </div>
-          )}
-          {ev.withheld > 0 && (
-            <div className="note" style={{ marginBottom: 20 }}>
-              🔒 개인정보(서명·연락처·이름·대화 내용 등)가 담긴 자료 <b>{ev.withheld}건</b>은
-              보호를 위해 <b>비공개</b>했습니다.{' '}
-              {ev.photos.length > 0
-                ? '물증 사진만 공개합니다.'
-                : '이 제보는 공개 가능한 사진이 없어 텍스트 요약만 제공합니다.'}
-            </div>
-          )}
-
-          {/* 본문 */}
-          {ev.description && (
-            <p style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--ink-2)', whiteSpace: 'pre-wrap', margin: '0 0 24px' }}>
-              {ev.description}
-            </p>
-          )}
-
-          {/* 메타 / 출처 — 신뢰는 출처 노출로 담보 */}
-          <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '4px 16px' }}>
-            {rows(ev).map(([k, v]) => (
-              <div key={k} style={{ display: 'flex', gap: 12, padding: '11px 0', borderBottom: '1px solid var(--line-2)', fontSize: 14 }}>
-                <div style={{ width: 92, color: 'var(--ink-3)', flex: '0 0 auto' }}>{k}</div>
-                <div style={{ color: 'var(--ink)', wordBreak: 'break-all' }}>{v}</div>
-              </div>
-            ))}
-          </div>
-        </article>
+        <section aria-label="분류">
+          <dl className="facts">
+            <dt>상태</dt>
+            <dd>
+              <StatusMark status={ev.status} />
+              <br />
+              <small>{EVIDENCE_STATUS_LEGEND[ev.status]}</small>
+            </dd>
+            <dt>좌표</dt>
+            <dd>{ev.lat !== null && ev.lng !== null ? `${ev.lat.toFixed(5)}, ${ev.lng.toFixed(5)}` : '좌표 없음'}</dd>
+            <dt>선거</dt>
+            <dd>{ev.election ?? '미기재'}</dd>
+            <dt>유형</dt>
+            <dd>{ev.type}</dd>
+          </dl>
+        </section>
       </div>
-    </div>
-  );
-}
 
-function rows(ev: Dataset['evidence'][number]): [string, React.ReactNode][] {
-  const r: [string, React.ReactNode][] = [
-    ['발생 장소', ev.place_raw],
-    ['발생 시각', ev.occurred_raw || '미상'],
-    ['수집 경로', ev.source],
-    ['제보자', ev.reporter],
-  ];
-  if (ev.source_url)
-    r.push(['원본 링크', <a href={ev.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--teal-600)', fontWeight: 600 }}>{ev.source_url}</a>]);
-  return r;
+      <hr className="rule" />
+      <h2>검증</h2>
+      <dl className="facts">
+        {VERIFICATION.map(([k, label]) => (
+          <div key={k} style={{ display: 'contents' }}>
+            <dt>{label}</dt>
+            <dd>{ev.verification[k] || '미기재'}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <hr className="rule" />
+      <h2>출처</h2>
+      {ev.sources.length ? (
+        <ol className="sources">
+          {ev.sources.map((s, i) => (
+            <li key={i}>
+              {s.url ? <a href={s.url} target="_blank" rel="noreferrer">{s.title}</a> : s.title}
+              {s.archiveUrl && <> · <a href={s.archiveUrl} target="_blank" rel="noreferrer">보관본</a></>}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p>출처 미기재</p>
+      )}
+
+      {ev.description && ev.description !== ev.claim && (
+        <>
+          <hr className="rule" />
+          <h2>제보 내용</h2>
+          <p style={{ whiteSpace: 'pre-wrap' }}>{ev.description}</p>
+        </>
+      )}
+
+      <p style={{ marginTop: 32 }}>
+        <Link to="/ledger">원장 목록으로</Link>
+      </p>
+    </DeskLayout>
+  );
 }

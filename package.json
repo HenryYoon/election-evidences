@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && vite build --ssr src/entry-server.tsx --outDir dist-server && node scripts/prerender.mjs",
     "preview": "vite preview",
-    "data": "python scripts/build_evidence.py"
+    "data": "python scripts/build_evidence.py",
+    "test": "vitest run",
+    "check:dist": "node scripts/check-dist.mjs",
+    "e2e": "node tests/e2e/smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.0",
@@ -22,7 +25,9 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.56.1",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vitest": "^2.1.9"
   }
 }

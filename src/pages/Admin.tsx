@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Evidence, EvidenceType } from '../types/evidence';
+import type { EvidenceRow, EvidenceType } from '../types/evidence';
 import { EVIDENCE_TYPES } from '../types/evidence';
-import { typeIcon } from '../components/evidence/EvidenceCard';
+import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
 
 const BUCKET = 'evidence-media';
-const blank = (): Partial<Evidence> => ({
+const blank = (): Partial<EvidenceRow> => ({
   id: `ev-${Date.now().toString(36)}`, num: 0, title: '', description: '',
   evidence_type: '사진', published: true, region_wide: null, region_wide_label: null,
   region_basic: null, place: '', place_raw: '', coordinates: null, located: false,
@@ -17,8 +17,8 @@ const blank = (): Partial<Evidence> => ({
 export default function Admin() {
   const [session, setSession] = useState<unknown>(null);
   const [ready, setReady] = useState(false);
-  const [rows, setRows] = useState<Evidence[]>([]);
-  const [editing, setEditing] = useState<Partial<Evidence> | null>(null);
+  const [rows, setRows] = useState<EvidenceRow[]>([]);
+  const [editing, setEditing] = useState<Partial<EvidenceRow> | null>(null);
   const [err, setErr] = useState('');
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function Admin() {
   const load = async () => {
     if (!supabase) return;
     const { data, error } = await supabase.from('evidence').select('*').order('num', { ascending: true });
-    if (error) setErr(error.message); else setRows((data as Evidence[]) || []);
+    if (error) setErr(error.message); else setRows((data as EvidenceRow[]) || []);
   };
   useEffect(() => { if (session) load(); }, [session]);
 
@@ -43,12 +43,12 @@ export default function Admin() {
   if (!ready) return <Center>불러오는 중…</Center>;
   if (!session) return <Login onErr={setErr} err={err} />;
 
-  const setPublished = async (e: Evidence, v: boolean) => {
+  const setPublished = async (e: EvidenceRow, v: boolean) => {
     if (e.published === v) return;
     await supabase!.from('evidence').update({ published: v }).eq('id', e.id);
     load();
   };
-  const remove = async (e: Evidence) => {
+  const remove = async (e: EvidenceRow) => {
     if (!confirm(`"${e.title}" 삭제할까요?`)) return;
     await supabase!.from('evidence').delete().eq('id', e.id);
     load();
@@ -98,14 +98,14 @@ export default function Admin() {
   );
 }
 
-function EditModal({ draft, onClose, onSaved }: { draft: Partial<Evidence>; onClose: () => void; onSaved: () => void }) {
-  const [d, setD] = useState<Partial<Evidence>>(draft);
+function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; onClose: () => void; onSaved: () => void }) {
+  const [d, setD] = useState<Partial<EvidenceRow>>(draft);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   // 비공개 버킷: 미리보기는 서명 URL, 저장값(d.photos)은 원본 URL 유지
   const signed = useSignedMap((d.photos ?? []).flatMap((p) => [p.thumb, p.view]));
   const disp = (u?: string | null) => { const p = storagePath(u); return (p && signed.get(p)) || u || ''; };
-  const set = (k: keyof Evidence, v: unknown) => setD((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof EvidenceRow, v: unknown) => setD((p) => ({ ...p, [k]: v }));
   const lng = d.coordinates?.[0] ?? '';
   const lat = d.coordinates?.[1] ?? '';
   const setCoord = (i: 0 | 1, v: string) => {

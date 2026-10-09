@@ -1,43 +1,6 @@
--- 선거 증거 아카이브 — Supabase 스키마
--- 실행: Supabase 대시보드 → SQL Editor 에 붙여넣고 Run.
-
--- 1) 증거 테이블 ---------------------------------------------------------
-create table if not exists public.evidence (
-  id                 text primary key,      -- ev-002
-  num                int,
-  title              text not null,
-  description        text,
-  evidence_type      text,                  -- 사진/영상/음성/문서
-  published          boolean not null default true,   -- 공개/비공개 토글
-  region_wide        text,
-  region_wide_label  text,
-  region_basic       text,
-  place              text,
-  place_raw          text,
-  coordinates        jsonb,                 -- [lng, lat] or null
-  located            boolean default false,
-  occurred_raw       text,
-  source             text,
-  source_url         text,
-  reporter           text,
-  photos             jsonb default '[]'::jsonb,       -- [{thumb,view}]
-  media_other        jsonb default '[]'::jsonb,       -- [{kind}]
-  withheld           int default 0,
-  media_count        int default 0,
-  created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now()
-);
-
-create index if not exists evidence_published_idx on public.evidence (published);
-create index if not exists evidence_region_idx on public.evidence (region_wide, region_basic);
-
--- updated_at 자동 갱신
-create or replace function public.touch_updated_at()
-returns trigger language plpgsql as $$
-begin new.updated_at = now(); return new; end $$;
-drop trigger if exists evidence_touch on public.evidence;
-create trigger evidence_touch before update on public.evidence
-  for each row execute function public.touch_updated_at();
+-- 0001 운영 DB 마이그레이션. Supabase SQL Editor에 붙여 넣고 Run.
+-- supabase_schema.sql의 1b), 관리자 정책, 5)~11)만 담는다. 버킷 설정(3)은 운영 값과 달라 뺀다.
+begin;
 
 -- 1b) 관리자 허용 목록 -------------------------------------------------
 --    로그인한 계정 전체가 아니라 admins에 있는 계정만 관리자로 본다.
@@ -58,13 +21,6 @@ $$;
 revoke all on function public.is_admin() from public;
 grant execute on function public.is_admin() to anon, authenticated;
 
--- 2) RLS: 공개는 published=true만 읽기, 쓰기는 관리자(admins)만 -----------
---    공개 앱은 로그인 없음(비식별화로 보호). 관리자(/admin)만 로그인해 편집.
-alter table public.evidence enable row level security;
-
-drop policy if exists evidence_public_read on public.evidence;
-create policy evidence_public_read on public.evidence
-  for select using (published = true);                 -- 익명도 공개분 조회
 
 drop policy if exists evidence_admin_read on public.evidence;
 create policy evidence_admin_read on public.evidence
@@ -74,22 +30,6 @@ drop policy if exists evidence_admin_write on public.evidence;
 create policy evidence_admin_write on public.evidence
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- 3) 미디어 스토리지 버킷 (공개 읽기) -----------------------------------
-insert into storage.buckets (id, name, public)
-values ('evidence-media', 'evidence-media', true)
-on conflict (id) do nothing;
-
--- 혹시 비공개로 바뀌었으면 공개로 복구 + 업로드 제한(하드닝)
-update storage.buckets
-  set public = true,
-      file_size_limit = 10485760,                       -- 10MB
-      allowed_mime_types = array['image/jpeg','image/png','image/webp']
-  where id = 'evidence-media';
-
-drop policy if exists media_auth_read on storage.objects;
-drop policy if exists media_public_read on storage.objects;
-create policy media_public_read on storage.objects
-  for select using (bucket_id = 'evidence-media');     -- 익명도 이미지 열람
 
 drop policy if exists media_admin_write on storage.objects;
 create policy media_admin_write on storage.objects
@@ -97,13 +37,6 @@ create policy media_admin_write on storage.objects
   using (bucket_id = 'evidence-media' and public.is_admin())
   with check (bucket_id = 'evidence-media' and public.is_admin());
 
--- 4) 관리자 계정만 생성: 대시보드 → Authentication → Users → Add user.
---    /admin 편집용. 공개 열람자는 계정 불필요(로그인 없음).
-
--- ======================================================================
--- 0001 선거 증거 데스크 마이그레이션 (plan/0001-evidence-desk.md 1단계)
--- 여러 번 실행해도 결과가 같다. 상태 값은 src/lib/status.ts와 같다.
--- ======================================================================
 
 -- 5) 원장 컬럼 ----------------------------------------------------------
 --    status는 기본값 없이 추가한다. 기존 행은 migrate_to_ledger.py가 채운다.
@@ -272,3 +205,8 @@ insert into public.feed_sources (id, name, platform) values
   ('olgung', '올공', 'youtube'),
   ('jahyeok', '자혁', 'youtube')
 on conflict (id) do nothing;
+
+
+-- 운영 DB의 유일한 계정(운영자)을 관리자로 등록한다.
+insert into public.admins (user_id) select id from auth.users on conflict do nothing;
+commit;

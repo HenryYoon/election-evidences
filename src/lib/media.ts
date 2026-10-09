@@ -3,7 +3,7 @@
 // 로컬 경로(/thumbs/..)나 외부 URL은 그대로 통과시킨다.
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
-import type { Evidence } from '../types/evidence';
+import type { EvidenceRow } from '../types/evidence';
 
 const BUCKET = 'evidence-media';
 const SIGN_TTL = 60 * 60 * 24; // 24시간 — 열람 세션 도중 만료 방지
@@ -27,7 +27,7 @@ export async function signPaths(paths: string[]): Promise<Map<string, string>> {
 
 // 읽기전용 리스트(공개 앱)용: 사진 URL을 서명 URL로 치환한 새 배열 반환.
 // ※ 관리자 편집 화면에서는 쓰지 말 것 — 저장 시 만료되는 서명 URL이 DB에 박힌다.
-export async function signEvidencePhotos(list: Evidence[]): Promise<Evidence[]> {
+export async function signEvidencePhotos(list: EvidenceRow[]): Promise<EvidenceRow[]> {
   if (!supabase) return list;
   const paths = new Set<string>();
   for (const e of list)

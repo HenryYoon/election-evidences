@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/maplibre';
-import type { Evidence } from '../../types/evidence';
+import type { EvidenceRow } from '../../types/evidence';
 import { jitter } from '../../lib/data';
 import { makeBaseStyle, bboxOfPoints, type BBox } from '../../lib/geo';
-import { typeIcon } from '../evidence/EvidenceCard';
+import { typeIcon } from '../../lib/evidenceType';
 
 const BASE_STYLE = makeBaseStyle();
 const CLUSTER_PX = 48;
 
 interface Props {
-  items: Evidence[];        // 지도에 표시할(필터 통과) 위치있는 제보
+  items: EvidenceRow[];        // 지도에 표시할(필터 통과) 위치있는 제보
   hoverId: string | null;
   onHover: (id: string | null) => void;
   onPick: (id: string) => void;              // 단일 마커 클릭
@@ -17,7 +17,7 @@ interface Props {
   fitKey?: number;          // 값이 바뀌면 전체 마커에 맞춰 리핏
 }
 
-interface MarkerPt { ev: Evidence; pos: [number, number] }
+interface MarkerPt { ev: EvidenceRow; pos: [number, number] }
 
 export default function EvidenceMap({ items, hoverId, onHover, onPick, onViewport, fitKey }: Props) {
   const ref = useRef<MapRef | null>(null);
