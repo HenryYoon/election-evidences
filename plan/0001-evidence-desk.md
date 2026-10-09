@@ -144,6 +144,16 @@
 7. 모바일 뷰포트에서 핀치 줌이 된다.
 8. Playwright로 `npm run preview`를 띄워 각 경로를 열고, 페이지마다 H1이 하나인지 확인한다.
 
+### CI (GitHub Actions, `.github/workflows/ci.yml`)
+- PR과 main 푸시마다 세 작업을 돌린다. 브랜치 보호 규칙에서 세 작업을 필수 검사로 지정해, 통과한 PR만 main에 머지한다. 배포는 Vercel Git 연동이 main 머지 때 한다.
+- CI는 합성 데이터(`tests/fixtures/evidence.json`)로만 빌드한다. 실제 제보와 Supabase 키를 CI에 두지 않는다.
+
+| 작업 | 내용 | 위 검증 항목 |
+|---|---|---|
+| `web` | `npm test`(상태 자동 상향 금지, `[lng, lat]`, 첫 문장, description 길이, 스냅샷 탈출) → `npm run build` → `npm run check:dist`(경로마다 title·description·canonical·H1 하나·첫 문단, 홈 건수 없음, 사이트맵 `/admin` 없음, robots, 전화번호·비밀 키 없음) → `npm run e2e`(데스크톱·모바일에서 하이드레이션 오류, H1, 가로 스크롤, JS 없는 상세, 내비게이션) | 1, 2, 3, 6, 7, 8 |
+| `python` | `migrate_to_ledger.py`의 날짜 파싱과 매핑 규칙 | 상태·날짜 매핑 |
+| `sql` | 스키마 두 번 적용 + RLS(anon·비관리자·관리자, `tip_contacts` 거부) + 운영 기준 스키마에 마이그레이션 0001, 0002 적용 | 5 |
+
 ## 범위 밖
 - 스토리지 버킷 MIME 제한(jpeg/png/webp)과 mp4 업로드 불일치.
 - `scripts/compress_videos.py`의 Windows 전용 ffmpeg 경로.

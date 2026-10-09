@@ -1,0 +1,44 @@
+{
+  "_note": "CI용 합성 데이터. 실제 제보가 아니다. 지명과 문장은 자리표시다.",
+  "evidence": [
+    {
+      "id": "ev-901", "num": 901, "title": "테스트 투표소에서 봉인지 서명이 서로 다름",
+      "description": "테스트 투표소에서 봉인지 서명이 서로 다름",
+      "evidence_type": "사진", "published": true,
+      "region_wide": "seoul", "region_wide_label": "서울", "region_basic": "jongno-gu",
+      "place": "종로구 테스트 투표소", "place_raw": "서울 종로구 테스트 투표소",
+      "coordinates": [126.97942, 37.59895], "located": true, "occurred_raw": "14:37:00",
+      "source": "카카오톡 제보", "source_url": "", "reporter": "익명 제보자",
+      "photos": [{ "thumb": null, "view": null }], "media_other": [], "withheld": 0, "media_count": 1,
+      "status": "reported", "claim": "테스트 투표소에서 봉인지 서명이 서로 다름", "election": "2026 지방선거",
+      "occurred_at": "2026-06-03T14:37:00+09:00",
+      "sources": [{ "title": "카카오톡 제보", "url": null }], "verification": {},
+      "created_at": "2026-06-03T06:00:00+00:00", "updated_at": "2026-06-04T01:00:00+00:00"
+    },
+    {
+      "id": "ev-902", "num": 902, "title": "테스트 개표소 보도",
+      "description": "테스트 개표소 보도",
+      "evidence_type": "문서", "published": true,
+      "region_wide": "busan", "region_wide_label": "부산", "region_basic": null,
+      "place": "부산 테스트 개표소", "place_raw": "부산 테스트 개표소",
+      "coordinates": [129.07556, 35.17944], "located": true, "occurred_raw": "",
+      "source": "언론 보도", "source_url": "https://example.com/news/1", "reporter": "언론 보도",
+      "photos": [], "media_other": [], "withheld": 0, "media_count": 0,
+      "status": "allegation", "claim": "테스트 개표소 보도", "election": "2026 지방선거",
+      "occurred_at": "2026-06-03",
+      "sources": [{ "title": "언론 보도", "url": "https://example.com/news/1" }], "verification": {},
+      "created_at": "2026-06-03T06:00:00+00:00", "updated_at": "2026-06-03T07:00:00+00:00"
+    },
+    {
+      "id": "ev-903", "num": 903, "title": "마이그레이션 전 행: 장소 미상, 원장 컬럼 없음",
+      "description": "마이그레이션 전 행: 장소 미상, 원장 컬럼 없음",
+      "evidence_type": "영상", "published": true,
+      "region_wide": null, "region_wide_label": null, "region_basic": null,
+      "place": "", "place_raw": "지역모름",
+      "coordinates": null, "located": false, "occurred_raw": "",
+      "source": "", "source_url": "", "reporter": "익명 제보자",
+      "photos": [], "media_other": [{ "kind": "video" }], "withheld": 1, "media_count": 1,
+      "updated_at": "2026-06-02T07:00:00+00:00"
+    }
+  ]
+}

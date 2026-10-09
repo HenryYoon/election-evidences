@@ -1,0 +1,73 @@
+# PR과 main 푸시마다 검사한다. 브랜치 보호 규칙에서 아래 세 작업을 필수 검사로 지정하면
+# 통과한 PR만 main에 머지된다. 배포는 Vercel Git 연동이 main 머지 때 한다.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: 빌드·단위·회수·e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # 합성 데이터로만 빌드한다. 실제 제보와 Supabase 키를 CI에 두지 않는다.
+      PRERENDER_DATA: tests/fixtures/evidence.json
+      SITE_URL: https://desk.example
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 단위 테스트
+        run: npm test
+      - name: 타입 체크 + 빌드 + 사전 렌더링
+        run: npm run build
+      - name: 빌드 결과물 검사 (title·description·canonical·H1·첫 문단·개인정보·비밀 키)
+        run: npm run check:dist
+      - name: Playwright 브라우저 설치
+        run: npx playwright install --with-deps chromium
+      - name: e2e 스모크
+        run: npm run e2e
+
+  python:
+    name: Python 매핑 테스트
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests/python -v
+
+  sql:
+    name: 스키마·RLS·마이그레이션
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tests/sql/run.sh

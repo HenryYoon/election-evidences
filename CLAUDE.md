@@ -12,6 +12,11 @@
 - `npm run dev`: 개발 서버 (5173)
 - `npm run build`: 타입 체크 + 빌드
 - `npm run preview`: 빌드 결과 미리보기
+- `npm test`: 단위 테스트(vitest)
+- `npm run check:dist`: 빌드 결과물 검사(회수 가능성, 개인정보, 비밀 키)
+- `npm run e2e`: Playwright 스모크. 로컬에서는 `PW_CHROMIUM=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
+- `bash tests/sql/run.sh`: 스키마·RLS·마이그레이션 검사. 빈 Postgres가 필요하다
+- CI용 빌드: `PRERENDER_DATA=tests/fixtures/evidence.json npm run build`
 - `npm run data`: xlsx → `public/data/evidence.json` ETL. 커밋되지 않는 `증거 데이터/` 폴더가 필요하다.
 - `python scripts/seed_supabase.py`: Supabase 적재. `.env`의 `SUPABASE_SERVICE_KEY`가 필요하다.
 

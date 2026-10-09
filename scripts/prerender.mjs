@@ -3,7 +3,8 @@
 //
 // 데이터: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY가 있으면 Supabase 공개 행을 읽는다.
 //   읽기에 실패하면 빌드를 실패시킨다. 빈 사이트를 배포하지 않기 위해서다.
-//   두 값이 없으면 로컬 개발용 public/data/evidence.json을 읽는다(커밋 금지 파일).
+//   두 값이 없으면 PRERENDER_DATA 파일, 그것도 없으면 로컬 개발용 public/data/evidence.json을
+//   읽는다(커밋 금지 파일).
 // 사이트 주소: SITE_URL → VITE_SITE_URL → VERCEL_PROJECT_PRODUCTION_URL 순서로 찾는다.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -49,12 +50,13 @@ async function loadDataset(server, env) {
     console.log(`[prerender] Supabase 공개 행 ${evidence.length}개`);
     return { evidence };
   }
-  const file = join(ROOT, 'public', 'data', 'evidence.json');
+  // PRERENDER_DATA: CI가 합성 데이터(tests/fixtures/evidence.json)를 넘길 때 쓴다.
+  const file = env.PRERENDER_DATA ? resolve(ROOT, env.PRERENDER_DATA) : join(ROOT, 'public', 'data', 'evidence.json');
   if (!existsSync(file)) {
     throw new Error('Supabase 환경변수도 public/data/evidence.json도 없다. 사전 렌더링할 데이터가 없다.');
   }
   const evidence = JSON.parse(readFileSync(file, 'utf-8')).evidence.filter((e) => e.published !== false);
-  console.log(`[prerender] 정적 JSON 공개 행 ${evidence.length}개 (로컬 개발용)`);
+  console.log(`[prerender] 정적 JSON 공개 행 ${evidence.length}개 (${file})`);
   return { evidence };
 }
 
