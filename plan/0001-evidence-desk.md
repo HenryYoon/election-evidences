@@ -53,9 +53,11 @@
 | `Analysis` | 명세 필드에 `title`, `question`을 더했다 | 명세 3장(H1은 분석 제목)과 5장(질문 하나)이 요구한다 |
 | `Tip.status` | 값은 `unverified` 하나다 | 명세가 정한 값이 하나뿐이다. 값을 더하려면 명세를 먼저 고친다 |
 | 통계 제외 항목 | `excluded`는 `feed`, `unverified_tip`, `no_coordinates`, `allegation_only` 키 배열이다. 라벨은 `src/lib/status.ts`에 있다 | 범례가 상수만 읽게 한다 |
+| `occurred_at` 채우기 | 원본 Drive 폴더 파일 이름의 `MMDD`를 쓴다. 증거 파일이 없으면 제보 시트의 날짜 구간 헤더를 쓴다. 시각은 시트 "발생 시간" 열에서 붙인다 | 파일 190개 중 170개는 업로드 날짜와 같고, 19개는 운영자가 사건 날짜로 앞당겨 적었다. 파일 이름 날짜가 운영자가 판단한 사건 날짜다 |
+| 잘린 `claim` 17건 | `title`이 `description` 앞 50자로 잘린 행은 `claim`을 비워 둔다. 운영자가 문안을 승인한 뒤 채운다 | `claim`은 상세 H1이다. 잘린 문장을 H1로 올리지 않는다 |
 | 피드 발신처 | 스키마가 `olgung`, `jahyeok` 행을 넣는다. 채널 주소는 운영자가 채운다 | 명세 3장 초기값 |
 | 관리자 판별 | `admins` 허용 목록과 `is_admin()` 함수를 둔다. 모든 관리자 정책(기존 `evidence`, 스토리지 포함)은 `authenticated` 전체가 아니라 `is_admin()`을 조건으로 쓴다 | 로그인 계정 전체를 관리자로 보면, Auth 가입 설정이 켜지는 순간 가입자가 `tip_contacts`를 읽는다 |
-| 운영 DB 적용 | 스키마 파일 전체가 아니라 `1b)`, 관리자 정책, `5)`~`11)`만 적용한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
+| 운영 DB 적용 | 스키마 파일 전체가 아니라 `scripts/migrations/0001_ledger_and_admins.sql`(`1b)`, 관리자 정책, `5)`~`11)`)과 `0002_ledger_backfill.sql`(원장 컬럼 채우기)을 순서대로 SQL Editor에서 실행한다. 서비스 키 없이 실행할 수 있어 `migrate_to_ledger.py`를 대신한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
 
 ### 2단계: 사전 렌더링 기반
 1. `src/entry-client.tsx`(hydrateRoot)와 `src/entry-server.tsx`(StaticRouter + renderToString)를 만든다.
