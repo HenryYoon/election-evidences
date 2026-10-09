@@ -154,7 +154,7 @@ export function toEvidence(row: EvidenceRow): Evidence {
     placeName: row.place,
     lng: coords ? coords[0] : null,
     lat: coords ? coords[1] : null,
-    claim: row.claim || row.title,
+    claim: row.claim || legacyClaim(row),
     election: row.election ?? null,
     type: row.evidence_type,
     sources: row.sources?.length ? row.sources : legacySource,
@@ -166,6 +166,14 @@ export function toEvidence(row: EvidenceRow): Evidence {
     photos: row.photos ?? [],
     mediaOther: row.media_other ?? [],
   };
+}
+
+// claim이 비어 있을 때의 대체 문장. 기존 title은 description 앞 50자를 자른 값이라
+// 문장 중간에서 끊긴다. 잘린 경우에는 description 전체를 쓴다.
+function legacyClaim(row: EvidenceRow): string {
+  const d = (row.description ?? '').replace(/\s+/g, ' ').trim();
+  const t = (row.title ?? '').trim();
+  return d.length > t.length && d.startsWith(t) ? d : t;
 }
 
 function hasMedia(row: EvidenceRow): boolean {

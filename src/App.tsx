@@ -1,19 +1,40 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
-import { useDataset } from './lib/data';
+import { useDataset } from './lib/snapshot';
+import type { Dataset } from './lib/data';
+import { pageMeta } from './lib/seo';
 import UnifiedMap from './pages/UnifiedMap';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
 import Admin from './pages/Admin';
 
-function PublicApp() {
-  const ds = useDataset();
-  if (!ds) return <div className="loading">아카이브를 불러오는 중…</div>;
+// 클라이언트 내비게이션 때 head를 경로에 맞춘다. 첫 HTML의 head는 사전 렌더링이 쓴다.
+function useHead(ds: Dataset) {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const meta = pageMeta(pathname, ds);
+    if (!meta) return;
+    document.title = meta.title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description);
+    const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (canonical) canonical.href = new URL(meta.path, canonical.href).href;
+  }, [pathname, ds]);
+}
+
+function PublicRoutes({ ds }: { ds: Dataset }) {
+  useHead(ds);
   return (
     <Routes>
       <Route path="/" element={<UnifiedMap ds={ds} />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />
     </Routes>
   );
+}
+
+function PublicApp() {
+  const ds = useDataset();
+  if (!ds) return <div className="loading">아카이브를 불러오는 중…</div>;
+  return <PublicRoutes ds={ds} />;
 }
 
 export default function App() {

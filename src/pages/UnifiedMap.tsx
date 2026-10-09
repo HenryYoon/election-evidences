@@ -1,12 +1,15 @@
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { lazy, useMemo, useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
 import type { BBox } from '../lib/geo';
 import { EVIDENCE_TYPES } from '../types/evidence';
-import EvidenceMap from '../components/map/EvidenceMap';
+import ClientOnly from '../components/ClientOnly';
 import EvidenceCard, { typeIcon } from '../components/evidence/EvidenceCard';
 import BottomSheet, { type Snap } from '../components/layout/BottomSheet';
 import { useIsMobile } from '../lib/useIsMobile';
+
+// MapLibre는 window를 참조한다. 서버 렌더에서 빼고 브라우저에서만 불러온다.
+const EvidenceMap = lazy(() => import('../components/map/EvidenceMap'));
 
 const inBbox = (c: [number, number], b: BBox) => c[0] >= b[0] && c[0] <= b[2] && c[1] >= b[1] && c[1] <= b[3];
 
@@ -62,13 +65,15 @@ export default function UnifiedMap({ ds }: { ds: Dataset }) {
   };
 
   const map = (
-    <EvidenceMap
-      items={byType}
-      hoverId={hoverId}
-      onHover={(id) => setHover(id, 'map')}
-      onPick={pickMarker}
-      onViewport={(bbox, zoom) => setView({ bbox, zoom })}
-    />
+    <ClientOnly fallback={<div className="map-placeholder" style={{ position: 'absolute', inset: 0, background: '#e9edf3' }} />}>
+      <EvidenceMap
+        items={byType}
+        hoverId={hoverId}
+        onHover={(id) => setHover(id, 'map')}
+        onPick={pickMarker}
+        onViewport={(bbox, zoom) => setView({ bbox, zoom })}
+      />
+    </ClientOnly>
   );
 
   const filters = (

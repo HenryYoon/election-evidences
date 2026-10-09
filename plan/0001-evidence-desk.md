@@ -68,6 +68,18 @@
 6. `package.json`의 `build`를 `tsc -b && vite build && vite build --ssr src/entry-server.tsx && node prerender`로 바꾼다.
 7. `vercel.json`은 정적 파일을 먼저 서빙하고 `/admin`만 SPA로 보낸다.
 
+#### 2단계 구현 결과 (플랜과 달라진 점)
+| 항목 | 구현 | 이유 |
+|---|---|---|
+| 출력 경로 | 홈은 `dist/index.html`, 그 밖은 `dist/<path>.html`(예: `dist/e/ev-002.html`). `vercel.json`의 `cleanUrls`가 확장자 없는 주소로 서빙한다 | `dist/<path>/index.html`은 슬래시 없는 주소(`/e/ev-002`)에서 SPA 폴백에 밀려 홈 HTML이 나갔다(`vite preview`에서 재현). 하이드레이션 오류(React #418)가 났다. Vercel 문서는 디렉터리 index 처리를 명시하지 않고 `cleanUrls`는 명시한다 |
+| 프리렌더 스크립트 | `scripts/prerender.mjs`. 렌더링, SEO, 데이터 로드는 TS로 쓰고 서버 엔트리(`dist-server/entry-server.js`)에 묶는다 | Node의 TS 실행 지원에 기대지 않는다 |
+| 데이터 | Supabase 환경변수가 있으면 공개 행을 읽고, 실패하면 빌드를 실패시킨다. 환경변수가 없으면 로컬용 `public/data/evidence.json`을 읽는다 | 빈 사이트를 배포하지 않는다 |
+| 스냅샷 | 페이지마다 렌더에 쓴 데이터를 `window.__DESK__`로 심는다. 상세는 그 카드 하나, 홈은 전체. 하이드레이션 뒤 최신 공개 데이터를 다시 읽는다 | 첫 렌더를 서버와 같게 한다(위험 표의 하이드레이션 대응) |
+| SPA 셸 | `dist/spa.html`(`noindex`). 파일이 없는 경로는 모두 셸로 보낸다 | `/admin`과 빌드 뒤에 생긴 카드 주소가 404가 되지 않게 한다 |
+| 상세 첫 문단 | 2단계에서 상세 H1 아래에 날짜·장소·상태·출처 문단(`leadSentence`)을 넣었다 | 상세 회수 검증을 2단계에서 할 수 있다. 3단계 상세 교체 때 그대로 쓴다 |
+| 미사용 페이지 삭제 | 3단계 6번의 삭제를 당겨 했다. `NationMap`, `WideMap`, `BasicDetail`, `RegionExplorer`, `StatsTab`과 함께 그 페이지들만 쓰던 `DetailMap`, `AppBar`도 지웠다 | 라우트에 연결되지 않은 지도 코드가 서버 렌더 범위에 남지 않게 한다 |
+| 홈 H1 | 아직 없다 | 홈은 3단계에서 교체한다 |
+
 ### 3단계: 홈, 원장 목록, 상세 교체
 1. `index.html`에서 `maximum-scale=1.0, user-scalable=no`를 지운다.
 2. 공통 레이아웃: 상단 `DESK`와 원장·통계·피드·제보 내비게이션.

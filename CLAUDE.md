@@ -45,5 +45,5 @@
 ## 작업 검증
 1. `npm run build`가 통과한다.
 2. 화면을 바꿨으면 `npm run preview`를 띄워 Playwright로 해당 경로를 연다. Chromium은 `/opt/pw-browsers`에 있다.
-3. 사전 렌더링 이후에는 `dist/<path>/index.html`에 title, description, canonical, H1 하나, 첫 문단이 있는지 확인한다.
+3. 사전 렌더링 이후에는 `dist/index.html`과 `dist/<path>.html`에 title, description, canonical, H1 하나, 첫 문단이 있는지 확인한다.
 4. 변경분을 `REVIEW.md` 기준으로 다시 읽는다.

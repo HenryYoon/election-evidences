@@ -1,6 +1,8 @@
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
 import { typeIcon } from '../components/evidence/EvidenceCard';
+import { toEvidence } from '../types/evidence';
+import { leadSentence } from '../lib/seo';
 
 export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
   const { evidenceId } = useParams();
@@ -25,7 +27,9 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
             <span className={`badge ${ev.evidence_type}`}>{typeIcon(ev.evidence_type)} {ev.evidence_type}</span>
             <span style={{ fontSize: 13, color: 'var(--ink-3)' }}>{ev.region_wide_label} · {ev.place}</span>
           </div>
-          <h1 style={{ fontSize: 22, lineHeight: 1.35, margin: '0 0 14px', color: 'var(--ink)' }}>{ev.title}</h1>
+          <h1 style={{ fontSize: 22, lineHeight: 1.35, margin: '0 0 8px', color: 'var(--ink)' }}>{toEvidence(ev).claim}</h1>
+          {/* 첫 문단: 날짜, 장소, 상태, 출처. 검색과 생성형 인용이 회수하는 단위다 */}
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--ink-2)', margin: '0 0 14px' }}>{leadSentence(toEvidence(ev))}</p>
 
           {/* 미디어 */}
           {ev.photos.length > 0 && (
