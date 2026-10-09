@@ -4,7 +4,11 @@ import { Analytics } from '@vercel/analytics/react';
 import { useDataset } from './lib/snapshot';
 import type { Dataset } from './lib/data';
 import { pageMeta } from './lib/seo';
-import UnifiedMap from './pages/UnifiedMap';
+import Home from './pages/Home';
+import Ledger from './pages/Ledger';
+import StatsList from './pages/StatsList';
+import FeedList from './pages/FeedList';
+import TipList from './pages/TipList';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
 import Admin from './pages/Admin';
 
@@ -25,15 +29,19 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
   useHead(ds);
   return (
     <Routes>
-      <Route path="/" element={<UnifiedMap ds={ds} />} />
+      <Route path="/" element={<Home ds={ds} />} />
+      <Route path="/ledger" element={<Ledger ds={ds} />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />
+      <Route path="/stats" element={<StatsList />} />
+      <Route path="/feed" element={<FeedList />} />
+      <Route path="/tips" element={<TipList />} />
     </Routes>
   );
 }
 
 function PublicApp() {
   const ds = useDataset();
-  if (!ds) return <div className="loading">아카이브를 불러오는 중…</div>;
+  if (!ds) return <div className="desk"><main className="desk-main">불러오는 중…</main></div>;
   return <PublicRoutes ds={ds} />;
 }
 

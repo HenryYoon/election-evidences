@@ -61,6 +61,7 @@ export interface EvidenceRow {
   occurred_at?: string | null; // ISO 8601. 시각을 모르면 날짜만(YYYY-MM-DD)
   sources?: EvidenceSource[] | null;
   verification?: Partial<EvidenceVerification> | null;
+  created_at?: string;
   updated_at?: string;
 }
 
@@ -86,6 +87,7 @@ export interface Evidence extends LayerRecord {
   sources: EvidenceSource[];
   verification: EvidenceVerification;
   // 상세 화면의 매체 칸과 원장 지역 필터용
+  archivedAt: string | null;  // 원장에 기록한 시각(created_at)
   description: string;
   regionWide: string | null;
   regionWideLabel: string | null;
@@ -135,6 +137,13 @@ export interface Analysis extends LayerRecord {
 
 export const EVIDENCE_TYPES: EvidenceType[] = ['사진', '영상', '음성', '문서'];
 
+// 원장 정렬: 발생 시각 최신순, 시각이 없으면 뒤로. 같으면 id 역순.
+export function compareLedger(a: Evidence, b: Evidence): number {
+  if (a.occurredAt && b.occurredAt && a.occurredAt !== b.occurredAt) return a.occurredAt < b.occurredAt ? 1 : -1;
+  if (!!a.occurredAt !== !!b.occurredAt) return a.occurredAt ? -1 : 1;
+  return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
+}
+
 const blankVerification: EvidenceVerification = { seen: null, where: null, when: null, notClaimed: null };
 
 // 행을 원장 레코드로 바꾼다. 원장 컬럼이 비어 있으면
@@ -159,6 +168,7 @@ export function toEvidence(row: EvidenceRow): Evidence {
     type: row.evidence_type,
     sources: row.sources?.length ? row.sources : legacySource,
     verification: { ...blankVerification, ...row.verification },
+    archivedAt: row.created_at ?? null,
     description: row.description,
     regionWide: row.region_wide,
     regionWideLabel: row.region_wide_label,

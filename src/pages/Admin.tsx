@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import type { EvidenceRow, EvidenceType } from '../types/evidence';
 import { EVIDENCE_TYPES } from '../types/evidence';
-import { typeIcon } from '../components/evidence/EvidenceCard';
+import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
 
 const BUCKET = 'evidence-media';

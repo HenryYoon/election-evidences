@@ -1,0 +1,98 @@
+/* 데스크 공개 화면. 명세 시각 규칙: 서체 하나, 색 네 가지(배경·글자·구분선·상태).
+   보조 정보는 색 대신 크기와 굵기로 구분한다. 관리자 화면은 global.css를 그대로 쓴다. */
+.desk {
+  --d-bg: #faf9f6;
+  --d-ink: #16181d;
+  --d-line: #d8d5cd;
+  --d-status: #a3321c;
+
+  min-height: 100%;
+  background: var(--d-bg);
+  color: var(--d-ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.desk a { color: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.desk a:hover { text-decoration-thickness: 2px; }
+.desk h1, .desk h2, .desk h3 { line-height: 1.3; margin: 0; }
+.desk h1 { font-size: 26px; font-weight: 800; }
+.desk h2 { font-size: 17px; font-weight: 800; }
+.desk small, .desk .sub { font-size: 13px; }
+
+.desk-top {
+  display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap;
+  padding: 14px 20px; border-bottom: 1px solid var(--d-line);
+}
+.desk-top .mark { font-weight: 900; letter-spacing: 0.12em; text-decoration: none; }
+.desk-top nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.desk-top nav a { text-decoration: none; font-weight: 600; }
+.desk-top nav a[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+
+.desk-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
+.desk-lead { margin: 8px 0 0; }
+.desk-disclaimer { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+
+.status { color: var(--d-status); font-weight: 700; white-space: nowrap; }
+
+.rule { border: 0; border-top: 1px solid var(--d-line); margin: 24px 0; }
+
+/* 홈 */
+.home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 24px; }
+.home-latest { list-style: none; margin: 0; padding: 0; }
+.home-latest li { padding: 12px 0; border-top: 1px solid var(--d-line); }
+.home-latest li:last-child { border-bottom: 1px solid var(--d-line); }
+.home-latest .meta { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
+.home-doors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 32px; border: 1px solid var(--d-line); }
+.home-doors section { padding: 16px; border-left: 1px solid var(--d-line); display: flex; flex-direction: column; gap: 6px; }
+.home-doors section:first-child { border-left: 0; }
+.home-doors p { margin: 0; font-size: 14px; }
+
+/* 지도 */
+.svgmap { width: 100%; height: auto; display: block; }
+.svgmap path { fill: var(--d-bg); stroke: var(--d-line); stroke-width: 1; }
+.svgmap circle { fill: var(--d-status); stroke: var(--d-bg); stroke-width: 1.5; }
+
+/* 원장 목록 */
+.filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 8px; align-items: end; }
+.filters label { display: flex; flex-direction: column; font-size: 13px; font-weight: 600; gap: 4px; }
+.filters select, .filters button {
+  font: inherit; font-size: 14px; color: var(--d-ink); background: var(--d-bg);
+  border: 1px solid var(--d-line); border-radius: 4px; padding: 6px 8px;
+}
+.legend { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; }
+.legend li { margin: 2px 0; }
+.ledger-rows { list-style: none; margin: 16px 0 0; padding: 0; }
+.ledger-row {
+  display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 14px;
+  padding: 14px 0; border-top: 1px solid var(--d-line);
+}
+.ledger-row:last-child { border-bottom: 1px solid var(--d-line); }
+.ledger-thumb {
+  width: 72px; height: 72px; border: 1px solid var(--d-line); display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 600; overflow: hidden;
+}
+.ledger-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ledger-row .meta { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
+.ledger-row .claim { font-weight: 700; margin: 2px 0; display: block; }
+.ledger-map { position: relative; height: 420px; margin-top: 16px; border: 1px solid var(--d-line); }
+
+/* 상세 */
+.detail-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; margin-top: 24px; }
+.detail-media { display: flex; flex-direction: column; gap: 12px; }
+.detail-media img, .detail-media video { width: 100%; border: 1px solid var(--d-line); display: block; }
+.facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); }
+.facts dt, .facts dd { padding: 8px 0; border-top: 1px solid var(--d-line); margin: 0; }
+.facts dt { font-weight: 700; padding-right: 16px; }
+.sources { margin: 8px 0 0; padding-left: 20px; }
+
+@media (max-width: 760px) {
+  .desk-main { padding: 18px 16px 48px; }
+  .desk h1 { font-size: 22px; }
+  .home-grid, .detail-grid { grid-template-columns: minmax(0, 1fr); }
+  .home-doors { grid-template-columns: minmax(0, 1fr); }
+  .home-doors section { border-left: 0; border-top: 1px solid var(--d-line); }
+  .home-doors section:first-child { border-top: 0; }
+  .ledger-map { height: 320px; }
+}
+
+.linklike { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

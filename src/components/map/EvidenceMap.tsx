@@ -3,7 +3,7 @@ import Map, { Marker, type MapRef } from 'react-map-gl/maplibre';
 import type { EvidenceRow } from '../../types/evidence';
 import { jitter } from '../../lib/data';
 import { makeBaseStyle, bboxOfPoints, type BBox } from '../../lib/geo';
-import { typeIcon } from '../evidence/EvidenceCard';
+import { typeIcon } from '../../lib/evidenceType';
 
 const BASE_STYLE = makeBaseStyle();
 const CLUSTER_PX = 48;
