@@ -58,6 +58,7 @@
 | 피드 발신처 | 스키마가 `olgung`, `jahyeok` 행을 넣는다. 채널 주소는 운영자가 채운다 | 명세 3장 초기값 |
 | 관리자 판별 | `admins` 허용 목록과 `is_admin()` 함수를 둔다. 모든 관리자 정책(기존 `evidence`, 스토리지 포함)은 `authenticated` 전체가 아니라 `is_admin()`을 조건으로 쓴다 | 로그인 계정 전체를 관리자로 보면, Auth 가입 설정이 켜지는 순간 가입자가 `tip_contacts`를 읽는다 |
 | 운영 DB 적용 | 스키마 파일 전체가 아니라 `scripts/migrations/0001_ledger_and_admins.sql`(`1b)`, 관리자 정책, `5)`~`11)`)과 `0002_ledger_backfill.sql`(기록 컬럼 채우기)을 순서대로 SQL Editor에서 실행한다. 서비스 키 없이 실행할 수 있어 `migrate_to_ledger.py`를 대신한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
+| 운영자 승인 반영(0003) | `scripts/migrations/0003_claims_dedupe_unmask.sql`이 잘린 `claim` 17건에 승인 문안을 넣고, 중복인 ev-009를 비공개로 돌려 사진이 있는 ev-098만 남긴다(발생 시각 10:59는 ev-009에서 옮긴다). `/e/ev-009`는 `/e/ev-098`로 영구 리다이렉트한다. 비식별화가 "참관인"을 이름으로 오인해 가린 6건(ev-012, 027, 038, 042, 043, 087)을 되돌린다. ev-025, ev-048의 ○○○은 이름일 수 있어 그대로 둔다. ev-044의 성씨 추측은 주장에서 빼고 본문에만 남긴다 | 운영자 승인(2026-10-10). 원인은 제보자 칸이 "참관인"뿐인 행을 실명으로 본 `build_name_deny`다. 함수를 `scripts/deident_text.py`로 옮겨 직함을 제외하고 CI에서 테스트한다 |
 
 ### 2단계: 사전 렌더링 기반
 1. `src/entry-client.tsx`(hydrateRoot)와 `src/entry-server.tsx`(StaticRouter + renderToString)를 만든다.
@@ -101,6 +102,8 @@
 | 사이트 이름 | 아직 "선거 증거 아카이브"다(`SITE_NAME`) | 8단계 1번에서 바꾼다 |
 
 ### 4단계: 피드
+> 보류(운영자 결정, 2026-10-10): 사이트 주제를 선거로만 한정한다. X 계정 등 외부 발신처 수집은 하지 않고 피드 층은 빈 상태로 둔다.
+
 1. `/feed`, `/feed/:source` 페이지를 만든다.
 2. `scripts/collect_feeds.py`가 `feed_sources`를 읽고, `platform='youtube'`이면 채널 RSS를 읽어 새 항목만 upsert한 뒤 Deploy Hook을 호출한다.
 3. GitHub Actions cron(30분 간격)으로 수집을 돌린다.
