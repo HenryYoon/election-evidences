@@ -57,6 +57,22 @@ try {
   if (await h.locator('.map-card').count()) failures.push('마우스를 치워도 지도 카드가 남는다');
   await hctx.close();
 
+  // 제보 폼(0001 플랜 5단계): 빈 폼은 막고, 채우면 보낸다. CI에는 Supabase 주소가 없어 안내 문구가 나온다.
+  const tctx = await browser.newContext();
+  const t = await tctx.newPage();
+  await t.goto(`${B}/tips`, { waitUntil: 'load' });
+  await t.waitForTimeout(300);
+  await t.getByRole('button', { name: '제보 보내기' }).click();
+  if ((await t.locator('.tip-errors li').count()) < 3) failures.push('빈 제보 폼을 막지 않았다');
+  await t.getByLabel('장소 (필수)').fill('종로구 테스트 투표소');
+  await t.getByLabel('무슨 일이 있었나요 (필수)').fill('테스트용 제보 본문입니다. 열 글자를 넘습니다.');
+  await t.getByLabel('위 내용에 동의합니다').check();
+  await t.getByRole('button', { name: '제보 보내기' }).click();
+  await t.waitForTimeout(300);
+  const tipMsg = (await t.locator('.tip-errors, .tip-done').innerText().catch(() => '')).trim();
+  if (!/제보를 받을 수 없습니다|제보를 받았습니다/.test(tipMsg)) failures.push(`제보 전송 결과 안내 없음: ${tipMsg}`);
+  await tctx.close();
+
   // 0002: 인용 복사 버튼, 마크다운 원문, llms.txt.
   const cctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
   const c = await cctx.newPage();
@@ -85,4 +101,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);

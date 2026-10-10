@@ -6,6 +6,7 @@ import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, MANUAL_ONLY_STATUSES, VERIFICATION_FIELDS } from '../lib/status';
 import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
+import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
 import type { EvidenceSource } from '../types/evidence';
 import type { EvidenceStatus } from '../lib/status';
 
@@ -28,6 +29,10 @@ export default function Admin() {
   const [editing, setEditing] = useState<Partial<EvidenceRow> | null>(null);
   const [err, setErr] = useState('');
   const [rebuild, setRebuild] = useState('');
+  const [tab, setTab] = useState<'records' | 'tips'>('records');
+  const [tips, setTips] = useState<TipRow[]>([]);
+  // 채택 중인 제보. 기록 초안을 저장하면 검수를 마치고 연락처를 지운다.
+  const [adopting, setAdopting] = useState<TipRow | null>(null);
 
   useEffect(() => {
     if (!supabase) { setReady(true); return; }
@@ -41,7 +46,30 @@ export default function Admin() {
     const { data, error } = await supabase.from('evidence').select('*').order('num', { ascending: true });
     if (error) setErr(error.message); else setRows((data as EvidenceRow[]) || []);
   };
-  useEffect(() => { if (session) load(); }, [session]);
+  const loadTips = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('tips')
+      .select('id, place_name, occurred_text, links, review, created_at, tip_contacts(body, name, contact)')
+      .eq('review', 'new')
+      .order('created_at', { ascending: false });
+    if (error) setErr(error.message); else setTips((data as unknown as TipRow[]) || []);
+  };
+  useEffect(() => { if (session) { load(); loadTips(); } }, [session]);
+
+  const finishTip = async (tip: TipRow, review: 'accepted' | 'rejected', evidenceId: string | null) => {
+    const { error } = await supabase!.rpc('finish_tip_review', { p_tip: tip.id, p_review: review, p_evidence: evidenceId });
+    if (error) setErr(error.message);
+    loadTips();
+  };
+  const adopt = (tip: TipRow) => {
+    setAdopting(tip);
+    setEditing(tipToEvidenceDraft(tip, `ev-${Date.now().toString(36)}`));
+  };
+  const reject = (tip: TipRow) => {
+    if (!confirm('이 제보를 기각할까요? 이름과 연락처는 지워집니다.')) return;
+    finishTip(tip, 'rejected', null);
+  };
 
   // 비공개 버킷: 목록 썸네일은 서명 URL로 표시(저장값은 원본 URL 유지)
   const signed = useSignedMap(rows.flatMap((r) => (r.photos ?? []).flatMap((p) => [p.thumb, p.view])));
@@ -90,6 +118,37 @@ export default function Admin() {
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
         {err && <div className="note" style={{ marginBottom: 12 }}>⚠ {err}</div>}
         {rebuild && <div className="note" style={{ marginBottom: 12 }}>{rebuild}</div>}
+        <div style={{ maxWidth: 1000, margin: '0 auto 12px', display: 'flex', gap: 8 }}>
+          <button className="chip" onClick={() => setTab('records')} style={tab === 'records' ? activeTab : undefined}>기록</button>
+          <button className="chip" onClick={() => setTab('tips')} style={tab === 'tips' ? activeTab : undefined}>제보 검수 ({tips.length})</button>
+        </div>
+        {tab === 'tips' && (
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+              새 제보 {tips.length}건. 채택하면 비공개 기록 초안이 열린다. 초안을 저장하거나 기각하면 이름·연락처가 지워진다.
+            </div>
+            {tips.length === 0 && <div style={rowStyle}>검수할 새 제보가 없다.</div>}
+            {tips.map((t) => (
+              <div key={t.id} style={{ ...rowStyle, alignItems: 'flex-start', flexDirection: 'column' }}>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                  {new Date(t.created_at).toLocaleString('ko-KR')} 접수 · {t.place_name}{t.occurred_text ? ` · ${t.occurred_text}` : ''}
+                </div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{t.tip_contacts?.body}</div>
+                {(t.links ?? []).map((l) => (
+                  <a key={l} href={l} target="_blank" rel="noreferrer noopener" style={{ fontSize: 13 }}>{l}</a>
+                ))}
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                  연락처(비공개): {t.tip_contacts?.name || '이름 없음'} · {t.tip_contacts?.contact || '연락처 없음'}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button className="chip" onClick={() => adopt(t)}>채택 → 기록 초안</button>
+                  <button className="chip" onClick={() => reject(t)} style={{ color: '#b4533a' }}>기각</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab === 'records' && (
         <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>총 {rows.length}건 · 공개 {rows.filter((r) => r.published).length}건</div>
           {rows.map((e, i) => (
@@ -117,8 +176,23 @@ export default function Admin() {
             </div>
           ))}
         </div>
+        )}
       </div>
-      {editing && <EditModal draft={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+      {editing && (
+        <EditModal
+          draft={editing}
+          onClose={() => { setEditing(null); setAdopting(null); }}
+          onSaved={async () => {
+            const saved = editing;
+            setEditing(null);
+            if (adopting) {
+              await finishTip(adopting, 'accepted', saved.id ?? null);
+              setAdopting(null);
+            }
+            load();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -306,6 +380,7 @@ const Row = ({ children }: { children: React.ReactNode }) => <div style={{ displ
 
 const inp: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--line)', borderRadius: 8, fontSize: 14, fontFamily: 'inherit' };
 const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '8px 12px' };
+const activeTab: React.CSSProperties = { background: 'var(--navy-800)', color: '#fff', borderColor: 'var(--navy-800)' };
 const segStyle: React.CSSProperties = { border: 0, padding: '6px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' };
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(20,28,60,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 24, overflowY: 'auto', zIndex: 100 };
 const modal: React.CSSProperties = { background: '#fff', borderRadius: 14, padding: 20, width: 'min(560px, 100%)', boxShadow: 'var(--shadow-lg)' };

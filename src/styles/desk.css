@@ -111,3 +111,26 @@
 }
 
 .linklike { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* 제보 폼(0001 플랜 5단계) */
+.tip-notes { margin: 12px 0 0; padding-left: 20px; font-size: 14px; }
+.tip-form { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; max-width: 640px; }
+.tip-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
+.tip-form input, .tip-form textarea {
+  font: inherit; font-weight: 400; color: var(--d-ink); background: var(--d-bg);
+  border: 1px solid var(--d-line); border-radius: 4px; padding: 8px 10px;
+}
+.tip-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.tip-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.tip-consent { border: 1px solid var(--d-line); padding: 10px 12px; margin: 0; }
+.tip-consent legend { font-size: 14px; font-weight: 700; padding: 0 4px; }
+.tip-consent p { margin: 0 0 8px; font-size: 13px; }
+.tip-form .tip-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; }
+.tip-errors { margin: 0; padding-left: 20px; color: var(--d-status); font-size: 14px; }
+.tip-submit {
+  align-self: flex-start; font: inherit; font-weight: 700; color: var(--d-bg); background: var(--d-ink);
+  border: 1px solid var(--d-ink); border-radius: 4px; padding: 8px 16px; cursor: pointer;
+}
+.tip-submit:disabled { opacity: 0.6; cursor: default; }
+.tip-done { margin-top: 20px; padding: 12px; border: 1px solid var(--d-line); }
+@media (max-width: 760px) { .tip-row { grid-template-columns: minmax(0, 1fr); } }
