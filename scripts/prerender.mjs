@@ -72,9 +72,13 @@ function mediaOrigin(row) {
   }
 }
 
+// Search Console 소유 확인(0001 플랜 8단계). 운영자가 값을 받으면 빌드 환경변수로 넣는다.
+const SITE_VERIFICATION = (process.env.GOOGLE_SITE_VERIFICATION || '').trim();
+
 function headFor(meta, site, markdown, origin) {
   const url = site + meta.path;
   return [
+    ...(SITE_VERIFICATION ? [`<meta name="google-site-verification" content="${esc(SITE_VERIFICATION)}" />`] : []),
     ...(origin ? [`<link rel="preconnect" href="${esc(origin)}" />`] : []),
     `<meta name="description" content="${esc(meta.description)}" />`,
     `<link rel="canonical" href="${esc(url)}" />`,
@@ -130,12 +134,20 @@ async function main() {
     const slice = whole ? ds : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
     const body = server.render(path, slice);
     const snapshot = whole ? server.snapshotRefScript(snapshotFile) : server.snapshotScript(slice);
+    // JSON-LD는 홈(WebSite)과 상세(Article)에만 둔다.
     // 상세는 같은 내용의 마크다운 판을 함께 쓴다(0002 명세 3장).
     const row = path.startsWith('/e/') ? slice.evidence[0] : null;
     const markdown = row ? server.markdownPath(row.id) : path === '/records' ? server.RECORDS_MD : null;
+    const ld =
+      path === '/' || row
+        ? server.jsonLdScript(server.jsonLd(row ? server.toEvidence(row) : null, site, meta.description))
+        : null;
     const html = template
       .replace(/<title>[^<]*<\/title>/, `<title>${esc(meta.title)}</title>`)
-      .replace('<!--app-head-->', `${headFor(meta, site, markdown, mediaOrigin(row))}\n    ${snapshot}`)
+      .replace(
+        '<!--app-head-->',
+        `${headFor(meta, site, markdown, mediaOrigin(row))}\n    ${ld ? `${ld}\n    ` : ''}${snapshot}`
+      )
       .replace('<!--app-html-->', body);
     const file = outFile(path);
     mkdirSync(dirname(file), { recursive: true });

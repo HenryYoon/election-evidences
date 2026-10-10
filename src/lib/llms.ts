@@ -100,3 +100,39 @@ export function evidenceMarkdown(ev: Evidence, site: string): string {
   lines.push('---', '', `${STATUS_DISCLAIMER} HTML: ${html}`, '');
   return lines.join('\n');
 }
+
+// JSON-LD(0001 플랜 8단계). 정리용이다. 판정을 뜻하는 ClaimReview는 쓰지 않는다.
+// 상태는 조사 분류이지 판정이 아니기 때문이다.
+export function jsonLd(ev: Evidence | null, site: string, description: string): Record<string, unknown> {
+  if (!ev) {
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: `${site}/`,
+      description,
+      inLanguage: 'ko',
+    };
+  }
+  const place: Record<string, unknown> = { '@type': 'Place', name: ev.placeName || '장소 미상' };
+  if (ev.lat !== null && ev.lng !== null) place.geo = { '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng };
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: ev.claim.length > 110 ? `${ev.claim.slice(0, 109)}…` : ev.claim,
+    description,
+    url: `${site}/e/${encodeURIComponent(ev.id)}`,
+    inLanguage: 'ko',
+    ...(ev.updatedAt ? { dateModified: ev.updatedAt } : {}),
+    contentLocation: place,
+    isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: `${site}/` },
+    ...(ev.sources.some((s) => s.url) ? { isBasedOn: ev.sources.filter((s) => s.url).map((s) => s.url) } : {}),
+    // 상태 이름과 고지 문장을 함께 둔다. 판정으로 읽히지 않게 하기 위해서다.
+    genre: `${EVIDENCE_STATUS_LABEL[ev.status]} (${STATUS_DISCLAIMER})`,
+  };
+}
+
+// <script> 안에 넣을 JSON. </script> 탈출을 막는다.
+export function jsonLdScript(data: Record<string, unknown>): string {
+  return `<script type="application/ld+json">${JSON.stringify(data).replace(/</g, '\\u003c')}</script>`;
+}

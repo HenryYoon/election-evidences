@@ -68,6 +68,23 @@ for (const [rel, max] of budgets) {
 if (/window\.__DESK__=/.test(home)) fail('index.html', '전체 스냅샷이 HTML 안에 있다');
 if (!existsSync(join(DIST, 'geo', 'basemap.svg'))) fail('geo/basemap.svg', '지도 경계선 파일이 없다');
 
+// JSON-LD(0001 플랜 8단계): 홈 WebSite, 상세 Article. 파싱되어야 하고 ClaimReview는 쓰지 않는다.
+for (const f of pages) {
+  const rel = relative(DIST, f);
+  const html = readFileSync(f, 'utf-8');
+  const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  const want = rel === 'index.html' ? 'WebSite' : rel.startsWith('e/') ? 'Article' : null;
+  if (!want) continue;
+  if (blocks.length !== 1) { fail(rel, `JSON-LD ${blocks.length}개(하나여야 한다)`); continue; }
+  try {
+    const data = JSON.parse(blocks[0]);
+    if (data['@type'] !== want) fail(rel, `JSON-LD @type ${data['@type']}, ${want}이어야 한다`);
+  } catch (e) {
+    fail(rel, `JSON-LD 파싱 실패: ${e.message}`);
+  }
+  if (/ClaimReview/.test(html)) fail(rel, 'ClaimReview를 쓰지 않는다(상태는 판정이 아니다)');
+}
+
 // AI 에이전트용 출력물(0002 명세 2·3·5장).
 const llmsPath = join(DIST, 'llms.txt');
 if (!existsSync(llmsPath)) fail('llms.txt', '없다');
@@ -96,7 +113,7 @@ if (!/noindex/.test(readFileSync(join(DIST, 'spa.html'), 'utf-8'))) fail('spa.ht
 // 개인정보·비밀 키(REVIEW 1·2): 배포물 어디에도 없어야 한다.
 // 공개 데이터는 HTML 스냅샷에만 들어간다. 압축된 라이브러리 JS의 숫자열은 오탐이라 전화번호 검사에서 뺀다.
 const PHONE = /(?<![\d.])01[016789][-. ]?\d{3,4}[-. ]?\d{4}(?![\d.])/;
-const SECRET = /SUPABASE_SERVICE_KEY|service_role|sb_secret_/;
+const SECRET = /SUPABASE_SERVICE_KEY|service_role|sb_secret_|DEPLOY_HOOK_URL|api\.vercel\.com\/v1\/integrations\/deploy/;
 for (const f of files.filter((p) => /\.(html|js|json|xml|txt|md)$/.test(p))) {
   const text = readFileSync(f, 'utf-8');
   const rel = relative(DIST, f);

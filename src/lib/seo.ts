@@ -4,7 +4,7 @@ import type { Dataset } from './data';
 import { toEvidence, type Evidence } from '../types/evidence';
 import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from './status';
 
-export const SITE_NAME = '선거 증거 아카이브';
+export const SITE_NAME = '선거 증거 데스크';
 const DESCRIPTION_MAX = 150;
 
 export interface PageMeta {

@@ -10,7 +10,7 @@ export { fetchPublicEvidence } from './lib/data';
 export { pageMeta, prerenderPaths, SITE_NAME } from './lib/seo';
 export { snapshotScript, snapshotRefScript };
 export { basemapSvg, BASEMAP_HREF } from './components/map/SvgMap';
-export { llmsTxt, recordsMarkdown, evidenceMarkdown, markdownPath, RECORDS_MD } from './lib/llms';
+export { llmsTxt, recordsMarkdown, evidenceMarkdown, markdownPath, RECORDS_MD, jsonLd, jsonLdScript } from './lib/llms';
 export { toEvidence } from './types/evidence';
 
 export function render(url: string, ds: Dataset): string {
