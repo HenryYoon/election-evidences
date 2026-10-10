@@ -284,34 +284,8 @@ def photo_withheld(fn, desc):
     return False
 
 
-# ── 텍스트 PII: 전화번호 + 제보자 실명 제거 ──────────────────────
-ROLE_STOP = {"참관인", "기자", "신문", "사무국장", "사무처장", "위원장", "중앙당",
-             "부방대", "조사단", "국제신문", "당협위원장", "과장", "처장", "국장"}
-
-
-def build_name_deny(records):
-    """제보자 실명만 보수적으로 추출(핸들/일반어 오탐 방지)."""
-    deny = set()
-    for r in records:
-        rep = r["reporter"].strip()
-        if "기사" in r["source"]:            # 공개 언론 제보자는 제외
-            continue
-        if re.fullmatch(r"[가-힣]{2,4}", rep):  # 순수 한글 실명
-            deny.add(rep)
-        elif any(role in rep for role in ROLE_STOP):  # "참관인 이부숙" 류
-            for tok in re.findall(r"[가-힣]{3,4}", rep):
-                if tok not in ROLE_STOP:
-                    deny.add(tok)
-        # 그 외(닉네임/영문/문구)는 무시 → 일반어 오탐 방지
-    COMMON = {"당일투표", "사무처", "행정복지", "관리관"}
-    return deny - COMMON
-
-
-def redact_text(text, deny):
-    text = PHONE_RE.sub("[전화번호]", text)
-    for name in sorted(deny, key=len, reverse=True):
-        text = text.replace(name, "○○○")
-    return text
+# 텍스트 PII 제거(전화번호, 제보자 실명)는 deident_text.py에 있다.
+from deident_text import build_name_deny, redact_text  # noqa: E402
 
 
 def main():
