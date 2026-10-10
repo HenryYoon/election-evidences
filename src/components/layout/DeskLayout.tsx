@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { STATUS_DISCLAIMER } from '../../lib/status';
 
 const LAYERS = [
-  { to: '/ledger', label: '원장' },
+  { to: '/records', label: '기록' },
   { to: '/stats', label: '통계' },
   { to: '/feed', label: '피드' },
   { to: '/tips', label: '제보' },
@@ -26,7 +26,7 @@ export default function DeskLayout({ children }: { children: ReactNode }) {
   );
 }
 
-// 홈, 원장, 통계 첫 화면에 고정하는 문장(명세 1장).
+// 홈, 기록, 통계 첫 화면에 고정하는 문장(명세 1장).
 export function Disclaimer() {
   return <p className="desk-disclaimer">{STATUS_DISCLAIMER}</p>;
 }

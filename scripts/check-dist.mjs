@@ -49,7 +49,7 @@ for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
 const home = readFileSync(join(DIST, 'index.html'), 'utf-8');
 const homeText = home.slice(home.indexOf('<div id="root">'), home.indexOf('<script>window.')).replace(/<[^>]+>/g, ' ');
 if (/\d+\s*건/.test(homeText)) fail('index.html', `홈 본문에 건수 표현: ${homeText.match(/\d+\s*건/)[0]}`);
-for (const layer of ['/ledger', '/stats', '/feed', '/tips']) {
+for (const layer of ['/records', '/stats', '/feed', '/tips']) {
   if (!home.includes(`href="${layer}"`)) fail('index.html', `${layer} 입구 링크 없음`);
 }
 

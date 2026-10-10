@@ -1,4 +1,4 @@
-// 원장 목록. 행: 사진 칸, 시각, 장소, 상태, 한 줄, 출처(명세 5장 원장).
+// 기록 목록. 행: 사진 칸, 시각, 장소, 상태, 한 줄, 출처(명세 5장 기록).
 import { lazy, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { applyFilters, NO_FILTERS, type Dataset, type LedgerFilters } from '../lib/data';
@@ -26,7 +26,7 @@ export default function Ledger({ ds }: { ds: Dataset }) {
 
   return (
     <DeskLayout>
-      <h1>원장</h1>
+      <h1>기록</h1>
       <p className="desk-lead">사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드를 발생 시각 최신순으로 둔다.</p>
       <Disclaimer />
 

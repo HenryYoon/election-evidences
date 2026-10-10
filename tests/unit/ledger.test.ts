@@ -53,7 +53,7 @@ describe('좌표', () => {
   });
 });
 
-describe('원장 매핑', () => {
+describe('기록 매핑', () => {
   it('claim이 비면 잘리지 않은 description을 쓴다', () => {
     const d = '가'.repeat(80);
     expect(toEvidence(row({ claim: null, title: d.slice(0, 50), description: d })).claim).toBe(d);
@@ -68,7 +68,7 @@ describe('원장 매핑', () => {
     expect(toEvidence(row({ verification: {} })).verification).toEqual({ seen: null, where: null, when: null, notClaimed: null });
   });
 
-  it('원장은 발생 시각 최신순이고 시각 없는 카드는 뒤로 간다', () => {
+  it('기록은 발생 시각 최신순이고 시각 없는 카드는 뒤로 간다', () => {
     const sorted = rows.map(toEvidence).sort(compareLedger).map((e) => e.id);
     expect(sorted).toEqual(['ev-901', 'ev-902', 'ev-903']);
   });

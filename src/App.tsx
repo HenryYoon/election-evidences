@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { useDataset } from './lib/snapshot';
 import type { Dataset } from './lib/data';
@@ -30,7 +30,8 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
   return (
     <Routes>
       <Route path="/" element={<Home ds={ds} />} />
-      <Route path="/ledger" element={<Ledger ds={ds} />} />
+      <Route path="/records" element={<Ledger ds={ds} />} />
+      <Route path="/ledger" element={<Navigate to="/records" replace />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />
       <Route path="/stats" element={<StatsList />} />
       <Route path="/feed" element={<FeedList />} />

@@ -96,10 +96,10 @@ async function main() {
   for (const path of paths) {
     const meta = server.pageMeta(path, ds);
     if (!meta) throw new Error(`메타 정보가 없는 경로: ${path}`);
-    // 페이지가 그리는 데이터만 심는다. 홈과 원장은 전체, 상세는 그 카드 하나, 나머지 층은 빈 원장.
+    // 페이지가 그리는 데이터만 심는다. 홈과 기록은 전체, 상세는 그 카드 하나, 나머지 층은 빈 기록.
     // 전체 데이터는 하이드레이션 뒤에 다시 읽는다.
     const slice =
-      path === '/' || path === '/ledger'
+      path === '/' || path === '/records'
         ? ds
         : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
     const body = server.render(path, slice);

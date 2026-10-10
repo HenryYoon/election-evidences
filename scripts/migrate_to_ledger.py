@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-기존 evidence 행을 원장 컬럼으로 매핑한다. (plan/0001-evidence-desk.md 1단계)
+기존 evidence 행을 기록 컬럼으로 매핑한다. (plan/0001-evidence-desk.md 1단계)
 
   title                → claim
   occurred_raw         → occurred_at  (ISO 8601. 연도가 없거나 파싱 실패면 null)
@@ -62,7 +62,7 @@ def has_media(row):
 
 
 def plan_patch(row):
-    """비어 있는 원장 컬럼만 채우는 patch를 만든다."""
+    """비어 있는 기록 컬럼만 채우는 patch를 만든다."""
     p = {}
     if not row.get("status"):
         p["status"] = STATUS_WITH_MEDIA if has_media(row) else STATUS_WITHOUT_MEDIA

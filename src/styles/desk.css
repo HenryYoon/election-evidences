@@ -52,7 +52,7 @@
 .svgmap path { fill: var(--d-bg); stroke: var(--d-line); stroke-width: 1; }
 .svgmap circle { fill: var(--d-status); stroke: var(--d-bg); stroke-width: 1.5; }
 
-/* 원장 목록 */
+/* 기록 목록 */
 .filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 8px; align-items: end; }
 .filters label { display: flex; flex-direction: column; font-size: 13px; font-weight: 600; gap: 4px; }
 .filters select, .filters button {

@@ -4,7 +4,7 @@
 
 export const STATUS_DISCLAIMER = '상태는 조사 분류이며 법적 결론이 아니다.';
 
-// ── 원장 상태 ─────────────────────────────────────────────
+// ── 기록 상태 ─────────────────────────────────────────────
 export const EVIDENCE_STATUSES = ['document', 'video_confirmed', 'reported', 'allegation'] as const;
 export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number];
 

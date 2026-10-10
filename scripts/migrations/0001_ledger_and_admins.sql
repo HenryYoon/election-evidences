@@ -38,7 +38,7 @@ create policy media_admin_write on storage.objects
   with check (bucket_id = 'evidence-media' and public.is_admin());
 
 
--- 5) 원장 컬럼 ----------------------------------------------------------
+-- 5) 기록 컬럼 ----------------------------------------------------------
 --    status는 기본값 없이 추가한다. 기존 행은 migrate_to_ledger.py가 채운다.
 --    document, video_confirmed는 관리자가 수동으로만 지정한다.
 alter table public.evidence add column if not exists status text;
@@ -76,7 +76,7 @@ create table if not exists public.feed_items (
   sent_at      timestamptz not null,
   text         text not null,                   -- 한 줄
   url          text not null unique,
-  evidence_id  text references public.evidence (id) on delete set null,  -- 원장 승격 시에만
+  evidence_id  text references public.evidence (id) on delete set null,  -- 기록 승격 시에만
   published    boolean not null default true,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
