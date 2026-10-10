@@ -79,6 +79,8 @@ begin
   update public.tip_contacts set name = null, contact = null where tip_id = p_tip;
 end $$;
 revoke all on function public.finish_tip_review(text, text, text) from public;
+-- Supabase는 새 함수에 anon 실행 권한을 기본으로 준다. public 회수로는 빠지지 않아 따로 회수한다.
+revoke execute on function public.finish_tip_review(text, text, text) from anon;
 grant execute on function public.finish_tip_review(text, text, text) to authenticated;
 
 commit;

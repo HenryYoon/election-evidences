@@ -54,6 +54,12 @@ end $$;
 reset role;
 
 do $$ begin
+  if has_function_privilege('anon', 'public.finish_tip_review(text,text,text)', 'execute') then
+    raise exception 'anon에 finish_tip_review 실행 권한이 있다';
+  end if;
+  raise notice 'ok: anon은 finish_tip_review 실행 권한이 없다';
+end $$;
+do $$ begin
   if exists (select 1 from public.tips where ip_hash like '%203.0.113.7%') then raise exception 'IP 원문이 저장됐다'; end if;
   raise notice 'ok: IP 원문을 저장하지 않는다';
 end $$;
