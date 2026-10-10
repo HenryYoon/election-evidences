@@ -17,7 +17,9 @@ function walk(dir) {
 }
 
 const files = walk(DIST);
-const pages = files.filter((f) => f.endsWith('.html') && !f.endsWith('spa.html'));
+// 검색엔진 소유 확인 파일(google*.html)은 페이지가 아니다. 내용은 구글이 준 한 줄 그대로여야 한다.
+const isVerification = (f) => /\/google[0-9a-f]+\.html$/.test(f);
+const pages = files.filter((f) => f.endsWith('.html') && !f.endsWith('spa.html') && !isVerification(f));
 if (!pages.length) fail('dist', '사전 렌더링된 HTML이 없다');
 
 // 회수 가능성(REVIEW 6): title, description, canonical, H1 하나, 첫 문단.

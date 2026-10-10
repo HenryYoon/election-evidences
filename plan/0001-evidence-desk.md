@@ -138,7 +138,7 @@
 2. JSON-LD와 `llms.txt`를 정리용으로 추가한다.
 3. 배포 후 운영자가 Search Console에 등록한다.
 
-> 구현 메모(2026-10-10): `llms.txt`는 0002에서 만들었다. JSON-LD는 홈 `WebSite`, 상세 `Article`(headline=주장, contentLocation=장소·좌표, isBasedOn=출처)만 둔다. 판정을 뜻하는 `ClaimReview`는 쓰지 않는다. 상태는 조사 분류이지 판정이 아니기 때문이다. Search Console 소유 확인용 메타는 빌드 환경변수 `GOOGLE_SITE_VERIFICATION`이 있을 때만 넣는다.
+> 구현 메모(2026-10-10): `llms.txt`는 0002에서 만들었다. JSON-LD는 홈 `WebSite`, 상세 `Article`(headline=주장, contentLocation=장소·좌표, isBasedOn=출처)만 둔다. 판정을 뜻하는 `ClaimReview`는 쓰지 않는다. 상태는 조사 분류이지 판정이 아니기 때문이다. Search Console 소유 확인용 메타는 빌드 환경변수 `GOOGLE_SITE_VERIFICATION`이 있을 때만 넣는다. 운영자가 HTML 파일 방식을 골라 `public/google227a35a405507a22.html`을 넣었다(2026-10-10). `cleanUrls` 때문에 이 주소는 확장자 없는 주소로 308 리다이렉트된다. 구글 확인이 리다이렉트로 실패하면 HTML 태그 방식(환경변수)으로 바꾼다. `check:dist`는 이 파일을 페이지 검사에서 뺀다.
 
 ## 위험
 | 위험 | 대응 |
