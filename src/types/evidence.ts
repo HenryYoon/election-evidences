@@ -87,7 +87,6 @@ export interface Evidence extends LayerRecord {
   sources: EvidenceSource[];
   verification: EvidenceVerification;
   // 상세 화면의 매체 칸과 원장 지역 필터용
-  archivedAt: string | null;  // 원장에 기록한 시각(created_at)
   description: string;
   regionWide: string | null;
   regionWideLabel: string | null;
@@ -168,7 +167,6 @@ export function toEvidence(row: EvidenceRow): Evidence {
     type: row.evidence_type,
     sources: row.sources?.length ? row.sources : legacySource,
     verification: { ...blankVerification, ...row.verification },
-    archivedAt: row.created_at ?? null,
     description: row.description,
     regionWide: row.region_wide,
     regionWideLabel: row.region_wide_label,

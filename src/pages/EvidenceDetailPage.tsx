@@ -1,10 +1,10 @@
 // 증거 카드 상세(명세 5장 원장).
-// 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체와 아카이브 시각. 오른쪽: 상태, 좌표, 선거, 유형.
+// 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 좌표, 선거, 유형.
 // 그 아래 검증 네 줄과 출처 목록.
 import { Link, useParams } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
 import { toEvidence, type EvidenceVerification } from '../types/evidence';
-import { formatOccurred, leadSentence } from '../lib/seo';
+import { leadSentence } from '../lib/seo';
 import { EVIDENCE_STATUS_LEGEND } from '../lib/status';
 import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
@@ -51,7 +51,6 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
             <p className="sub">개인정보(서명, 연락처, 이름, 대화 내용)가 담긴 자료 {row.withheld}개는 공개하지 않는다.</p>
           )}
           {!ev.photos.some((p) => p.view) && !playable.length && <p className="sub">공개한 매체가 없다.</p>}
-          <p className="sub">아카이브 시각 {ev.archivedAt ? formatOccurred(ev.archivedAt) : '미기재'}</p>
         </section>
 
         <section aria-label="분류">
