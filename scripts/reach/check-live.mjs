@@ -50,6 +50,11 @@ for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/stats'
   const html = await res.text();
   sizes[path] = checkPage(path, html, max);
   if (path.startsWith('/e/') && !html.includes('type="text/markdown"')) fail(path, '마크다운 alternate 링크 없음');
+  if (path === '/') {
+    // 보안 헤더(0003 명세 1장)
+    if (res.headers.get('x-content-type-options') !== 'nosniff') fail(path, 'X-Content-Type-Options: nosniff 없음');
+    if (res.headers.get('x-frame-options') !== 'DENY') fail(path, 'X-Frame-Options: DENY 없음');
+  }
 }
 
 for (const [from, to] of [['/ledger', '/records'], ['/e/ev-009', '/e/ev-098']]) {
