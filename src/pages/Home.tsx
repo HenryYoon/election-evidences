@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
 import { toEvidence, compareLedger, type Evidence } from '../types/evidence';
 import { formatOccurred, sourceLabel, SITE_NAME } from '../lib/seo';
-import { STATUS_DISCLAIMER } from '../lib/status';
+import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from '../lib/status';
 import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
 import SvgMap from '../components/map/SvgMap';
@@ -25,7 +25,18 @@ export default function Home({ ds }: { ds: Dataset }) {
   // 지도에는 좌표가 있는 기록 카드를 모두 찍는다. 피드와 제보는 찍지 않는다.
   const points = ledger
     .filter((e) => e.lat !== null && e.lng !== null)
-    .map((e) => ({ id: e.id, lng: e.lng as number, lat: e.lat as number, label: `${e.placeName} · ${e.claim}` }));
+    .map((e) => ({
+      id: e.id,
+      lng: e.lng as number,
+      lat: e.lat as number,
+      label: `${e.placeName} · ${e.claim}`,
+      card: {
+        thumb: e.photos.find((p) => p.thumb)?.thumb ?? null,
+        claim: e.claim,
+        meta: `${formatOccurred(e.occurredAt)} · ${e.placeName || '장소 미상'}`,
+        status: EVIDENCE_STATUS_LABEL[e.status],
+      },
+    }));
   const newest = ledger[0];
 
   return (

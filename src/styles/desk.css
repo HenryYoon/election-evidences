@@ -51,6 +51,18 @@
 .svgmap { width: 100%; height: auto; display: block; }
 .svgmap path { fill: var(--d-bg); stroke: var(--d-line); stroke-width: 1; }
 .svgmap circle { fill: var(--d-status); stroke: var(--d-bg); stroke-width: 1.5; }
+/* 지도 점 미리보기 카드. 색은 데스크 네 가지만 쓴다. */
+.svgmap-wrap { position: relative; }
+.svgmap a:focus-visible circle { stroke: var(--d-ink); stroke-width: 2; }
+.map-card {
+  position: absolute; z-index: 2; pointer-events: none;
+  display: flex; gap: 10px; align-items: flex-start;
+  width: min(280px, 80vw); padding: 8px;
+  background: var(--d-bg); color: var(--d-ink); border: 1px solid var(--d-line);
+}
+.map-card img { width: 72px; height: 72px; object-fit: cover; flex: 0 0 auto; border: 1px solid var(--d-line); }
+.map-card-claim { font-weight: 700; font-size: 14px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.map-card-meta { font-size: 12px; margin-top: 4px; }
 
 /* 기록 목록 */
 .filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 8px; align-items: end; }
