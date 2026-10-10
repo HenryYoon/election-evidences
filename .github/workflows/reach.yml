@@ -82,11 +82,13 @@ jobs:
           cp history.json reach-out/history.json
           dir=$(mktemp -d)
           cp history.json "$dir/history.json"
+          # Vercel은 배포할 브랜치 안의 vercel.json을 읽는다. 이 브랜치 자체에 배포 끄기를 둔다.
+          echo '{ "git": { "deploymentEnabled": false } }' > "$dir/vercel.json"
           cd "$dir"
           git init -q -b reach-history
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add history.json
+          git add history.json vercel.json
           git commit -q -m "측정 기록 ${GITHUB_RUN_ID}"
           git push -q --force "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" reach-history
       - uses: actions/upload-artifact@v4
