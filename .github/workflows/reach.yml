@@ -36,6 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     continue-on-error: true
+    permissions:
+      # 측정 기록을 reach-history 브랜치에 쌓는다. main에는 쓰지 않는다.
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,8 +65,30 @@ jobs:
           node scripts/reach/mirror-live.mjs "$SITE" live-mirror
           npx -y agentic-seo@1.0.0 --output-dir live-mirror --json > reach-out/agentic-seo.json || true
           mkdir -p empty && cd empty && npx -y agentic-seo@1.0.0 --url "$SITE" --json > ../reach-out/agentic-seo-url.json || true
+      - name: 측정 기록 가져오기
+        run: |
+          if git fetch --depth=1 origin reach-history 2>/dev/null; then
+            git show FETCH_HEAD:history.json > history.json
+          else
+            echo "reach-history 브랜치가 없어 초기 기록(history-seed.json)으로 시작한다"
+          fi
       - name: 요약
-        run: node scripts/reach/report-scores.mjs reach-out
+        # 기준은 최근 4회 평균. 이번 회차를 history.json에 덧붙인다.
+        run: node scripts/reach/report-scores.mjs reach-out history.json
+      - name: 측정 기록 저장
+        if: github.ref == 'refs/heads/main'
+        run: |
+          [ -f history.json ] || exit 0
+          cp history.json reach-out/history.json
+          dir=$(mktemp -d)
+          cp history.json "$dir/history.json"
+          cd "$dir"
+          git init -q -b reach-history
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history.json
+          git commit -q -m "측정 기록 ${GITHUB_RUN_ID}"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${GITHUB_REPOSITORY}.git" reach-history
       - uses: actions/upload-artifact@v4
         with:
           name: reach-${{ github.run_id }}

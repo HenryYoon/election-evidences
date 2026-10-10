@@ -1,0 +1,10 @@
+{
+  "_comment": "reach-history 브랜치가 없을 때 쓰는 초기 기록(2026-10-10 운영 측정 5회). 범주별 값은 그 회차의 페이지별 최솟값이다. agenticSeo는 내려받기+폴더 모드, agenticSeoUrl은 URL 모드다.",
+  "runs": [
+    { "run": 38028839685, "date": "2026-10-10T05:51:03Z", "lighthouse": { "performance": 77, "accessibility": 100, "best-practices": 96, "seo": 100 }, "agenticSeo": null, "agenticSeoUrl": 20 },
+    { "run": 38029162932, "date": "2026-10-10T05:56:45Z", "lighthouse": { "performance": 76, "accessibility": 100, "best-practices": 96, "seo": 100 }, "agenticSeo": null, "agenticSeoUrl": 20 },
+    { "run": 38029560086, "date": "2026-10-10T06:03:55Z", "lighthouse": { "performance": 74, "accessibility": 100, "best-practices": 96, "seo": 100 }, "agenticSeo": 59, "agenticSeoUrl": null },
+    { "run": 38030012917, "date": "2026-10-10T06:11:54Z", "lighthouse": { "performance": 80, "accessibility": 100, "best-practices": 96, "seo": 100 }, "agenticSeo": 59, "agenticSeoUrl": 20 },
+    { "run": 38030390996, "date": "2026-10-10T06:18:18Z", "lighthouse": { "performance": 98, "accessibility": 100, "best-practices": 96, "seo": 100 }, "agenticSeo": 59, "agenticSeoUrl": 20 }
+  ]
+}
