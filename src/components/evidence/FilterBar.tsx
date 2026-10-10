@@ -1,4 +1,4 @@
-// 원장 필터: 유형, 선거, 상태, 지역. 선택지는 원장에 실제로 있는 값만 보인다.
+// 기록 필터: 유형, 선거, 상태, 지역. 선택지는 기록에 실제로 있는 값만 보인다.
 import type { Evidence } from '../../types/evidence';
 import { EVIDENCE_TYPES } from '../../types/evidence';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL } from '../../lib/status';

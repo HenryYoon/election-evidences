@@ -56,7 +56,7 @@ export function jitter(coord: [number, number], seed: string): [number, number] 
   return [coord[0] + Math.cos(a) * r, coord[1] + Math.sin(a) * r];
 }
 
-// ── 원장 필터: 유형, 선거, 상태, 지역 ─────────────────────
+// ── 기록 필터: 유형, 선거, 상태, 지역 ─────────────────────
 export interface LedgerFilters {
   type: string;     // 빈 문자열이면 전체
   election: string;

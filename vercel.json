@@ -1,5 +1,6 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [{ "source": "/ledger", "destination": "/records", "permanent": true }],
   "rewrites": [{ "source": "/((?!assets/|geo/|.*\\..*).*)", "destination": "/spa" }]
 }

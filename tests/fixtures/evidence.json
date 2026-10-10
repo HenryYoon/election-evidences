@@ -30,8 +30,8 @@
       "created_at": "2026-06-03T06:00:00+00:00", "updated_at": "2026-06-03T07:00:00+00:00"
     },
     {
-      "id": "ev-903", "num": 903, "title": "마이그레이션 전 행: 장소 미상, 원장 컬럼 없음",
-      "description": "마이그레이션 전 행: 장소 미상, 원장 컬럼 없음",
+      "id": "ev-903", "num": 903, "title": "마이그레이션 전 행: 장소 미상, 기록 컬럼 없음",
+      "description": "마이그레이션 전 행: 장소 미상, 기록 컬럼 없음",
       "evidence_type": "영상", "published": true,
       "region_wide": null, "region_wide_label": null, "region_basic": null,
       "place": "", "place_raw": "지역모름",

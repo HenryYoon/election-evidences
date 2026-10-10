@@ -54,7 +54,7 @@ export interface EvidenceRow {
   media_other: EvidenceMediaOther[];
   withheld: number;   // 개인정보로 비공개된 자료 수
   media_count: number;
-  // 원장 컬럼. 마이그레이션 전 행과 정적 JSON에는 없다.
+  // 기록 컬럼. 마이그레이션 전 행과 정적 JSON에는 없다.
   status?: EvidenceStatus | null;
   claim?: string | null;
   election?: string | null;
@@ -86,7 +86,7 @@ export interface Evidence extends LayerRecord {
   type: EvidenceType;
   sources: EvidenceSource[];
   verification: EvidenceVerification;
-  // 상세 화면의 매체 칸과 원장 지역 필터용
+  // 상세 화면의 매체 칸과 기록 지역 필터용
   description: string;
   regionWide: string | null;
   regionWideLabel: string | null;
@@ -101,7 +101,7 @@ export interface FeedItem extends LayerRecord {
   sentAt: string;
   text: string;
   url: string;
-  evidenceId?: string;       // 원장으로 승격된 경우에만
+  evidenceId?: string;       // 기록으로 승격된 경우에만
 }
 
 // 공개 필드만 둔다. 제보자 이름, 전화, 계정은 `tip_contacts`에만 있다.
@@ -136,7 +136,7 @@ export interface Analysis extends LayerRecord {
 
 export const EVIDENCE_TYPES: EvidenceType[] = ['사진', '영상', '음성', '문서'];
 
-// 원장 정렬: 발생 시각 최신순, 시각이 없으면 뒤로. 같으면 id 역순.
+// 기록 정렬: 발생 시각 최신순, 시각이 없으면 뒤로. 같으면 id 역순.
 export function compareLedger(a: Evidence, b: Evidence): number {
   if (a.occurredAt && b.occurredAt && a.occurredAt !== b.occurredAt) return a.occurredAt < b.occurredAt ? 1 : -1;
   if (!!a.occurredAt !== !!b.occurredAt) return a.occurredAt ? -1 : 1;
@@ -145,7 +145,7 @@ export function compareLedger(a: Evidence, b: Evidence): number {
 
 const blankVerification: EvidenceVerification = { seen: null, where: null, when: null, notClaimed: null };
 
-// 행을 원장 레코드로 바꾼다. 원장 컬럼이 비어 있으면
+// 행을 기록 레코드로 바꾼다. 기록 컬럼이 비어 있으면
 // `scripts/migrate_to_ledger.py`와 같은 규칙으로 기존 컬럼에서 채운다.
 export function toEvidence(row: EvidenceRow): Evidence {
   const coords = row.coordinates;

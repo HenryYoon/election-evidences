@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/ledger', '/stats', '/feed', '/tips', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -45,7 +45,7 @@ try {
 
   const ctx = await browser.newContext();
   const q = await ctx.newPage();
-  await q.goto(`${B}/ledger`, { waitUntil: 'load' });
+  await q.goto(`${B}/records`, { waitUntil: 'load' });
   await q.locator('.ledger-row a').first().click();
   await q.waitForURL(/\/e\/ev-901$/);
   if (!(await q.title()).startsWith('테스트 투표소')) failures.push(`내비게이션 뒤 title 미갱신: ${await q.title()}`);

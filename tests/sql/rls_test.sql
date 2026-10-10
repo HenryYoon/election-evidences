@@ -17,7 +17,7 @@ end $$;
 
 -- 익명
 set role anon;
-select pg_temp.expect('anon은 공개 원장만 본다', (select count(*) from public.evidence), 1);
+select pg_temp.expect('anon은 공개 기록만 본다', (select count(*) from public.evidence), 1);
 select pg_temp.expect('anon은 공개 제보만 본다', (select count(*) from public.tips), 1);
 select pg_temp.expect('anon은 비공개 분석의 행을 못 본다', (select count(*) from public.analysis_rows), 0);
 do $$ begin
@@ -36,11 +36,11 @@ reset role;
 set role authenticated;
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 select pg_temp.expect('비관리자는 tip_contacts를 못 본다', (select count(*) from public.tip_contacts), 0);
-select pg_temp.expect('비관리자는 비공개 원장을 못 본다', (select count(*) from public.evidence where not published), 0);
+select pg_temp.expect('비관리자는 비공개 기록을 못 본다', (select count(*) from public.evidence where not published), 0);
 do $$ begin
   update public.evidence set status = 'document' where id = 'ev-pub';
   if found then raise exception 'RLS 실패: 비관리자가 상태를 바꿨다'; end if;
-  raise notice 'ok: 비관리자는 원장 수정 불가';
+  raise notice 'ok: 비관리자는 기록 수정 불가';
 end $$;
 do $$ begin
   perform 1 from public.admins;
@@ -51,7 +51,7 @@ end $$;
 -- 관리자
 set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000001';
 select pg_temp.expect('관리자는 tip_contacts를 본다', (select count(*) from public.tip_contacts), 1);
-select pg_temp.expect('관리자는 비공개 원장도 본다', (select count(*) from public.evidence), 2);
+select pg_temp.expect('관리자는 비공개 기록도 본다', (select count(*) from public.evidence), 2);
 reset role;
 
 -- 제약

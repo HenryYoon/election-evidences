@@ -44,15 +44,15 @@ function latest(rows: { updated_at?: string }[]): string | null {
 
 // 층 목록 페이지. 키워드를 반복하지 않고 층의 성격만 적는다.
 const LAYER_META: Record<string, { title: string; description: string }> = {
-  '/ledger': {
-    title: '원장',
+  '/records': {
+    title: '기록',
     description: `사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드 목록. 유형, 선거, 상태, 지역으로 거른다. ${STATUS_DISCLAIMER}`,
   },
   '/stats': {
     title: '통계',
-    description: `원장과 공식 표를 계산한 분석 목록. 피드, 미확인 제보, 좌표 없는 카드는 모수와 지도에 넣지 않는다. ${STATUS_DISCLAIMER}`,
+    description: `기록과 공식 표를 계산한 분석 목록. 피드, 미확인 제보, 좌표 없는 카드는 모수와 지도에 넣지 않는다. ${STATUS_DISCLAIMER}`,
   },
-  '/feed': { title: '피드', description: '외부 발신처의 소식 목록. 피드는 증거가 아니며, 원장 카드가 된 소식에만 원장 링크를 단다.' },
+  '/feed': { title: '피드', description: '외부 발신처의 소식 목록. 피드는 증거가 아니며, 기록 카드가 된 소식에만 기록 링크를 단다.' },
   '/tips': { title: '제보', description: '시민 제보 목록. 기본 상태는 미확인이며, 제보자의 이름과 연락처는 공개하지 않는다.' },
 };
 
@@ -62,13 +62,13 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
       path,
       title: SITE_NAME,
       description: clip(
-        `${SITE_NAME}. 2026 지방선거 사전투표, 본투표, 개표 과정의 사진·영상·문서를 날짜, 장소, 상태, 출처와 함께 기록한 증거 원장. ${STATUS_DISCLAIMER}`
+        `${SITE_NAME}. 2026 지방선거 사전투표, 본투표, 개표 과정의 사진·영상·문서를 날짜, 장소, 상태, 출처와 함께 정리한 증거 기록. ${STATUS_DISCLAIMER}`
       ),
       lastmod: latest(ds.evidence),
     };
   }
   const layer = LAYER_META[path];
-  if (layer) return { path, title: `${layer.title} | ${SITE_NAME}`, description: clip(layer.description), lastmod: path === '/ledger' ? latest(ds.evidence) : null };
+  if (layer) return { path, title: `${layer.title} | ${SITE_NAME}`, description: clip(layer.description), lastmod: path === '/records' ? latest(ds.evidence) : null };
   const m = path.match(/^\/e\/([^/]+)$/);
   if (m) {
     const row = ds.evidence.find((e) => e.id === decodeURIComponent(m[1]));

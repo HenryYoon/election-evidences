@@ -1,4 +1,4 @@
-// 증거 카드 상세(명세 5장 원장).
+// 증거 카드 상세(명세 5장 기록).
 // 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 좌표, 선거, 유형.
 // 그 아래 검증 네 줄과 출처 목록.
 import { Link, useParams } from 'react-router-dom';
@@ -23,7 +23,7 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
     return (
       <DeskLayout>
         <h1>카드를 찾을 수 없다</h1>
-        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/ledger">원장 목록</Link>에서 찾을 수 있다.</p>
+        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/records">기록 목록</Link>에서 찾을 수 있다.</p>
       </DeskLayout>
     );
   }
@@ -106,7 +106,7 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
       )}
 
       <p style={{ marginTop: 32 }}>
-        <Link to="/ledger">원장 목록으로</Link>
+        <Link to="/records">기록 목록으로</Link>
       </p>
     </DeskLayout>
   );
