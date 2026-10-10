@@ -1,0 +1,66 @@
+# 운영 사이트 검색·AI 도달 점검(0002 명세 7장). 주 1회와 수동 실행.
+# PR CI와 별개다. 필수 검사로 지정하지 않는다. 머지를 막지 않는다.
+# - 회수 점검(우리 규칙)은 어기면 이 작업이 실패로 표시된다.
+# - Lighthouse, agentic-seo 점수는 표로만 남기고, 기준보다 떨어지면 경고만 낸다.
+name: Reach
+
+on:
+  schedule:
+    - cron: '17 0 * * 1' # 매주 월요일 09:17 KST
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 점검할 사이트 주소
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  SITE: ${{ inputs.site || 'https://election-evidences.vercel.app' }}
+
+jobs:
+  live:
+    name: 운영 사이트 회수 점검
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/reach/check-live.mjs "$SITE"
+
+  scores:
+    name: Lighthouse·agentic-seo 점수
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 측정할 상세 주소 고르기
+        run: |
+          DETAIL=$(curl -sf "$SITE/sitemap.xml" | grep -o '<loc>[^<]*/e/[^<]*</loc>' | head -1 | sed 's/<[^>]*>//g')
+          echo "DETAIL=$DETAIL" >> "$GITHUB_ENV"
+      - name: Lighthouse
+        run: |
+          mkdir -p reach-out
+          i=0
+          for url in "$SITE/" "$SITE/records" "$DETAIL"; do
+            i=$((i+1))
+            npx -y lighthouse@12.8.2 "$url" --quiet --output=json --output-path="reach-out/lh-$i.json" \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless=new --no-sandbox" || echo "::warning::Lighthouse 실패: $url"
+          done
+      - name: agentic-seo
+        run: npx -y agentic-seo@1.0.0 --url "$SITE" --json > reach-out/agentic-seo.json || true
+      - name: 요약
+        run: node scripts/reach/report-scores.mjs reach-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reach-${{ github.run_id }}
+          path: reach-out/
+          retention-days: 30

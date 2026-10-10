@@ -53,6 +53,39 @@ for (const layer of ['/records', '/stats', '/feed', '/tips']) {
   if (!home.includes(`href="${layer}"`)) fail('index.html', `${layer} 입구 링크 없음`);
 }
 
+// HTML 예산(0002 명세 1장): 스냅샷과 지도 경계선을 HTML 밖으로 뺐는지 본다.
+const KB = 1024;
+const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
+const budgets = [
+  ['index.html', 40 * KB],
+  ['records.html', 20 * KB + recordCount * 0.6 * KB],
+  ...pages.filter((p) => relative(DIST, p).startsWith('e/')).map((p) => [relative(DIST, p), 10 * KB]),
+];
+for (const [rel, max] of budgets) {
+  const size = statSync(join(DIST, rel)).size;
+  if (size > max) fail(rel, `HTML ${Math.round(size / KB)}KB, 예산 ${Math.round(max / KB)}KB 초과`);
+}
+if (/window\.__DESK__=/.test(home)) fail('index.html', '전체 스냅샷이 HTML 안에 있다');
+if (!existsSync(join(DIST, 'geo', 'basemap.svg'))) fail('geo/basemap.svg', '지도 경계선 파일이 없다');
+
+// AI 에이전트용 출력물(0002 명세 2·3·5장).
+const llmsPath = join(DIST, 'llms.txt');
+if (!existsSync(llmsPath)) fail('llms.txt', '없다');
+else {
+  const llms = readFileSync(llmsPath, 'utf-8');
+  if (!llms.startsWith('# ')) fail('llms.txt', 'H1로 시작하지 않는다');
+  if (!llms.includes('법적 결론이 아니다')) fail('llms.txt', '상태 고지 문장이 없다');
+  if (llms.length > 12000) fail('llms.txt', `${llms.length}자. 색인은 짧게 두고 전체 목록은 records.md에 둔다`);
+  if (!existsSync(join(DIST, 'records.md'))) fail('records.md', '전체 기록 목록이 없다');
+}
+for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
+  const rel = relative(DIST, f);
+  const md = f.replace(/\.html$/, '.md');
+  if (!existsSync(md)) fail(rel, '마크다운 판이 없다');
+  if (!/<link rel="alternate" type="text\/markdown"/.test(readFileSync(f, 'utf-8'))) fail(rel, '마크다운 alternate 링크가 없다');
+}
+if (!/User-agent: ClaudeBot/.test(readFileSync(join(DIST, 'robots.txt'), 'utf-8'))) fail('robots.txt', 'AI 크롤러 명시 허용이 없다');
+
 // 사이트맵과 robots.
 const sitemap = readFileSync(join(DIST, 'sitemap.xml'), 'utf-8');
 if (/\/admin/.test(sitemap)) fail('sitemap.xml', '/admin이 들어 있다');
@@ -64,7 +97,7 @@ if (!/noindex/.test(readFileSync(join(DIST, 'spa.html'), 'utf-8'))) fail('spa.ht
 // 공개 데이터는 HTML 스냅샷에만 들어간다. 압축된 라이브러리 JS의 숫자열은 오탐이라 전화번호 검사에서 뺀다.
 const PHONE = /(?<![\d.])01[016789][-. ]?\d{3,4}[-. ]?\d{4}(?![\d.])/;
 const SECRET = /SUPABASE_SERVICE_KEY|service_role|sb_secret_/;
-for (const f of files.filter((p) => /\.(html|js|json|xml|txt)$/.test(p))) {
+for (const f of files.filter((p) => /\.(html|js|json|xml|txt|md)$/.test(p))) {
   const text = readFileSync(f, 'utf-8');
   const rel = relative(DIST, f);
   if (SECRET.test(text)) fail(rel, `비밀 키 흔적: ${text.match(SECRET)[0]}`);

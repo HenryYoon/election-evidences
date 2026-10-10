@@ -8,6 +8,7 @@
 // 사이트 주소: SITE_URL → VITE_SITE_URL → VERCEL_PROJECT_PRODUCTION_URL 순서로 찾는다.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,10 +61,17 @@ async function loadDataset(server, env) {
   return { evidence };
 }
 
-function headFor(meta, site) {
+function headFor(meta, site, markdown) {
+  const url = site + meta.path;
   return [
     `<meta name="description" content="${esc(meta.description)}" />`,
-    `<link rel="canonical" href="${esc(site + meta.path)}" />`,
+    `<link rel="canonical" href="${esc(url)}" />`,
+    // 링크 공유 미리보기와 페이지 성격 표시(0002 명세 6장).
+    `<meta property="og:type" content="${meta.path.startsWith('/e/') ? 'article' : 'website'}" />`,
+    `<meta property="og:title" content="${esc(meta.title)}" />`,
+    `<meta property="og:description" content="${esc(meta.description)}" />`,
+    `<meta property="og:url" content="${esc(url)}" />`,
+    ...(markdown ? [`<link rel="alternate" type="text/markdown" href="${esc(markdown)}" />`] : []),
   ].join('\n    ');
 }
 
@@ -92,24 +100,35 @@ async function main() {
 
   const ds = await loadDataset(server, env);
   const paths = server.prerenderPaths(ds);
+
+  const snapshotJson = JSON.stringify(ds);
+  const snapshotFile = `/snapshot/${createHash('sha256').update(snapshotJson).digest('hex').slice(0, 16)}.json`;
+  mkdirSync(join(DIST, 'snapshot'), { recursive: true });
+  writeFileSync(join(DIST, snapshotFile), snapshotJson);
+  mkdirSync(join(DIST, 'geo'), { recursive: true });
+  writeFileSync(join(DIST, server.BASEMAP_HREF), server.basemapSvg());
   const sitemap = [];
   for (const path of paths) {
     const meta = server.pageMeta(path, ds);
     if (!meta) throw new Error(`메타 정보가 없는 경로: ${path}`);
     // 페이지가 그리는 데이터만 심는다. 홈과 기록은 전체, 상세는 그 카드 하나, 나머지 층은 빈 기록.
     // 전체 데이터는 하이드레이션 뒤에 다시 읽는다.
-    const slice =
-      path === '/' || path === '/records'
-        ? ds
-        : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
+    // 홈과 기록 목록의 전체 스냅샷은 HTML 밖 해시 파일로 뺀다(0002 명세 1장).
+    const whole = path === '/' || path === '/records';
+    const slice = whole ? ds : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
     const body = server.render(path, slice);
+    const snapshot = whole ? server.snapshotRefScript(snapshotFile) : server.snapshotScript(slice);
+    // 상세는 같은 내용의 마크다운 판을 함께 쓴다(0002 명세 3장).
+    const row = path.startsWith('/e/') ? slice.evidence[0] : null;
+    const markdown = row ? server.markdownPath(row.id) : path === '/records' ? server.RECORDS_MD : null;
     const html = template
       .replace(/<title>[^<]*<\/title>/, `<title>${esc(meta.title)}</title>`)
-      .replace('<!--app-head-->', `${headFor(meta, site)}\n    ${server.snapshotScript(slice)}`)
+      .replace('<!--app-head-->', `${headFor(meta, site, markdown)}\n    ${snapshot}`)
       .replace('<!--app-html-->', body);
     const file = outFile(path);
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, html);
+    if (row) writeFileSync(join(DIST, decodeURIComponent(server.markdownPath(row.id))), server.evidenceMarkdown(server.toEvidence(row), site));
     sitemap.push({ loc: site + meta.path, lastmod: meta.lastmod });
   }
 
@@ -121,7 +140,14 @@ async function main() {
         .join('\n') +
       `\n</urlset>\n`
   );
-  writeFileSync(join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: ${site}/sitemap.xml\n`);
+  writeFileSync(join(DIST, 'llms.txt'), server.llmsTxt(ds, site));
+  writeFileSync(join(DIST, server.RECORDS_MD), server.recordsMarkdown(ds, site));
+  // 모두 허용을 유지하고, 주요 AI 크롤러를 이름으로도 허용한다(0002 명세 5장).
+  const AI_CRAWLERS = ['GPTBot', 'OAI-SearchBot', 'ChatGPT-User', 'ClaudeBot', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Google-Extended'];
+  writeFileSync(
+    join(DIST, 'robots.txt'),
+    [...AI_CRAWLERS, '*'].map((ua) => `User-agent: ${ua}\nAllow: /\nDisallow: /admin\n`).join('\n') + `\nSitemap: ${site}/sitemap.xml\n`
+  );
 
   // 정적 JSON 폴백 데이터가 배포물에 섞이지 않게 지운다(.gitignore와 같은 이유).
   for (const dir of ['data', 'thumbs', 'view']) rmSync(join(DIST, dir), { recursive: true, force: true });

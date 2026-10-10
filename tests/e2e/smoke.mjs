@@ -1,5 +1,5 @@
 // 브라우저 스모크 테스트. vite preview로 dist를 띄우고 공개 경로를 연다.
-// 확인: 하이드레이션 오류 없음, H1 하나, 가로 스크롤 없음(데스크톱·모바일), JS 없이 상세 첫 문장, 클라이언트 내비게이션.
+// 확인: 하이드레이션 오류 없음(홈·기록 목록은 스냅샷 파일을 받은 뒤 하이드레이션), H1 하나, 가로 스크롤 없음(데스크톱·모바일), JS 없이 상세 첫 문장, 클라이언트 내비게이션.
 // 로컬에서 브라우저 경로가 다르면 PW_CHROMIUM=/path/to/chrome 으로 넘긴다.
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
@@ -43,6 +43,20 @@ try {
   if (!/2026-06-03 14:37/.test(lead) || !/상태/.test(lead) || !/출처/.test(lead)) failures.push(`JS 없이 상세 첫 문장 부족: ${lead}`);
   await nojs.close();
 
+  // 0002: 인용 복사 버튼, 마크다운 원문, llms.txt.
+  const cctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
+  const c = await cctx.newPage();
+  await c.goto(`${B}/e/ev-901`, { waitUntil: 'load' });
+  await c.getByRole('button', { name: '인용 복사' }).click();
+  const clip = await c.evaluate(() => navigator.clipboard.readText());
+  if (!/상태/.test(clip) || !clip.includes('/e/ev-901')) failures.push(`인용 복사 내용 부족: ${clip}`);
+  const mdHref = await c.locator('a[type="text/markdown"]').getAttribute('href');
+  const md = await (await fetch(B + mdHref)).text();
+  if (!md.startsWith('# ')) failures.push(`마크다운 원문 오류: ${mdHref}`);
+  if (!(await (await fetch(`${B}/llms.txt`)).text()).includes('/e/ev-901.md')) failures.push('llms.txt에 기록 링크 없음');
+  if (!(await (await fetch(`${B}/records.md`)).text()).includes('/e/ev-903.md')) failures.push('records.md에 기록 링크 없음');
+  await cctx.close();
+
   const ctx = await browser.newContext();
   const q = await ctx.newPage();
   await q.goto(`${B}/records`, { waitUntil: 'load' });
@@ -57,4 +71,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);

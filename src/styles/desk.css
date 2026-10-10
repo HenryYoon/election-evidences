@@ -84,6 +84,7 @@
 .facts dt, .facts dd { padding: 8px 0; border-top: 1px solid var(--d-line); margin: 0; }
 .facts dt { font-weight: 700; padding-right: 16px; }
 .sources { margin: 8px 0 0; padding-left: 20px; }
+.cite-tools { display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline; }
 
 @media (max-width: 760px) {
   .desk-main { padding: 18px 16px 48px; }

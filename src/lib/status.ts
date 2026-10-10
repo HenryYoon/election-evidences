@@ -54,3 +54,11 @@ export const EXCLUDED_LABEL: Record<ExcludedKind, string> = {
   no_coordinates: '좌표 없는 카드',
   allegation_only: '주장만 있는 카드',
 };
+
+// 검증 네 줄. 상세 화면과 마크다운이 같은 순서와 이름을 쓴다.
+export const VERIFICATION_FIELDS = [
+  ['seen', '보인 것'],
+  ['where', '장소'],
+  ['when', '시각'],
+  ['notClaimed', '주장하지 않는 것'],
+] as const;
