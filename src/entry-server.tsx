@@ -3,12 +3,15 @@ import { StrictMode } from 'react';
 import { renderToString } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import App from './App';
-import { SnapshotProvider, snapshotScript } from './lib/snapshot';
+import { SnapshotProvider, snapshotScript, snapshotRefScript } from './lib/snapshot';
 import type { Dataset } from './lib/data';
 
 export { fetchPublicEvidence } from './lib/data';
 export { pageMeta, prerenderPaths, SITE_NAME } from './lib/seo';
-export { snapshotScript };
+export { snapshotScript, snapshotRefScript };
+export { basemapSvg, BASEMAP_HREF } from './components/map/SvgMap';
+export { llmsTxt, recordsMarkdown, evidenceMarkdown, markdownPath, RECORDS_MD } from './lib/llms';
+export { toEvidence } from './types/evidence';
 
 export function render(url: string, ds: Dataset): string {
   return renderToString(

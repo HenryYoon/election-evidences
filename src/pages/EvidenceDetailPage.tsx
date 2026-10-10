@@ -1,20 +1,15 @@
 // 증거 카드 상세(명세 5장 기록).
 // 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 좌표, 선거, 유형.
 // 그 아래 검증 네 줄과 출처 목록.
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
-import { toEvidence, type EvidenceVerification } from '../types/evidence';
-import { leadSentence } from '../lib/seo';
-import { EVIDENCE_STATUS_LEGEND } from '../lib/status';
+import { toEvidence } from '../types/evidence';
+import { leadSentence, sourceLabel } from '../lib/seo';
+import { markdownPath } from '../lib/llms';
+import { EVIDENCE_STATUS_LEGEND, VERIFICATION_FIELDS } from '../lib/status';
 import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
-
-const VERIFICATION: [keyof EvidenceVerification, string][] = [
-  ['seen', '보인 것'],
-  ['where', '장소'],
-  ['when', '시각'],
-  ['notClaimed', '주장하지 않는 것'],
-];
 
 export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
   const { evidenceId } = useParams();
@@ -74,7 +69,7 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
       <hr className="rule" />
       <h2>검증</h2>
       <dl className="facts">
-        {VERIFICATION.map(([k, label]) => (
+        {VERIFICATION_FIELDS.map(([k, label]) => (
           <div key={k} style={{ display: 'contents' }}>
             <dt>{label}</dt>
             <dd>{ev.verification[k] || '미기재'}</dd>
@@ -105,9 +100,31 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
         </>
       )}
 
-      <p style={{ marginTop: 32 }}>
+      <hr className="rule" />
+      <p className="cite-tools">
+        <CopyCitation text={`${ev.claim}\n${leadSentence(ev)}\n출처: ${sourceLabel(ev)}`} path={`/e/${encodeURIComponent(ev.id)}`} />
+        <a href={markdownPath(ev.id)} type="text/markdown">마크다운 원문</a>
         <Link to="/records">기록 목록으로</Link>
       </p>
     </DeskLayout>
+  );
+}
+
+// 인용 복사: 주장, 첫 문장, 출처, 주소를 일반 텍스트로 클립보드에 넣는다(0002 명세 4장).
+function CopyCitation({ text, path }: { text: string; path: string }) {
+  const [done, setDone] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${text}\n${window.location.origin}${path}`);
+      setDone(true);
+      setTimeout(() => setDone(false), 2000);
+    } catch {
+      setDone(false);
+    }
+  };
+  return (
+    <button type="button" className="linklike" onClick={copy} aria-live="polite">
+      {done ? '복사했다' : '인용 복사'}
+    </button>
   );
 }

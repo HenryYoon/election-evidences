@@ -7,10 +7,13 @@ import type { Dataset } from './data';
 import { loadPublicEvidence } from './data';
 
 export const SNAPSHOT_GLOBAL = '__DESK__';
+// 스냅샷이 큰 페이지(홈, 기록 목록)는 HTML 밖 파일로 빼고 주소만 심는다(0002 명세 1장).
+export const SNAPSHOT_SRC_GLOBAL = '__DESK_SRC__';
 
 declare global {
   interface Window {
     [SNAPSHOT_GLOBAL]?: Dataset;
+    [SNAPSHOT_SRC_GLOBAL]?: string;
   }
 }
 
@@ -49,4 +52,10 @@ export function snapshotScript(ds: Dataset): string {
     .replace(LINE_SEP, '\\u2028')
     .replace(PARA_SEP, '\\u2029');
   return `<script>window.${SNAPSHOT_GLOBAL}=${json}</script>`;
+}
+
+// 스냅샷 파일 주소만 심는다. 주소는 빌드가 만든 해시 경로라 따옴표나 꺾쇠가 없다.
+export function snapshotRefScript(src: string): string {
+  if (!/^\/[\w./-]+$/.test(src)) throw new Error(`스냅샷 주소 형식 오류: ${src}`);
+  return `<link rel="preload" href="${src}" as="fetch" crossorigin="anonymous" />\n    <script>window.${SNAPSHOT_SRC_GLOBAL}="${src}"</script>`;
 }

@@ -1,0 +1,5 @@
+{
+  "_comment": "점수 기준(0002 플랜). 첫 운영 측정 뒤 채운다. 떨어지면 경고만 낸다. 올릴 때만 고친다.",
+  "lighthouse": { "performance": null, "accessibility": null, "best-practices": null, "seo": null },
+  "agenticSeo": null
+}
