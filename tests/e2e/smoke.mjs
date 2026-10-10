@@ -43,6 +43,20 @@ try {
   if (!/2026-06-03 14:37/.test(lead) || !/상태/.test(lead) || !/출처/.test(lead)) failures.push(`JS 없이 상세 첫 문장 부족: ${lead}`);
   await nojs.close();
 
+  // 홈 지도 점 미리보기 카드: 마우스를 올리면 뜨고, 벗어나면 사라진다.
+  const hctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const h = await hctx.newPage();
+  await h.goto(`${B}/`, { waitUntil: 'load' });
+  await h.waitForTimeout(300);
+  if (await h.locator('.map-card').count()) failures.push('지도 카드가 처음부터 떠 있다');
+  await h.locator('.svgmap circle').first().hover();
+  const cardText = (await h.locator('.map-card').innerText().catch(() => '')).replace(/\s+/g, ' ');
+  if (!/상태|자료 접수|주장|문서 확인|영상 확인/.test(cardText) || cardText.length < 10) failures.push(`지도 카드 내용 부족: ${cardText}`);
+  await h.mouse.move(5, 5);
+  await h.waitForTimeout(100);
+  if (await h.locator('.map-card').count()) failures.push('마우스를 치워도 지도 카드가 남는다');
+  await hctx.close();
+
   // 0002: 인용 복사 버튼, 마크다운 원문, llms.txt.
   const cctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
   const c = await cctx.newPage();
@@ -71,4 +85,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
