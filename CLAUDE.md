@@ -6,7 +6,7 @@
 - 변경은 `intent/` → `spec/` → `plan/` 순서로 문서를 커밋한 뒤 구현한다. 파일 이름은 같은 번호(`0001-...`)를 쓴다.
 - 우선순위: `spec/`의 원본 PDF > `spec/*.md` > `plan/` > 이 문서 > 스킬.
 - 구현이 플랜과 달라지면 같은 커밋에서 `plan/` 문서를 고친다.
-- 현재 작업: `plan/0001-evidence-desk.md`
+- 현재 작업: `plan/0001-evidence-desk.md`, `plan/0002-search-reach.md`
 
 ## 명령어
 - `npm run dev`: 개발 서버 (5173)
