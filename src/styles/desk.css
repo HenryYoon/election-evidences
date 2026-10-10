@@ -80,6 +80,8 @@
 .detail-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; margin-top: 24px; }
 .detail-media { display: flex; flex-direction: column; gap: 12px; }
 .detail-media img, .detail-media video { width: 100%; border: 1px solid var(--d-line); display: block; }
+/* 매체 크기를 모르는 상태에서 받으면 아래 내용이 밀린다(CLS). 자리를 먼저 잡고 안에서 맞춘다. */
+.detail-media img, .detail-media video { aspect-ratio: 4 / 3; height: auto; object-fit: contain; background: var(--d-bg); }
 .facts { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); }
 .facts dt, .facts dd { padding: 8px 0; border-top: 1px solid var(--d-line); margin: 0; }
 .facts dt { font-weight: 700; padding-right: 16px; }

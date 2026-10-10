@@ -61,9 +61,21 @@ async function loadDataset(server, env) {
   return { evidence };
 }
 
-function headFor(meta, site, markdown) {
+// 상세 매체가 있는 저장소에 미리 연결한다(연결 지연 약 250~340ms, 0002 플랜 상세 성능).
+// img·video는 CORS 없이 받으므로 crossorigin을 붙이지 않는다. 붙이면 이 연결을 다시 쓰지 못한다.
+function mediaOrigin(row) {
+  const first = row?.photos?.find((p) => p?.view)?.view || row?.media_other?.find((m) => m?.url)?.url;
+  try {
+    return first ? new URL(first).origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function headFor(meta, site, markdown, origin) {
   const url = site + meta.path;
   return [
+    ...(origin ? [`<link rel="preconnect" href="${esc(origin)}" />`] : []),
     `<meta name="description" content="${esc(meta.description)}" />`,
     `<link rel="canonical" href="${esc(url)}" />`,
     // 링크 공유 미리보기와 페이지 성격 표시(0002 명세 6장).
@@ -123,7 +135,7 @@ async function main() {
     const markdown = row ? server.markdownPath(row.id) : path === '/records' ? server.RECORDS_MD : null;
     const html = template
       .replace(/<title>[^<]*<\/title>/, `<title>${esc(meta.title)}</title>`)
-      .replace('<!--app-head-->', `${headFor(meta, site, markdown)}\n    ${snapshot}`)
+      .replace('<!--app-head-->', `${headFor(meta, site, markdown, mediaOrigin(row))}\n    ${snapshot}`)
       .replace('<!--app-html-->', body);
     const file = outFile(path);
     mkdirSync(dirname(file), { recursive: true });
