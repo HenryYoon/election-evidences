@@ -9,11 +9,11 @@
 | 항목 | 결정 | 근거 |
 |---|---|---|
 | 사전 렌더링 | Vite SSR 빌드 + 빌드 시 경로별 HTML 생성 | 명세 6장. 현재 `index.html`은 빈 `<div id="root">`다 |
-| 상태 필드 | 유지. 기존 건은 미디어 있으면 `reported`, 없으면 `allegation` | 통계 모수, 원장 필터, 상세 첫 문장이 상태에 의존한다. `document`, `video_confirmed`는 관리자가 검증 네 줄을 채운 뒤 수동으로만 지정한다 |
+| 상태 필드 | 유지. 기존 건은 미디어 있으면 `reported`, 없으면 `allegation` | 통계 모수, 기록 필터, 상세 첫 문장이 상태에 의존한다. `document`, `video_confirmed`는 관리자가 검증 네 줄을 채운 뒤 수동으로만 지정한다 |
 | 데이터 갱신 | Vercel Deploy Hook으로 재빌드 | 사전 렌더링 HTML은 빌드 시점 스냅샷이다. 관리자 저장, 피드 수집, 제보 승인 시 호출한다 |
 | 피드 수집 | 유튜브 채널 RSS. X 등은 2차 | RSS는 API 키가 필요 없다. X API는 유료이고 약관 문제가 있다 |
 | 제보 접수 | 공개 폼 → 서버 함수 → 비공개 테이블 → 관리자 검수 후 공개 | 제보 원문에 제3자 개인정보가 섞일 수 있다 |
-| 홈·통계 지도 | GeoJSON 기반 정적 SVG | SVG는 사전 렌더링된다. MapLibre는 원장 목록의 "지도 보기"에만 남긴다 |
+| 홈·통계 지도 | GeoJSON 기반 정적 SVG | SVG는 사전 렌더링된다. MapLibre는 기록 목록의 "지도 보기"에만 남긴다 |
 | Analytics | Vercel Analytics 유지 | 명세가 금지한 것은 Google Analytics 선행 설치다. Vercel Analytics는 색인 수단이 아니다 |
 
 ## 바뀌는 파일
@@ -44,7 +44,7 @@
 #### 1단계 구현 결과 (플랜과 달라진 점)
 | 항목 | 구현 | 이유 |
 |---|---|---|
-| 타입 이름 | 기존 행 타입을 `EvidenceRow`로 바꾸고, `Evidence`는 명세 4장 원장 레코드로 새로 정의했다. `toEvidence(row)`가 행을 원장 레코드로 바꾼다 | DB 행은 snake_case다. 한 타입에 두 표기를 섞으면 타입이 실제 데이터와 어긋난다. 기존 페이지는 3단계까지 `EvidenceRow`를 쓴다 |
+| 타입 이름 | 기존 행 타입을 `EvidenceRow`로 바꾸고, `Evidence`는 명세 4장 기록 레코드로 새로 정의했다. `toEvidence(row)`가 행을 기록 레코드로 바꾼다 | DB 행은 snake_case다. 한 타입에 두 표기를 섞으면 타입이 실제 데이터와 어긋난다. 기존 페이지는 3단계까지 `EvidenceRow`를 쓴다 |
 | `lat`, `lng` | 새 컬럼을 만들지 않는다. `toEvidence`가 `coordinates`(`[lng, lat]`)에서 읽는다 | 좌표 원본을 한 곳에만 둔다 |
 | `sources[].url` | `string \| null` | 카카오톡 제보처럼 링크가 없는 출처가 있다 |
 | `occurred_at` | `text`. ISO 8601이고, 시각을 모르면 날짜만 쓴다. 연도가 없으면 null이다 | 날짜만 아는 건에 자정 시각을 붙이면 시각을 지어낸 셈이다. `occurred_raw`는 그대로 남긴다 |
@@ -57,7 +57,7 @@
 | 잘린 `claim` 17건 | `title`이 `description` 앞 50자로 잘린 행은 `claim`을 비워 둔다. 운영자가 문안을 승인한 뒤 채운다 | `claim`은 상세 H1이다. 잘린 문장을 H1로 올리지 않는다 |
 | 피드 발신처 | 스키마가 `olgung`, `jahyeok` 행을 넣는다. 채널 주소는 운영자가 채운다 | 명세 3장 초기값 |
 | 관리자 판별 | `admins` 허용 목록과 `is_admin()` 함수를 둔다. 모든 관리자 정책(기존 `evidence`, 스토리지 포함)은 `authenticated` 전체가 아니라 `is_admin()`을 조건으로 쓴다 | 로그인 계정 전체를 관리자로 보면, Auth 가입 설정이 켜지는 순간 가입자가 `tip_contacts`를 읽는다 |
-| 운영 DB 적용 | 스키마 파일 전체가 아니라 `scripts/migrations/0001_ledger_and_admins.sql`(`1b)`, 관리자 정책, `5)`~`11)`)과 `0002_ledger_backfill.sql`(원장 컬럼 채우기)을 순서대로 SQL Editor에서 실행한다. 서비스 키 없이 실행할 수 있어 `migrate_to_ledger.py`를 대신한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
+| 운영 DB 적용 | 스키마 파일 전체가 아니라 `scripts/migrations/0001_ledger_and_admins.sql`(`1b)`, 관리자 정책, `5)`~`11)`)과 `0002_ledger_backfill.sql`(기록 컬럼 채우기)을 순서대로 SQL Editor에서 실행한다. 서비스 키 없이 실행할 수 있어 `migrate_to_ledger.py`를 대신한다 | 운영 버킷 설정(50MB, mp4·오디오 허용)이 스키마 파일 `3)`과 다르다. 파일 전체를 실행하면 영상 업로드가 막힌다 |
 
 ### 2단계: 사전 렌더링 기반
 1. `src/entry-client.tsx`(hydrateRoot)와 `src/entry-server.tsx`(StaticRouter + renderToString)를 만든다.
@@ -80,22 +80,23 @@
 | 미사용 페이지 삭제 | 3단계 6번의 삭제를 당겨 했다. `NationMap`, `WideMap`, `BasicDetail`, `RegionExplorer`, `StatsTab`과 함께 그 페이지들만 쓰던 `DetailMap`, `AppBar`도 지웠다 | 라우트에 연결되지 않은 지도 코드가 서버 렌더 범위에 남지 않게 한다 |
 | 홈 H1 | 아직 없다 | 홈은 3단계에서 교체한다 |
 
-### 3단계: 홈, 원장 목록, 상세 교체
+### 3단계: 홈, 기록 목록, 상세 교체
 1. `index.html`에서 `maximum-scale=1.0, user-scalable=no`를 지운다.
-2. 공통 레이아웃: 상단 `DESK`와 원장·통계·피드·제보 내비게이션.
-3. 홈 `/`: 명세 5장 홈 규칙. 지도는 `public/geo/provinces.geojson` SVG에 오늘 원장 좌표만 점으로 찍는다.
-4. 원장 `/ledger`: 기존 `FilterBar`와 `applyFilters`(`src/lib/data.ts`)를 확장한다. 기존 `UnifiedMap` 지도는 "지도 보기" 토글로 옮긴다.
-5. 상세 `/e/:id`: 명세 5장 원장 규칙. 빈 검증 줄은 "미기재"로 표시한다. `src/lib/media.ts`와 기존 영상·음성 플레이어를 재사용한다.
+2. 공통 레이아웃: 상단 `DESK`와 기록·통계·피드·제보 내비게이션.
+3. 홈 `/`: 명세 5장 홈 규칙. 지도는 `public/geo/provinces.geojson` SVG에 오늘 기록 좌표만 점으로 찍는다.
+4. 기록 `/records`: 기존 `FilterBar`와 `applyFilters`(`src/lib/data.ts`)를 확장한다. 기존 `UnifiedMap` 지도는 "지도 보기" 토글로 옮긴다.
+5. 상세 `/e/:id`: 명세 5장 기록 규칙. 빈 검증 줄은 "미기재"로 표시한다. `src/lib/media.ts`와 기존 영상·음성 플레이어를 재사용한다.
 6. 쓰지 않는 페이지와 컴포넌트를 지운다.
 
 #### 3단계 구현 결과 (플랜과 달라진 점)
 | 항목 | 구현 | 이유 |
 |---|---|---|
-| "오늘 원장" | 오른쪽 세 줄은 원장에서 가장 최근 발생일의 카드다. 빌드 날짜가 아니다. 지도는 좌표가 있는 원장 카드를 모두 찍는다 | 원장은 선거 기간 기록이라 빌드 날짜 기준이면 홈이 늘 빈다. 지도를 최근 발생일로 거르면 날짜가 없는 동안(운영 DB 마이그레이션 전) 점이 0개가 되고, 날짜가 있어도 하루치만 보인다 |
+| "오늘 기록" | 오른쪽 세 줄은 기록에서 가장 최근 발생일의 카드다. 빌드 날짜가 아니다. 지도는 좌표가 있는 기록 카드를 모두 찍는다 | 기록 층은 선거 기간 자료라 빌드 날짜 기준이면 홈이 늘 빈다. 지도를 최근 발생일로 거르면 날짜가 없는 동안(운영 DB 마이그레이션 전) 점이 0개가 되고, 날짜가 있어도 하루치만 보인다 |
 | 통계·피드·제보 목록 | `StatsList`, `FeedList`, `TipList`를 빈 상태로 먼저 만들었다. 데이터 연결은 4~6단계에서 한다 | 홈의 네 입구와 내비게이션이 404로 가지 않게 한다. 사이트맵에 층 목록이 들어간다 |
 | 시각 규칙 | 공개 화면은 `src/styles/desk.css`(색 4개: 배경·글자·구분선·상태)를 쓴다. 보조 정보는 색 대신 크기로 구분한다. 관리자 화면은 `global.css`를 그대로 쓴다 | 명세 시각 규칙. 관리자 화면은 7단계에서 바꾼다 |
 | 상세 | 공개면에서 "제보자" 줄을 뺐다. `description`이 주장과 다르면 "제보 내용"으로 둔다 | 명세 상세 구성에 제보자 칸이 없다 |
 | 아카이브 시각 | 상세에서 뺐다 | 쓸 수 있는 값이 `created_at`(DB 등록 시각)뿐이다. 운영 DB 95건 중 93건이 일괄 적재 시각 하나다. 운영자 결정(명세 5장 상세 구성과 다름) |
+| 층 이름 | "원장"을 "기록"으로 바꿨다. 주소는 `/records`이고 `/ledger`는 `/records`로 영구 리다이렉트한다(`vercel.json`, 클라이언트 `Navigate`). 코드 안 이름(`Ledger`, `compareLedger`, 마이그레이션 파일 이름)은 그대로 둔다 | 운영자 결정. "원장"은 회계 용어라 낯설다. "기록"은 상태와 무관하게 모든 카드를 포괄한다 |
 | 삭제 | `UnifiedMap`, `EvidenceCard`, `BottomSheet`, `useIsMobile`. `typeIcon`은 `src/lib/evidenceType.ts`로 옮겼다 | 홈 교체로 쓰지 않는다 |
 | 사이트 이름 | 아직 "선거 증거 아카이브"다(`SITE_NAME`) | 8단계 1번에서 바꾼다 |
 
@@ -103,7 +104,7 @@
 1. `/feed`, `/feed/:source` 페이지를 만든다.
 2. `scripts/collect_feeds.py`가 `feed_sources`를 읽고, `platform='youtube'`이면 채널 RSS를 읽어 새 항목만 upsert한 뒤 Deploy Hook을 호출한다.
 3. GitHub Actions cron(30분 간격)으로 수집을 돌린다.
-4. 관리자 화면에 "원장으로 승격" 버튼을 둔다. 승격은 새 원장 카드를 만들고 `evidenceId`를 연결한다.
+4. 관리자 화면에 "기록으로 승격" 버튼을 둔다. 승격은 새 기록 카드를 만들고 `evidenceId`를 연결한다.
 
 ### 5단계: 제보
 1. `/tips`, `/tips/:id` 페이지를 만든다.
@@ -117,7 +118,7 @@
 2. `scripts/load_analysis.py`가 공식 표 CSV를 `analyses`, `analysis_rows`에 적재한다. 데이터가 오기 전에는 목록이 비어 있다.
 
 ### 7단계: 관리자
-1. `Admin.tsx`에 원장·피드·제보·통계 탭을 추가한다.
+1. `Admin.tsx`에 기록·피드·제보·통계 탭을 추가한다.
 2. 저장 성공 시 `api/rebuild.ts`로 Deploy Hook을 호출한다.
 
 ### 8단계: 정리
