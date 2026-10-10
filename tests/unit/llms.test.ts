@@ -57,3 +57,27 @@ describe('기록 마크다운', () => {
     expect(evidenceMarkdown(tricky, SITE).split('\n')[0]).toBe('# \\[링크\\](javascript:x) \\*굵게\\*');
   });
 });
+
+describe('JSON-LD', () => {
+  it('홈은 WebSite, 상세는 Article이고 ClaimReview를 쓰지 않는다', async () => {
+    const { jsonLd } = await import('../../src/lib/llms');
+    expect(jsonLd(null, SITE, '설명')['@type']).toBe('WebSite');
+    const a = jsonLd(toEvidence(rows[0]), SITE, '설명');
+    expect(a['@type']).toBe('Article');
+    expect(JSON.stringify(a)).not.toContain('ClaimReview');
+    expect(String(a.genre)).toContain('법적 결론이 아니다');
+  });
+
+  it('좌표는 위도·경도를 바르게 넣는다', async () => {
+    const { jsonLd } = await import('../../src/lib/llms');
+    const ev = toEvidence(rows[0]);
+    const place = jsonLd(ev, SITE, '설명').contentLocation as { geo: { latitude: number; longitude: number } };
+    expect(place.geo).toEqual({ '@type': 'GeoCoordinates', latitude: ev.lat, longitude: ev.lng });
+  });
+
+  it('스크립트 태그 탈출을 막는다', async () => {
+    const { jsonLd, jsonLdScript } = await import('../../src/lib/llms');
+    const ev = toEvidence({ ...rows[0], claim: '</script><script>alert(1)</script>' });
+    expect(jsonLdScript(jsonLd(ev, SITE, 'x')).match(/<\/script>/g)).toHaveLength(1);
+  });
+});
