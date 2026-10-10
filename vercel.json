@@ -15,7 +15,7 @@
   ],
   "rewrites": [
     {
-      "source": "/((?!assets/|geo/|.*\\..*).*)",
+      "source": "/((?!assets/|geo/|api/|.*\\..*).*)",
       "destination": "/spa"
     }
   ],
@@ -47,5 +47,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "reach-history": false
+    }
+  }
 }

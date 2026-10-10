@@ -4,6 +4,10 @@ import type { EvidenceRow, EvidenceType } from '../types/evidence';
 import { EVIDENCE_TYPES } from '../types/evidence';
 import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
+import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, MANUAL_ONLY_STATUSES, VERIFICATION_FIELDS } from '../lib/status';
+import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
+import type { EvidenceSource } from '../types/evidence';
+import type { EvidenceStatus } from '../lib/status';
 
 const BUCKET = 'evidence-media';
 const blank = (): Partial<EvidenceRow> => ({
@@ -12,6 +16,9 @@ const blank = (): Partial<EvidenceRow> => ({
   region_basic: null, place: '', place_raw: '', coordinates: null, located: false,
   occurred_raw: '', source: '', source_url: '', reporter: '익명 제보자',
   photos: [], media_other: [], withheld: 0, media_count: 0,
+  // 기록 필드. 새 카드는 비공개·주장 상태로 시작한다. 상태는 관리자만 올린다.
+  status: 'allegation', claim: '', election: '2026 지방선거', occurred_at: null,
+  sources: [], verification: {},
 });
 
 export default function Admin() {
@@ -20,6 +27,7 @@ export default function Admin() {
   const [rows, setRows] = useState<EvidenceRow[]>([]);
   const [editing, setEditing] = useState<Partial<EvidenceRow> | null>(null);
   const [err, setErr] = useState('');
+  const [rebuild, setRebuild] = useState('');
 
   useEffect(() => {
     if (!supabase) { setReady(true); return; }
@@ -48,6 +56,21 @@ export default function Admin() {
     await supabase!.from('evidence').update({ published: v }).eq('id', e.id);
     load();
   };
+  // 공개 HTML 갱신: 사전 렌더링 본문(검색·AI가 읽는 HTML)을 최신 DB로 다시 만든다.
+  // 화면 자체는 하이드레이션 뒤 최신 데이터를 다시 읽으므로 버튼 전에도 반영된다.
+  const requestRebuild = async () => {
+    setRebuild('요청 중…');
+    const { data } = await supabase!.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) { setRebuild('로그인이 필요하다'); return; }
+    try {
+      const res = await fetch('/api/rebuild', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+      const body = await res.json().catch(() => ({}));
+      setRebuild(res.ok ? '재빌드를 요청했다. 수 분 뒤 공개 HTML에 반영된다.' : `실패: ${body.error ?? res.status}`);
+    } catch (e) {
+      setRebuild(`실패: ${(e as Error).message}`);
+    }
+  };
   const remove = async (e: EvidenceRow) => {
     if (!confirm(`"${e.title}" 삭제할까요?`)) return;
     await supabase!.from('evidence').delete().eq('id', e.id);
@@ -57,14 +80,16 @@ export default function Admin() {
   return (
     <div className="app" style={{ background: 'var(--bg)' }}>
       <header className="appbar" style={{ justifyContent: 'space-between' }}>
-        <span className="brand">증거 아카이브 · 관리자</span>
+        <span className="brand">선거 증거 데스크 · 관리자</span>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="chip" onClick={() => setEditing(blank())}>+ 새 제보</button>
+          <button className="chip" onClick={() => setEditing(blank())}>+ 새 기록</button>
+          <button className="chip" onClick={requestRebuild} title="사전 렌더링 HTML을 최신 DB로 다시 만든다">공개 HTML 갱신</button>
           <button className="chip" onClick={() => supabase!.auth.signOut()}>로그아웃</button>
         </div>
       </header>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
         {err && <div className="note" style={{ marginBottom: 12 }}>⚠ {err}</div>}
+        {rebuild && <div className="note" style={{ marginBottom: 12 }}>{rebuild}</div>}
         <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>총 {rows.length}건 · 공개 {rows.filter((r) => r.published).length}건</div>
           {rows.map((e, i) => (
@@ -76,9 +101,9 @@ export default function Admin() {
                 {e.photos[0]?.thumb ? <img src={disp(e.photos[0].thumb)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : typeIcon(e.evidence_type)}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.title}</div>
+                <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.claim || e.title}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {e.region_wide_label ?? '미상'} · {e.place} · {e.evidence_type}
+                  {e.status ? EVIDENCE_STATUS_LABEL[e.status] : '상태 없음'} · {e.occurred_at ?? '날짜 미상'} · {e.place} · {e.evidence_type}
                   <span style={{ marginLeft: 6, opacity: 0.6 }}>#{e.num}{e.withheld ? ` · 비공개자료 ${e.withheld}` : ''}</span>
                 </div>
               </div>
@@ -106,6 +131,7 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
   const signed = useSignedMap((d.photos ?? []).flatMap((p) => [p.thumb, p.view]));
   const disp = (u?: string | null) => { const p = storagePath(u); return (p && signed.get(p)) || u || ''; };
   const set = (k: keyof EvidenceRow, v: unknown) => setD((p) => ({ ...p, [k]: v }));
+  const setSource = (i: number, src: EvidenceSource) => set('sources', (d.sources ?? []).map((s, j) => (j === i ? src : s)));
   const lng = d.coordinates?.[0] ?? '';
   const lat = d.coordinates?.[1] ?? '';
   const setCoord = (i: 0 | 1, v: string) => {
@@ -129,8 +155,10 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
 
   const save = async () => {
     if (!supabase) return;
+    const errs = validateLedgerDraft(d);
+    if (errs.length) { setMsg(errs.join(' ')); return; }
     setBusy(true);
-    const row = { ...d, media_count: (d.photos?.length ?? 0) + (d.media_other?.length ?? 0) };
+    const row = normalizeLedgerDraft(d);
     const { error } = await supabase.from('evidence').upsert(row);
     setBusy(false);
     if (error) setMsg(error.message); else onSaved();
@@ -139,10 +167,40 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
   return (
     <div style={overlay} onClick={onClose}>
       <div style={modal} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 12px' }}>{draft.title ? '제보 수정' : '새 제보'}</h3>
+        <h3 style={{ margin: '0 0 12px' }}>{draft.title || draft.claim ? '기록 수정' : '새 기록'}</h3>
         {msg && <div className="note" style={{ marginBottom: 10 }}>⚠ {msg}</div>}
         <Field label="제목"><input style={inp} value={d.title ?? ''} onChange={(e) => set('title', e.target.value)} /></Field>
-        <Field label="설명"><textarea style={{ ...inp, height: 80 }} value={d.description ?? ''} onChange={(e) => set('description', e.target.value)} /></Field>
+        <Field label="설명(상세의 제보 내용)"><textarea style={{ ...inp, height: 80 }} value={d.description ?? ''} onChange={(e) => set('description', e.target.value)} /></Field>
+        <Field label="주장(상세 H1, 한 문장)"><textarea style={{ ...inp, height: 56 }} value={d.claim ?? ''} onChange={(e) => set('claim', e.target.value)} /></Field>
+        <Row>
+          <Field label="상태">
+            <select style={inp} value={d.status ?? 'allegation'} onChange={(e) => set('status', e.target.value as EvidenceStatus)}>
+              {EVIDENCE_STATUSES.map((s) => <option key={s} value={s}>{EVIDENCE_STATUS_LABEL[s]}</option>)}
+            </select>
+          </Field>
+          <Field label="선거"><input style={inp} value={d.election ?? ''} onChange={(e) => set('election', e.target.value)} /></Field>
+        </Row>
+        <div style={{ fontSize: 12, color: 'var(--ink-3)', margin: '-4px 0 10px' }}>
+          {EVIDENCE_STATUS_LEGEND[(d.status ?? 'allegation') as EvidenceStatus]}
+          {MANUAL_ONLY_STATUSES.includes((d.status ?? 'allegation') as EvidenceStatus) && ' 이 상태는 아래 검증 네 줄을 모두 채워야 저장된다.'}
+        </div>
+        <Field label="발생 시각(2026-06-03 또는 2026-06-03T14:37:00+09:00)"><input style={inp} value={d.occurred_at ?? ''} onChange={(e) => set('occurred_at', e.target.value)} /></Field>
+        <Field label="검증 네 줄">
+          {VERIFICATION_FIELDS.map(([k, label]) => (
+            <input key={k} style={{ ...inp, marginBottom: 6 }} placeholder={label} value={(d.verification ?? {})[k] ?? ''}
+              onChange={(e) => set('verification', { ...(d.verification ?? {}), [k]: e.target.value })} />
+          ))}
+        </Field>
+        <Field label="출처(이름, 주소)">
+          {(d.sources ?? []).map((src, i) => (
+            <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+              <input style={inp} placeholder="이름" value={src.title} onChange={(e) => setSource(i, { ...src, title: e.target.value })} />
+              <input style={inp} placeholder="https://" value={src.url ?? ''} onChange={(e) => setSource(i, { ...src, url: e.target.value })} />
+              <button className="chip" onClick={() => set('sources', (d.sources ?? []).filter((_, j) => j !== i))}>삭제</button>
+            </div>
+          ))}
+          <button className="chip" onClick={() => set('sources', [...(d.sources ?? []), { title: '', url: null }])}>+ 출처</button>
+        </Field>
         <Row>
           <Field label="유형">
             <select style={inp} value={d.evidence_type} onChange={(e) => set('evidence_type', e.target.value as EvidenceType)}>
