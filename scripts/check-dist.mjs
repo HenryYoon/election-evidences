@@ -109,6 +109,10 @@ if (!/User-agent: ClaudeBot/.test(readFileSync(join(DIST, 'robots.txt'), 'utf-8'
 const sitemap = readFileSync(join(DIST, 'sitemap.xml'), 'utf-8');
 if (/\/admin/.test(sitemap)) fail('sitemap.xml', '/admin이 들어 있다');
 if (!/\/e\/[^<]+<\/loc>/.test(sitemap)) fail('sitemap.xml', '상세 주소가 없다');
+if (!sitemap.startsWith('<?xml version="1.0" encoding="UTF-8"?>')) fail('sitemap.xml', 'XML 선언으로 시작하지 않는다');
+for (const m of sitemap.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)) {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/.test(m[1])) fail('sitemap.xml', `lastmod 형식: ${m[1]}`);
+}
 if (!/Sitemap: \S+\/sitemap\.xml/.test(readFileSync(join(DIST, 'robots.txt'), 'utf-8'))) fail('robots.txt', '사이트맵 주소 없음');
 if (!/noindex/.test(readFileSync(join(DIST, 'spa.html'), 'utf-8'))) fail('spa.html', 'noindex 없음');
 

@@ -75,6 +75,13 @@ function mediaOrigin(row) {
 // Search Console 소유 확인(0001 플랜 8단계). 운영자가 값을 받으면 빌드 환경변수로 넣는다.
 const SITE_VERIFICATION = (process.env.GOOGLE_SITE_VERIFICATION || '').trim();
 
+// 사이트맵 lastmod는 초 단위 UTC로 쓴다. DB 값의 마이크로초(소수 6자리)는 표준상 허용되지만 의심 요소를 없앤다.
+function sitemapDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString().replace(/\.\d{3}Z$/, '+00:00');
+}
+
 function headFor(meta, site, markdown, origin) {
   const url = site + meta.path;
   return [
@@ -153,7 +160,7 @@ async function main() {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, html);
     if (row) writeFileSync(join(DIST, decodeURIComponent(server.markdownPath(row.id))), server.evidenceMarkdown(server.toEvidence(row), site));
-    sitemap.push({ loc: site + meta.path, lastmod: meta.lastmod });
+    sitemap.push({ loc: site + meta.path, lastmod: sitemapDate(meta.lastmod) });
   }
 
   writeFileSync(
