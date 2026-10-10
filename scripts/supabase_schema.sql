@@ -33,7 +33,7 @@ create index if not exists evidence_region_idx on public.evidence (region_wide, 
 
 -- updated_at 자동 갱신
 create or replace function public.touch_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = '' as $$
 begin new.updated_at = now(); return new; end $$;
 drop trigger if exists evidence_touch on public.evidence;
 create trigger evidence_touch before update on public.evidence
@@ -87,9 +87,8 @@ update storage.buckets
   where id = 'evidence-media';
 
 drop policy if exists media_auth_read on storage.objects;
+-- 공개 버킷 주소(/object/public/)는 정책 없이 열린다. anon 읽기 정책을 두면 객체 목록까지 조회된다(0005).
 drop policy if exists media_public_read on storage.objects;
-create policy media_public_read on storage.objects
-  for select using (bucket_id = 'evidence-media');     -- 익명도 이미지 열람
 
 drop policy if exists media_admin_write on storage.objects;
 create policy media_admin_write on storage.objects
@@ -289,6 +288,7 @@ create or replace function public.submit_tip(
   p_place text, p_occurred text, p_body text, p_links text[], p_name text, p_contact text
 ) returns text language plpgsql security definer set search_path = '' as $$
 declare
+  hdr json;
   ip text;
   h text;
   new_id text;
@@ -316,7 +316,10 @@ begin
     end if;
   end loop;
 
-  ip := btrim(split_part(coalesce(current_setting('request.headers', true)::json ->> 'x-forwarded-for', ''), ',', 1));
+  -- cf-connecting-ip는 Cloudflare가 덮어써서 요청자가 위조하지 못한다. 없으면 x-forwarded-for 첫 값.
+  hdr := coalesce(current_setting('request.headers', true), '{}')::json;
+  ip := coalesce(nullif(btrim(hdr ->> 'cf-connecting-ip'), ''),
+                 btrim(split_part(coalesce(hdr ->> 'x-forwarded-for', ''), ',', 1)));
   h := md5('desk-tip:' || coalesce(nullif(ip, ''), 'unknown'));
   if (select count(*) from public.tips where ip_hash = h and created_at > now() - interval '1 hour') >= 5 then
     raise exception '잠시 뒤에 다시 보내 주세요' using errcode = 'P0001';
