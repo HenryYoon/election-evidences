@@ -33,7 +33,12 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
 
       <div className="detail-grid">
         <section aria-label="매체" className="detail-media">
-          {ev.photos.map((p, i) => (p.view ? <img key={i} src={p.view} alt={`${ev.placeName} 사진 ${i + 1}`} loading="lazy" /> : null))}
+          {/* 첫 사진은 화면 첫머리라 바로 받는다(LCP). 나머지는 스크롤할 때 받는다. */}
+          {ev.photos.map((p, i) =>
+            p.view ? (
+              <img key={i} src={p.view} alt={`${ev.placeName} 사진 ${i + 1}`} loading={i ? 'lazy' : 'eager'} decoding="async" {...(i ? {} : { fetchpriority: 'high' })} />
+            ) : null
+          )}
           {playable.map((m, i) =>
             m.kind === 'video' ? (
               <video key={i} src={m.url} controls preload="metadata" playsInline />

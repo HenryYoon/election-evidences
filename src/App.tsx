@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Analytics } from '@vercel/analytics/react';
 import { useDataset } from './lib/snapshot';
@@ -10,7 +10,8 @@ import StatsList from './pages/StatsList';
 import FeedList from './pages/FeedList';
 import TipList from './pages/TipList';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
-import Admin from './pages/Admin';
+// 관리자 화면(Supabase 클라이언트 포함)은 공개 페이지 번들에서 뺀다. /admin은 사전 렌더링하지 않는다.
+const Admin = lazy(() => import('./pages/Admin'));
 
 // 클라이언트 내비게이션 때 head를 경로에 맞춘다. 첫 HTML의 head는 사전 렌더링이 쓴다.
 function useHead(ds: Dataset) {
@@ -51,7 +52,7 @@ export default function App() {
     <>
       <Routes>
         {/* 관리자만 자체 로그인 게이트. 공개 앱은 로그인 없음(비식별화로 보호) */}
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
         <Route path="/*" element={<PublicApp />} />
       </Routes>
       <Analytics />
