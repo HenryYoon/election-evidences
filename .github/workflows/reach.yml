@@ -56,7 +56,10 @@ jobs:
               --chrome-flags="--headless=new --no-sandbox" || echo "::warning::Lighthouse 실패: $url"
           done
       - name: agentic-seo
-        run: npx -y agentic-seo@1.0.0 --url "$SITE" --json > reach-out/agentic-seo.json || true
+        # URL 모드는 10개 중 2개 점검만 원격으로 해서 점수가 낮게 나온다. 운영 사이트를 내려받아 폴더 모드로 감사한다.
+        run: |
+          node scripts/reach/mirror-live.mjs "$SITE" live-mirror
+          npx -y agentic-seo@1.0.0 --output-dir live-mirror --json > reach-out/agentic-seo.json || true
       - name: 요약
         run: node scripts/reach/report-scores.mjs reach-out
       - uses: actions/upload-artifact@v4
