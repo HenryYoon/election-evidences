@@ -1,3 +1,5 @@
+// 지도 CSS(65KB)는 지도를 여는 화면에서만 받는다. 공개 페이지 첫 렌더를 막지 않게 하기 위해서다.
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/maplibre';
 import type { EvidenceRow } from '../../types/evidence';
