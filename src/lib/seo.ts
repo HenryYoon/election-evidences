@@ -53,7 +53,7 @@ const LAYER_META: Record<string, { title: string; description: string }> = {
     description: `기록과 공식 표를 계산한 분석 목록. 피드, 미확인 제보, 좌표 없는 카드는 모수와 지도에 넣지 않는다. ${STATUS_DISCLAIMER}`,
   },
   '/feed': { title: '피드', description: '외부 발신처의 소식 목록. 피드는 증거가 아니며, 기록 카드가 된 소식에만 기록 링크를 단다.' },
-  '/tips': { title: '제보', description: '시민 제보 목록. 기본 상태는 미확인이며, 제보자의 이름과 연락처는 공개하지 않는다.' },
+  '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받는다. 제보는 바로 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다. 이름과 연락처는 공개하지 않는다.' },
 };
 
 export function pageMeta(path: string, ds: Dataset): PageMeta | null {

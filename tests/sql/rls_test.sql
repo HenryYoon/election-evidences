@@ -18,7 +18,7 @@ end $$;
 -- 익명
 set role anon;
 select pg_temp.expect('anon은 공개 기록만 본다', (select count(*) from public.evidence), 1);
-select pg_temp.expect('anon은 공개 제보만 본다', (select count(*) from public.tips), 1);
+select pg_temp.expect('anon은 제보를 하나도 못 본다(published여도)', (select count(*) from public.tips), 0);
 select pg_temp.expect('anon은 비공개 분석의 행을 못 본다', (select count(*) from public.analysis_rows), 0);
 do $$ begin
   perform 1 from public.tip_contacts;

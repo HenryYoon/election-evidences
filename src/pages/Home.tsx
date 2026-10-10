@@ -88,8 +88,8 @@ export default function Home({ ds }: { ds: Dataset }) {
         </section>
         <section>
           <h2>제보</h2>
-          <p>아직 공개한 제보가 없다.</p>
-          <Link to="/tips">제보 보기</Link>
+          <p>제보를 받는다. 운영진 검수 뒤 기록으로 공개한다.</p>
+          <Link to="/tips">제보하기</Link>
         </section>
       </div>
     </DeskLayout>
