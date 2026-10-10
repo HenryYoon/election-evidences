@@ -17,7 +17,7 @@
 ## 바뀌는 파일
 - 프론트: `src/entry-client.tsx`, `src/entry-server.tsx`, `src/lib/snapshot.tsx`, `src/lib/status.ts`(검증 네 줄 공용화), `src/lib/llms.ts`(새 파일), `src/components/map/SvgMap.tsx`, `src/pages/EvidenceDetailPage.tsx`, `src/styles/desk.css`
 - 빌드: `scripts/prerender.mjs`(og 메타, `llms.txt`, `records.md`, 기록별 `.md`, robots.txt), `scripts/check-dist.mjs`, `vercel.json`(`.md`·`llms.txt` Content-Type, 스냅샷 캐시)
-- 점검: `scripts/reach/check-live.mjs`, `scripts/reach/report-scores.mjs`, `scripts/reach/baseline.json`, `.github/workflows/reach.yml`(모두 새 파일)
+- 점검: `scripts/reach/check-live.mjs`, `scripts/reach/mirror-live.mjs`, `scripts/reach/report-scores.mjs`, `scripts/reach/baseline.json`, `.github/workflows/reach.yml`(모두 새 파일)
 - 테스트: `tests/unit/llms.test.ts`(새 파일), `tests/e2e/smoke.mjs`
 
 ## 작업 순서
@@ -54,6 +54,6 @@
 | /e/ev-002 | 77 | 100 | 96 | 100 |
 
 - 회수 점검: 모두 통과. HTML 크기는 상세 4~6KB.
-- agentic-seo(URL 모드): F 20. 로컬 폴더 모드(D 56)보다 낮다. URL 모드는 빌드 폴더를 볼 수 없어 마크다운 판과 `llms.txt` 일부 항목을 확인하지 못한다. 두 모드의 점수를 서로 비교하지 않는다.
+- agentic-seo(URL 모드): F 20(두 번 측정). 패키지 코드를 보니 URL 모드는 10개 점검 중 `llms-txt`, `agent-permissions` 2개만 원격으로 확인하고 나머지 8개는 폴더가 없어 0점이다. 그래서 `scripts/reach/mirror-live.mjs`로 운영 사이트(사이트맵의 모든 페이지, 기록별 `.md`, `llms.txt`, `records.md`, robots.txt)를 내려받아 폴더 모드로 감사하도록 바꿨다. 로컬 미리보기를 같은 방식으로 재면 D 57이다. 운영 기준값은 바꾼 뒤 첫 측정에서 넣는다.
 - `scripts/reach/baseline.json`에 페이지별 최솟값을 기준으로 적었다.
 - 다음 개선 후보: 상세 성능 77. 상세 페이지도 지도 라이브러리(maplibre) CSS와 공통 번들을 받는다. 원인을 측정한 뒤 별도 작업으로 다룬다.

@@ -1,5 +1,10 @@
 {
-  "_comment": "점수 기준(0002 플랜). 2026-10-10 첫 운영 측정의 페이지별 최솟값이다. 떨어지면 경고만 낸다. 올릴 때만 고친다.",
-  "lighthouse": { "performance": 77, "accessibility": 100, "best-practices": 96, "seo": 100 },
-  "agenticSeo": 20
+  "_comment": "점수 기준(0002 플랜). Lighthouse는 2026-10-10 첫 운영 측정의 페이지별 최솟값이다. agentic-seo는 폴더 모드로 바꾼 뒤 첫 측정값을 넣는다. 떨어지면 경고만 낸다. 올릴 때만 고친다.",
+  "lighthouse": {
+    "performance": 77,
+    "accessibility": 100,
+    "best-practices": 96,
+    "seo": 100
+  },
+  "agenticSeo": null
 }
