@@ -1,6 +1,22 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [{ "source": "/ledger", "destination": "/records", "permanent": true }],
-  "rewrites": [{ "source": "/((?!assets/|geo/|.*\\..*).*)", "destination": "/spa" }]
+  "redirects": [
+    {
+      "source": "/ledger",
+      "destination": "/records",
+      "permanent": true
+    },
+    {
+      "source": "/e/ev-009",
+      "destination": "/e/ev-098",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/((?!assets/|geo/|.*\\..*).*)",
+      "destination": "/spa"
+    }
+  ]
 }
