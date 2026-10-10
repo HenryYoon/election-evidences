@@ -39,3 +39,13 @@
 | 정책 삭제 뒤 공개 사진이 안 열린다 | 공개 버킷 주소는 RLS를 거치지 않는다. 적용 뒤 상세 페이지 사진을 연다 |
 | `cf-connecting-ip`가 PostgREST까지 오지 않는다 | `x-forwarded-for` 첫 값으로 돌아간다. 지금보다 나빠지지 않는다 |
 | `X-Frame-Options: DENY`가 Search Console 미리보기를 막는다 | 미리보기는 렌더링 서버가 직접 받는다. 프레임에 넣지 않는다 |
+
+## 적용 결과 (2026-10-10)
+| 항목 | 결과 |
+|---|---|
+| 보안 헤더 | 운영 회수 점검 통과(실행 38035558195) |
+| 0005 | 운영자가 실행. 스토리지 정책은 `media_admin_write`만 남음, `touch_updated_at` search_path 고정, `submit_tip`이 `cf-connecting-ip` 사용 |
+| 공개 미디어 | 0005 뒤 운영 점검(실행 38036822443)의 저장소 요청 200 62건, 206 1건, 304 1건. 4xx 없음 |
+| Supabase 보안 경고 | `touch_updated_at` 경고 해소. 남은 경고(anon의 `is_admin`·`submit_tip` 실행, `admins` 정책 없음)는 의도한 설정 |
+| 유출 비밀번호 차단 | Free 플랜이라 켤 수 없다. 운영자가 비밀번호 기준을 올렸다 |
+| 신규 가입 | 꺼져 있음(운영자 확인) |

@@ -28,5 +28,5 @@
 - `touch_updated_at`에 `search_path = ''`를 둔다.
 
 ## 5. 운영자가 할 일
-- Supabase Auth의 유출 비밀번호 차단(leaked password protection)을 켠다.
+- Supabase Auth의 비밀번호 기준을 올린다(최소 12자, 숫자·대소문자·기호). 유출 비밀번호 차단(leaked password protection)은 Pro 플랜 기능이라 Free 플랜에서 켤 수 없다. 계정이 관리자뿐이므로 강한 고유 비밀번호로 대신한다.
 - Supabase Auth의 신규 가입(Allow new users to sign up)이 꺼져 있는지 확인한다.
