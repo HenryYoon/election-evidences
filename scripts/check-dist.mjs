@@ -51,7 +51,7 @@ for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
 const home = readFileSync(join(DIST, 'index.html'), 'utf-8');
 const homeText = home.slice(home.indexOf('<div id="root">'), home.indexOf('<script>window.')).replace(/<[^>]+>/g, ' ');
 if (/\d+\s*건/.test(homeText)) fail('index.html', `홈 본문에 건수 표현: ${homeText.match(/\d+\s*건/)[0]}`);
-for (const layer of ['/records', '/stats', '/feed', '/tips', '/about', '/privacy']) {
+for (const layer of ['/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact']) {
   if (!home.includes(`href="${layer}"`)) fail('index.html', `${layer} 입구 링크 없음`);
 }
 
@@ -119,7 +119,7 @@ if (!/noindex/.test(readFileSync(join(DIST, 'spa.html'), 'utf-8'))) fail('spa.ht
 // 개인정보·비밀 키(REVIEW 1·2): 배포물 어디에도 없어야 한다.
 // 공개 데이터는 HTML 스냅샷에만 들어간다. 압축된 라이브러리 JS의 숫자열은 오탐이라 전화번호 검사에서 뺀다.
 const PHONE = /(?<![\d.])01[016789][-. ]?\d{3,4}[-. ]?\d{4}(?![\d.])/;
-const SECRET = /SUPABASE_SERVICE_KEY|service_role|sb_secret_|DEPLOY_HOOK_URL|api\.vercel\.com\/v1\/integrations\/deploy/;
+const SECRET = /SUPABASE_SERVICE_KEY|service_role|sb_secret_|DEPLOY_HOOK_URL|api\.vercel\.com\/v1\/integrations\/deploy|RESEND_API_KEY|CONTACT_TO|\bre_[A-Za-z0-9]{8,}_[A-Za-z0-9]{8,}/;
 for (const f of files.filter((p) => /\.(html|js|json|xml|txt|md)$/.test(p))) {
   const text = readFileSync(f, 'utf-8');
   const rel = relative(DIST, f);

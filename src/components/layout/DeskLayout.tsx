@@ -25,6 +25,7 @@ export default function DeskLayout({ children }: { children: ReactNode }) {
       <main className="desk-main">{children}</main>
       <footer className="desk-foot">
         <Link to="/about">소개</Link>
+        <Link to="/contact">문의</Link>
         <Link to="/privacy">개인정보 처리방침</Link>
       </footer>
     </div>

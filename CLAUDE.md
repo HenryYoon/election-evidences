@@ -26,6 +26,8 @@
 - `scripts/`: Python ETL과 비식별화(`deident_*`, `reencode_view.py`). SDK 없이 `urllib`로 Supabase REST를 호출한다.
 - `scripts/supabase_schema.sql`: 테이블, RLS, 스토리지 버킷 정의.
 - `api/rebuild.js`: 관리자 "공개 HTML 갱신" 버튼이 부르는 Vercel 함수. 서버 환경변수 `DEPLOY_HOOK_URL`(Vercel Deploy Hook)이 필요하다. `VITE_` 접두사를 붙이지 않는다.
+- `api/contact.js`: 문의 메일 발송. 서버 환경변수 `RESEND_API_KEY`, `CONTACT_TO`가 필요하다. `VITE_` 접두사를 붙이지 않는다. 운영자 이메일 주소를 저장소에 쓰지 않는다.
+- `scripts/retention.mjs`, `.github/workflows/retention.yml`: 매일 개인정보 파기. GitHub Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`가 필요하다.
 - 배포: Vercel. 데이터: Supabase(Postgres + Storage).
 
 ## 서브에이전트
