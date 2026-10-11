@@ -1,0 +1,26 @@
+# 개인정보 보유 기간이 지난 제보를 파기한다(0005 명세 4장). 매일 한 번과 수동 실행.
+# 필요한 Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY. 없거나 파기에 실패하면 작업이 실패로 끝난다.
+name: Retention
+
+on:
+  schedule:
+    - cron: '23 18 * * *' # 매일 03:23 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    name: 보유 기간 지난 개인정보 파기
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/retention.mjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}

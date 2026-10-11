@@ -8,11 +8,18 @@ export interface TipForm {
   links: string;   // 줄마다 하나
   name: string;
   contact: string;
-  consent: boolean;
+  consent: boolean;          // 필수: 개인정보 수집·이용
+  overseasConsent: boolean;  // 필수: 국외 이전
+  optionalConsent: boolean;  // 선택: 이름·연락처. 적은 경우에만 요구한다
   website: string; // 미끼 칸. 사람에게는 보이지 않는다. 채워져 있으면 보내지 않는다.
 }
 
-export const EMPTY_TIP: TipForm = { place: '', occurred: '', body: '', links: '', name: '', contact: '', consent: false, website: '' };
+export const EMPTY_TIP: TipForm = {
+  place: '', occurred: '', body: '', links: '', name: '', contact: '',
+  consent: false, overseasConsent: false, optionalConsent: false, website: '',
+};
+
+export const hasContact = (f: Pick<TipForm, 'name' | 'contact'>) => Boolean(f.name.trim() || f.contact.trim());
 
 export function parseLinks(s: string): string[] {
   return s.split(/\s+/).map((x) => x.trim()).filter(Boolean);
@@ -30,6 +37,8 @@ export function validateTip(f: TipForm): string[] {
   if (links.length > 5) errs.push('링크는 5개까지 받습니다.');
   if (links.some((l) => !/^https?:\/\//.test(l) || l.length > 500)) errs.push('링크는 http:// 또는 https://로 시작해야 합니다.');
   if (!f.consent) errs.push('개인정보 수집·이용에 동의해야 보낼 수 있습니다.');
+  if (!f.overseasConsent) errs.push('개인정보 국외 이전에 동의해야 보낼 수 있습니다.');
+  if (hasContact(f) && !f.optionalConsent) errs.push('이름이나 연락처를 적었다면 선택 항목 수집·이용에 동의해 주세요. 동의하지 않으려면 두 칸을 비워 주세요.');
   return errs;
 }
 
@@ -109,8 +118,9 @@ export async function submitTip(f: TipForm, fetchImpl: typeof fetch = fetch): Pr
         p_occurred: f.occurred.trim(),
         p_body: f.body.trim(),
         p_links: parseLinks(f.links),
-        p_name: f.name.trim() || null,
-        p_contact: f.contact.trim() || null,
+        // 선택 동의가 없으면 이름·연락처를 보내지 않는다.
+        p_name: (f.optionalConsent && f.name.trim()) || null,
+        p_contact: (f.optionalConsent && f.contact.trim()) || null,
       }),
     });
     if (res.ok) {

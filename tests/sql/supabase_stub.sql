@@ -1,6 +1,7 @@
 -- Supabase가 제공하는 역할, 스키마, 함수의 최소 대체물. CI의 순수 Postgres에서 스키마를 돌리기 위해 쓴다.
 do $$ begin create role anon; exception when duplicate_object then null; end $$;
 do $$ begin create role authenticated; exception when duplicate_object then null; end $$;
+do $$ begin create role service_role; exception when duplicate_object then null; end $$;
 create schema if not exists storage;
 create table if not exists storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table if not exists storage.objects (id serial primary key, bucket_id text);
