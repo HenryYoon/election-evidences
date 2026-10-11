@@ -60,6 +60,7 @@ const KB = 1024;
 const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
 const budgets = [
   ['index.html', 40 * KB],
+  ['en.html', 40 * KB],
   ['records.html', 20 * KB + recordCount * 0.6 * KB],
   ...pages.filter((p) => relative(DIST, p).startsWith('e/')).map((p) => [relative(DIST, p), 10 * KB]),
 ];
@@ -68,6 +69,19 @@ for (const [rel, max] of budgets) {
   if (size > max) fail(rel, `HTML ${Math.round(size / KB)}KB, 예산 ${Math.round(max / KB)}KB 초과`);
 }
 if (/window\.__DESK__=/.test(home)) fail('index.html', '전체 스냅샷이 HTML 안에 있다');
+
+// 영어 페이지(0007 명세): lang="en"과 언어 짝 hreflang.
+for (const [ko, en] of [['index.html', 'en.html'], ['about.html', 'en/about.html']]) {
+  for (const rel of [ko, en]) {
+    if (!existsSync(join(DIST, rel))) { fail(rel, '파일 없음'); continue; }
+    const html = readFileSync(join(DIST, rel), 'utf-8');
+    const want = rel === en ? 'en' : 'ko';
+    if (!html.includes(`<html lang="${want}">`)) fail(rel, `<html lang="${want}"> 없음`);
+    for (const hl of ['ko', 'en', 'x-default']) {
+      if (!new RegExp(`<link rel="alternate" hreflang="${hl}" href="[^"]+"`).test(html)) fail(rel, `hreflang ${hl} 없음`);
+    }
+  }
+}
 if (!existsSync(join(DIST, 'geo', 'basemap.svg'))) fail('geo/basemap.svg', '지도 경계선 파일이 없다');
 
 // JSON-LD(0001 플랜 8단계): 홈 WebSite, 상세 Article. 파싱되어야 하고 ClaimReview는 쓰지 않는다.

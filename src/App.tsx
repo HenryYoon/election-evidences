@@ -23,6 +23,7 @@ function useHead(ds: Dataset) {
     const meta = pageMeta(pathname, ds);
     if (!meta) return;
     document.title = meta.title;
+    document.documentElement.lang = meta.lang ?? 'ko';
     document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description);
     const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (canonical) canonical.href = new URL(meta.path, canonical.href).href;
@@ -34,6 +35,8 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
   return (
     <Routes>
       <Route path="/" element={<Home ds={ds} />} />
+      <Route path="/en" element={<Home ds={ds} lang="en" />} />
+      <Route path="/en/about" element={<About lang="en" />} />
       <Route path="/records" element={<Ledger ds={ds} />} />
       <Route path="/ledger" element={<Navigate to="/records" replace />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />

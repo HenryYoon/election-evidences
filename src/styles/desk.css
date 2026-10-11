@@ -28,6 +28,7 @@
 .desk-top nav a { text-decoration: none; font-weight: 600; }
 .desk-top nav a[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .desk-top .desk-about { margin-left: auto; text-decoration: none; font-weight: 600; }
+.desk-top .desk-lang { text-decoration: none; font-weight: 600; border: 1px solid var(--d-line); border-radius: 4px; padding: 0 6px; }
 .desk-top .desk-about[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 
 .desk-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }

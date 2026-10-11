@@ -95,6 +95,14 @@ function headFor(meta, site, markdown, origin) {
     `<meta property="og:description" content="${esc(meta.description)}" />`,
     `<meta property="og:url" content="${esc(url)}" />`,
     ...(markdown ? [`<link rel="alternate" type="text/markdown" href="${esc(markdown)}" />`] : []),
+    // 언어 짝(0007 명세 1장). x-default는 한국어판이다.
+    ...(meta.alternates
+      ? [
+          `<link rel="alternate" hreflang="ko" href="${esc(site + meta.alternates.ko)}" />`,
+          `<link rel="alternate" hreflang="en" href="${esc(site + meta.alternates.en)}" />`,
+          `<link rel="alternate" hreflang="x-default" href="${esc(site + meta.alternates.ko)}" />`,
+        ]
+      : []),
   ].join('\n    ');
 }
 
@@ -137,7 +145,7 @@ async function main() {
     // 페이지가 그리는 데이터만 심는다. 홈과 기록은 전체, 상세는 그 카드 하나, 나머지 층은 빈 기록.
     // 전체 데이터는 하이드레이션 뒤에 다시 읽는다.
     // 홈과 기록 목록의 전체 스냅샷은 HTML 밖 해시 파일로 뺀다(0002 명세 1장).
-    const whole = path === '/' || path === '/records';
+    const whole = path === '/' || path === '/en' || path === '/records';
     const slice = whole ? ds : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
     const body = server.render(path, slice);
     const snapshot = whole ? server.snapshotRefScript(snapshotFile) : server.snapshotScript(slice);
@@ -150,6 +158,7 @@ async function main() {
         ? server.jsonLdScript(server.jsonLd(row ? server.toEvidence(row) : null, site, meta.description))
         : null;
     const html = template
+      .replace('<html lang="ko">', `<html lang="${meta.lang ?? 'ko'}">`)
       .replace(/<title>[^<]*<\/title>/, `<title>${esc(meta.title)}</title>`)
       .replace(
         '<!--app-head-->',
