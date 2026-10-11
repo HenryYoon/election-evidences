@@ -4,6 +4,7 @@ import type { Dataset } from './data';
 import { toEvidence, type Evidence } from '../types/evidence';
 import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from './status';
 import { SITE_PURPOSE } from './site';
+import { COPY, LANG_PAIRS, type Lang } from './i18n';
 
 export const SITE_NAME = '선거 증거 데스크';
 const DESCRIPTION_MAX = 150;
@@ -13,6 +14,25 @@ export interface PageMeta {
   title: string;
   description: string;
   lastmod: string | null; // ISO 8601. 사이트맵 lastmod
+  lang?: Lang; // 없으면 한국어
+  alternates?: { ko: string; en: string }; // 언어 짝이 있는 페이지(0007)
+}
+
+// 영어 페이지(0007 명세). description은 한국어판과 같은 150자 상한을 지킨다.
+const EN_META: Record<string, { title: string; description: string }> = {
+  '/en': {
+    title: COPY.en.siteName,
+    description: "Photos, videos, and documents from Korea's 2026 local elections, published with date, place, source, and status. Status is not a legal conclusion.",
+  },
+  '/en/about': {
+    title: `About | ${COPY.en.siteName}`,
+    description: 'What the Election Evidence Desk collects, how it checks material, what each status means, and what it does not do.',
+  },
+};
+
+function pairOf(path: string): { ko: string; en: string } | undefined {
+  const p = LANG_PAIRS.find(([ko, en]) => ko === path || en === path);
+  return p ? { ko: p[0], en: p[1] } : undefined;
 }
 
 // 2026-06-03T14:37:00+09:00 → "2026-06-03 14:37". 날짜만 있으면 날짜만.
@@ -70,8 +90,20 @@ const LAYER_META: Record<string, { title: string; description: string }> = {
 };
 
 export function pageMeta(path: string, ds: Dataset): PageMeta | null {
+  const en = EN_META[path];
+  if (en) {
+    return {
+      path,
+      title: en.title,
+      description: clip(en.description),
+      lastmod: path === '/en' ? latest(ds.evidence) : null,
+      lang: 'en',
+      alternates: pairOf(path),
+    };
+  }
   if (path === '/') {
     return {
+      alternates: pairOf(path),
       path,
       title: SITE_NAME,
       description: clip(
@@ -81,7 +113,15 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
     };
   }
   const layer = LAYER_META[path];
-  if (layer) return { path, title: `${layer.title} | ${SITE_NAME}`, description: clip(layer.description), lastmod: path === '/records' ? latest(ds.evidence) : null };
+  if (layer) {
+    return {
+      path,
+      title: `${layer.title} | ${SITE_NAME}`,
+      description: clip(layer.description),
+      lastmod: path === '/records' ? latest(ds.evidence) : null,
+      alternates: pairOf(path),
+    };
+  }
   const m = path.match(/^\/e\/([^/]+)$/);
   if (m) {
     const row = ds.evidence.find((e) => e.id === decodeURIComponent(m[1]));
@@ -99,5 +139,5 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
 
 // 빌드 때 HTML을 만드는 경로. /admin은 넣지 않는다.
 export function prerenderPaths(ds: Dataset): string[] {
-  return ['/', ...Object.keys(LAYER_META), ...ds.evidence.map((e) => `/e/${encodeURIComponent(e.id)}`)];
+  return ['/', ...Object.keys(LAYER_META), ...Object.keys(EN_META), ...ds.evidence.map((e) => `/e/${encodeURIComponent(e.id)}`)];
 }

@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact', '/en', '/en/about', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -111,6 +111,23 @@ try {
   if (!/문의를 받을 수 없습니다|문의를 받았습니다/.test(qMsg)) failures.push(`문의 전송 결과 안내 없음: ${qMsg}`);
   await qctx.close();
 
+  // 0007: 언어 토글은 짝 페이지로 간다. 영어 페이지는 lang="en"이다.
+  const lctx = await browser.newContext();
+  const l = await lctx.newPage();
+  await l.goto(`${B}/about`, { waitUntil: 'load' });
+  await l.getByRole('link', { name: 'EN', exact: true }).click();
+  await l.waitForURL(/\/en\/about$/);
+  if ((await l.locator('h1').innerText()) !== 'About') failures.push('영어 소개 H1이 다르다');
+  if ((await l.evaluate(() => document.documentElement.lang)) !== 'en') failures.push('영어 페이지 html lang이 en이 아니다');
+  await l.getByRole('link', { name: '한국어', exact: true }).click();
+  await l.waitForURL(/\/about$/);
+  if ((await l.evaluate(() => document.documentElement.lang)) !== 'ko') failures.push('한국어로 돌아와도 html lang이 ko가 아니다');
+  await l.goto(`${B}/records`, { waitUntil: 'load' });
+  await l.getByRole('link', { name: 'EN', exact: true }).click();
+  await l.waitForURL(/\/en$/);
+  if (!/Status is an investigative classification/.test(await l.locator('.desk-lead').innerText())) failures.push('영어 메인 첫 문단이 다르다');
+  await lctx.close();
+
   // 0004: 홈 목적 문장과 소개 페이지.
   const actx = await browser.newContext({ javaScriptEnabled: false });
   const a = await actx.newPage();
@@ -148,4 +165,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일·동의, 소개·처리방침·문의, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일·동의, 소개·처리방침·문의, 언어 토글, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);

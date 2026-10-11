@@ -1,7 +1,8 @@
+import { COPY, type Lang } from '../../lib/i18n';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, type EvidenceStatus } from '../../lib/status';
 
-export function StatusMark({ status }: { status: EvidenceStatus }) {
-  return <span className="status">{EVIDENCE_STATUS_LABEL[status]}</span>;
+export function StatusMark({ status, lang = 'ko' }: { status: EvidenceStatus; lang?: Lang }) {
+  return <span className="status">{lang === 'ko' ? EVIDENCE_STATUS_LABEL[status] : COPY[lang].statusLabel[status]}</span>;
 }
 
 // 페이지 범례. 문구는 src/lib/status.ts 상수만 읽는다.
