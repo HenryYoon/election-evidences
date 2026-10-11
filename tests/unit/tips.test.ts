@@ -1,6 +1,16 @@
 // 0001 플랜 5단계: 제보 폼 검사, 전송, 채택 초안.
 import { describe, expect, it, vi } from 'vitest';
-import { EMPTY_TIP, parseLinks, submitTip, validateTip } from '../../src/lib/tips';
+import {
+  EMPTY_TIP,
+  MAX_TIP_FILE_BYTES,
+  parseLinks,
+  submitTip,
+  tipFileExt,
+  tipUploadPath,
+  uploadTipFiles,
+  validateTip,
+  validateTipFiles,
+} from '../../src/lib/tips';
 import { tipToEvidenceDraft, type TipRow } from '../../src/lib/adminTips';
 
 const ok = { ...EMPTY_TIP, place: '종로구 투표소', body: '투표함 봉인지가 뜯겨 있었습니다.', consent: true };
@@ -33,7 +43,7 @@ describe('제보 전송', () => {
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
     const f = vi.fn(async () => new Response('"t1"'));
     const r = await submitTip({ ...ok, place: ' 종로구 ', links: 'https://a.example', name: ' ', contact: '010' }, f as unknown as typeof fetch);
-    expect(r).toEqual({ ok: true });
+    expect(r).toEqual({ ok: true, id: 't1' });
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://db.example/rest/v1/rpc/submit_tip');
     expect(JSON.parse(String(init.body))).toEqual({
@@ -46,6 +56,39 @@ describe('제보 전송', () => {
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
     const f = vi.fn(async () => new Response(JSON.stringify({ message: '잠시 뒤에 다시 보내 주세요' }), { status: 400 }));
     expect(await submitTip(ok, f as unknown as typeof fetch)).toEqual({ ok: false, message: '잠시 뒤에 다시 보내 주세요' });
+    vi.unstubAllEnvs();
+  });
+});
+
+describe('첨부 파일(0004 명세 3장)', () => {
+  const file = (name: string, type = '', size = 1000) => ({ name, type, size });
+
+  it('확장자를 정규화하고, 없으면 MIME 형식을 본다', () => {
+    expect(tipFileExt(file('IMG_0001.JPEG'))).toBe('jpg');
+    expect(tipFileExt(file('clip.MOV'))).toBe('mov');
+    expect(tipFileExt(file('photo', 'image/heic'))).toBe('heic');
+    expect(tipFileExt(file('page.html', 'text/html'))).toBeNull();
+    expect(tipFileExt(file('x.svg', 'image/svg+xml'))).toBeNull();
+  });
+  it('개수, 형식, 크기를 막는다', () => {
+    expect(validateTipFiles([file('a.jpg'), file('b.pdf')])).toEqual([]);
+    expect(validateTipFiles(Array.from({ length: 6 }, (_, i) => file(`${i}.jpg`)))).toHaveLength(1);
+    expect(validateTipFiles([file('a.exe')]).join()).toContain('a.exe');
+    expect(validateTipFiles([file('big.mp4', 'video/mp4', MAX_TIP_FILE_BYTES + 1)]).join()).toContain('링크');
+  });
+  it('저장 경로에 원래 파일 이름을 쓰지 않는다', () => {
+    expect(tipUploadPath('t1', 0, 'jpg')).toBe('t1/1.jpg');
+  });
+  it('비공개 버킷에 덮어쓰기 없이 올리고, 실패한 파일 이름을 돌려준다', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://db.example/');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
+    const f = vi.fn(async (url: string) => new Response('{}', { status: url.endsWith('/2.pdf') ? 400 : 200 }));
+    const files = [new File(['a'], '홍길동 사진.jpeg', { type: 'image/jpeg' }), new File(['b'], 'doc.pdf', { type: '' })];
+    expect(await uploadTipFiles('t1', files, f as unknown as typeof fetch)).toEqual(['doc.pdf']);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://db.example/storage/v1/object/tip-uploads/t1/1.jpg');
+    expect(init.headers).toMatchObject({ 'Content-Type': 'image/jpeg', 'x-upsert': 'false' });
+    expect((f.mock.calls[1] as unknown as [string, RequestInit])[1].headers).toMatchObject({ 'Content-Type': 'application/pdf' });
     vi.unstubAllEnvs();
   });
 });

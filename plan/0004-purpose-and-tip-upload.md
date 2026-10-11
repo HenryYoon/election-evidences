@@ -14,7 +14,7 @@
 ## 바뀌는 파일
 - DB: `scripts/migrations/0006_tip_uploads.sql`(새 파일), `scripts/supabase_schema.sql`, `tests/sql/supabase_stub.sql`, `tests/sql/upload_test.sql`(새 파일), `tests/sql/run.sh`
 - 프론트: `src/lib/site.ts`(새 파일), `src/pages/Home.tsx`, `src/pages/About.tsx`(새 파일), `src/components/layout/DeskLayout.tsx`, `src/App.tsx`, `src/lib/seo.ts`, `src/lib/llms.ts`, `src/lib/tips.ts`, `src/pages/TipList.tsx`, `src/pages/Admin.tsx`, `src/styles/desk.css`
-- 점검: `scripts/reach/check-live.mjs`(`/about`), `tests/unit/tips.test.ts`, `tests/e2e/smoke.mjs`
+- 점검: `scripts/check-dist.mjs`(홈의 `/about` 링크), `scripts/reach/check-live.mjs`(`/about`), `tests/unit/tips.test.ts`, `tests/e2e/smoke.mjs`
 
 ## 작업 순서
 1. 0006 마이그레이션과 SQL 검사.

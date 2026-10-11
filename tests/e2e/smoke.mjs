@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -64,6 +64,16 @@ try {
   await t.waitForTimeout(300);
   await t.getByRole('button', { name: '제보 보내기' }).click();
   if ((await t.locator('.tip-errors li').count()) < 3) failures.push('빈 제보 폼을 막지 않았다');
+  // 첨부 파일(0004): 받지 않는 형식은 막고, 빼면 풀린다.
+  const fileInput = t.locator('.tip-files input[type=file]');
+  await fileInput.setInputFiles([
+    { name: 'photo.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('jpg') },
+    { name: 'run.exe', mimeType: 'application/octet-stream', buffer: Buffer.from('exe') },
+  ]);
+  if ((await t.locator('.tip-file-list li').count()) !== 2) failures.push('고른 파일 목록이 보이지 않는다');
+  if (!/run\.exe/.test(await t.locator('.tip-errors').innerText().catch(() => ''))) failures.push('받지 않는 형식을 막지 않았다');
+  await t.getByRole('button', { name: 'run.exe 빼기' }).click();
+  if ((await t.locator('.tip-file-list li').count()) !== 1 || (await t.locator('.tip-errors').count())) failures.push('파일을 빼도 목록이나 오류가 그대로다');
   await t.getByLabel('장소 (필수)').fill('종로구 테스트 투표소');
   await t.getByLabel('무슨 일이 있었나요 (필수)').fill('테스트용 제보 본문입니다. 열 글자를 넘습니다.');
   await t.getByLabel('위 내용에 동의합니다').check();
@@ -72,6 +82,15 @@ try {
   const tipMsg = (await t.locator('.tip-errors, .tip-done').innerText().catch(() => '')).trim();
   if (!/제보를 받을 수 없습니다|제보를 받았습니다/.test(tipMsg)) failures.push(`제보 전송 결과 안내 없음: ${tipMsg}`);
   await tctx.close();
+
+  // 0004: 홈 목적 문장과 소개 페이지.
+  const actx = await browser.newContext({ javaScriptEnabled: false });
+  const a = await actx.newPage();
+  await a.goto(`${B}/`, { waitUntil: 'load' });
+  if (!/검증 상태를 붙여 공개한다/.test(await a.locator('.desk-lead').innerText())) failures.push('홈 첫 문단에 목적 문장이 없다');
+  await a.goto(`${B}/about`, { waitUntil: 'load' });
+  if ((await a.locator('h1').innerText()) !== '소개' || !(await a.getByRole('heading', { name: '정정과 문의' }).count())) failures.push('소개 페이지 내용이 없다');
+  await actx.close();
 
   // 0002: 인용 복사 버튼, 마크다운 원문, llms.txt.
   const cctx = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
@@ -101,4 +120,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일, 소개, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);

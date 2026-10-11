@@ -1,5 +1,6 @@
 // 제보 접수(0001 플랜 5단계). 브라우저가 Supabase RPC submit_tip을 anon 키로 부른다.
 // 검사 규칙은 DB 함수와 같다. DB가 최종 검사를 하고, 여기서는 먼저 알려 준다.
+// 첨부 파일(0004 명세 3장)은 접수 뒤 Storage REST로 비공개 버킷 tip-uploads에 올린다.
 export interface TipForm {
   place: string;
   occurred: string;
@@ -32,7 +33,66 @@ export function validateTip(f: TipForm): string[] {
   return errs;
 }
 
-export type SubmitResult = { ok: true } | { ok: false; message: string };
+export type SubmitResult = { ok: true; id?: string } | { ok: false; message: string };
+
+// ── 첨부 파일 ─────────────────────────────────────────────
+// 버킷 제한(scripts/migrations/0006_tip_uploads.sql)과 같은 값이다. DB 정책이 최종 검사를 한다.
+export const TIP_UPLOAD_BUCKET = 'tip-uploads';
+export const MAX_TIP_FILES = 5;
+export const MAX_TIP_FILE_BYTES = 20 * 1024 * 1024;
+const TYPE_BY_EXT: Record<string, string> = {
+  jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+  mp4: 'video/mp4', mov: 'video/quicktime', pdf: 'application/pdf',
+};
+const EXT_ALIAS: Record<string, string> = { jpeg: 'jpg', qt: 'mov' };
+const EXT_BY_TYPE: Record<string, string> = Object.fromEntries(Object.entries(TYPE_BY_EXT).map(([e, t]) => [t, e]));
+export const TIP_FILE_ACCEPT = Object.keys(TYPE_BY_EXT).map((e) => `.${e}`).concat('.jpeg', ...new Set(Object.values(TYPE_BY_EXT))).join(',');
+
+interface FileLike { name: string; type: string; size: number }
+
+// 저장할 확장자. 파일 이름의 확장자를 먼저 보고, 없으면 MIME 형식을 본다. 받지 않는 형식이면 null.
+export function tipFileExt(f: FileLike): string | null {
+  const raw = f.name.toLowerCase().match(/\.([a-z0-9]+)$/)?.[1] ?? '';
+  const ext = EXT_ALIAS[raw] ?? raw;
+  if (TYPE_BY_EXT[ext]) return ext;
+  return EXT_BY_TYPE[f.type] ?? null;
+}
+
+export function validateTipFiles(files: FileLike[]): string[] {
+  const errs: string[] = [];
+  if (files.length > MAX_TIP_FILES) errs.push(`파일은 ${MAX_TIP_FILES}개까지 올릴 수 있습니다.`);
+  const bad = files.filter((f) => !tipFileExt(f));
+  if (bad.length) errs.push(`받지 않는 형식입니다: ${bad.map((f) => f.name).join(', ')}. 사진(JPG, PNG, WebP, HEIC), 영상(MP4, MOV), PDF만 받습니다.`);
+  const big = files.filter((f) => f.size > MAX_TIP_FILE_BYTES);
+  if (big.length) errs.push(`20MB가 넘는 파일입니다: ${big.map((f) => f.name).join(', ')}. 큰 영상은 공유 링크로 보내 주세요.`);
+  return errs;
+}
+
+// 저장 경로: <제보 id>/<순번>.<확장자>. 원래 파일 이름은 쓰지 않는다(이름에 개인정보가 섞일 수 있다).
+export const tipUploadPath = (tipId: string, i: number, ext: string) => `${tipId}/${i + 1}.${ext}`;
+
+// 파일을 하나씩 올리고 실패한 파일 이름을 돌려준다.
+export async function uploadTipFiles(tipId: string, files: File[], fetchImpl: typeof fetch = fetch): Promise<string[]> {
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (!url || !key) return files.map((f) => f.name);
+  const failed: string[] = [];
+  for (const [i, f] of files.entries()) {
+    const ext = tipFileExt(f);
+    if (!ext) { failed.push(f.name); continue; }
+    try {
+      const res = await fetchImpl(`${url.replace(/\/$/, '')}/storage/v1/object/${TIP_UPLOAD_BUCKET}/${tipUploadPath(tipId, i, ext)}`, {
+        method: 'POST',
+        headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': TYPE_BY_EXT[ext], 'x-upsert': 'false' },
+        body: f,
+      });
+      if (!res.ok) failed.push(f.name);
+    } catch {
+      failed.push(f.name);
+    }
+  }
+  return failed;
+}
 
 export async function submitTip(f: TipForm, fetchImpl: typeof fetch = fetch): Promise<SubmitResult> {
   // 미끼 칸이 채워졌으면 봇으로 보고 성공처럼 끝낸다. 봇에게 거절 이유를 알려 주지 않는다.
@@ -53,7 +113,10 @@ export async function submitTip(f: TipForm, fetchImpl: typeof fetch = fetch): Pr
         p_contact: f.contact.trim() || null,
       }),
     });
-    if (res.ok) return { ok: true };
+    if (res.ok) {
+      const id = await res.json().catch(() => null);
+      return typeof id === 'string' ? { ok: true, id } : { ok: true };
+    }
     const err = await res.json().catch(() => ({}));
     // DB 함수가 낸 한국어 안내(검증, 비율 제한)는 그대로 보여 준다.
     return { ok: false, message: (err as { message?: string }).message || `보내지 못했습니다(${res.status}).` };

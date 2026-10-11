@@ -8,6 +8,7 @@ import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from '../lib/status';
 import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
 import SvgMap from '../components/map/SvgMap';
+import { HOW_STEPS, LAYER_LINES, SITE_PURPOSE } from '../lib/site';
 
 const dateOf = (e: Evidence) => (e.occurredAt ? e.occurredAt.slice(0, 10) : null);
 
@@ -43,9 +44,14 @@ export default function Home({ ds }: { ds: Dataset }) {
     <DeskLayout>
       <h1>{SITE_NAME}</h1>
       <p className="desk-lead">
-        {day ? `${day} 기록. ` : ''}
-        {STATUS_DISCLAIMER}
+        {SITE_PURPOSE} {STATUS_DISCLAIMER}
       </p>
+      <ol className="home-how">
+        {HOW_STEPS.map(([k, v]) => (
+          <li key={k}><strong>{k}</strong> {v}</li>
+        ))}
+      </ol>
+      <p className="home-about"><Link to="/about">이 사이트 소개</Link></p>
 
       <div className="home-grid">
         <section aria-label="기록 지도">
@@ -73,22 +79,26 @@ export default function Home({ ds }: { ds: Dataset }) {
       <div className="home-doors">
         <section>
           <h2>기록</h2>
-          <p>{newest ? `${formatOccurred(newest.occurredAt)} · ${newest.placeName || '장소 미상'}` : '아직 기록이 없다.'}</p>
+          <p>{LAYER_LINES.records}</p>
+          <p className="sub">{newest ? `${formatOccurred(newest.occurredAt)} · ${newest.placeName || '장소 미상'}` : '아직 기록이 없다.'}</p>
           <Link to="/records">기록 보기</Link>
         </section>
         <section>
           <h2>통계</h2>
-          <p>아직 공개한 분석이 없다.</p>
+          <p>{LAYER_LINES.stats}</p>
+          <p className="sub">아직 공개한 분석이 없다.</p>
           <Link to="/stats">통계 보기</Link>
         </section>
         <section>
           <h2>피드</h2>
-          <p>아직 수집한 소식이 없다.</p>
+          <p>{LAYER_LINES.feed}</p>
+          <p className="sub">아직 수집한 소식이 없다.</p>
           <Link to="/feed">피드 보기</Link>
         </section>
         <section>
           <h2>제보</h2>
-          <p>제보를 받는다. 운영진 검수 뒤 기록으로 공개한다.</p>
+          <p>{LAYER_LINES.tips}</p>
+          <p className="sub">사진·영상·문서 파일을 함께 보낼 수 있다.</p>
           <Link to="/tips">제보하기</Link>
         </section>
       </div>

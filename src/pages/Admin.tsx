@@ -11,6 +11,41 @@ import type { EvidenceSource } from '../types/evidence';
 import type { EvidenceStatus } from '../lib/status';
 
 const BUCKET = 'evidence-media';
+// 제보 첨부 파일 버킷(0004 명세 3장). 비공개라 서명 주소로만 연다.
+const TIP_BUCKET = 'tip-uploads';
+
+async function listTipFiles(tipId: string): Promise<string[]> {
+  const { data } = await supabase!.storage.from(TIP_BUCKET).list(tipId);
+  return (data ?? []).map((o) => `${tipId}/${o.name}`);
+}
+
+// 제보 첨부 파일. 이미지는 작게 보이고, 나머지는 링크로 연다.
+function TipFiles({ tipId }: { tipId: string }) {
+  const [files, setFiles] = useState<{ path: string; url: string }[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const paths = await listTipFiles(tipId);
+      if (!paths.length) { if (alive) setFiles([]); return; }
+      const { data } = await supabase!.storage.from(TIP_BUCKET).createSignedUrls(paths, 60 * 60);
+      if (alive) setFiles((data ?? []).flatMap((d) => (d.signedUrl ? [{ path: d.path ?? '', url: d.signedUrl }] : [])));
+    })();
+    return () => { alive = false; };
+  }, [tipId]);
+  if (!files) return <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>첨부 파일 확인 중…</div>;
+  if (!files.length) return <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>첨부 파일 없음</div>;
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {files.map((f) => (
+        <a key={f.path} href={f.url} target="_blank" rel="noreferrer noopener" style={{ fontSize: 13 }}>
+          {/\.(jpg|png|webp)$/.test(f.path)
+            ? <img src={f.url} alt={f.path} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 6 }} />
+            : `첨부 ${f.path.split('/').pop()}`}
+        </a>
+      ))}
+    </div>
+  );
+}
 const blank = (): Partial<EvidenceRow> => ({
   id: `ev-${Date.now().toString(36)}`, num: 0, title: '', description: '',
   evidence_type: '사진', published: true, region_wide: null, region_wide_label: null,
@@ -66,8 +101,14 @@ export default function Admin() {
     setAdopting(tip);
     setEditing(tipToEvidenceDraft(tip, `ev-${Date.now().toString(36)}`));
   };
-  const reject = (tip: TipRow) => {
-    if (!confirm('이 제보를 기각할까요? 이름과 연락처는 지워집니다.')) return;
+  const reject = async (tip: TipRow) => {
+    if (!confirm('이 제보를 기각할까요? 이름·연락처와 첨부 파일이 지워집니다.')) return;
+    // 첨부 파일을 먼저 지운다. Supabase는 SQL로 저장소 파일을 지우지 못하게 막는다.
+    const paths = await listTipFiles(tip.id);
+    if (paths.length) {
+      const { error } = await supabase!.storage.from(TIP_BUCKET).remove(paths);
+      if (error) { setErr(`첨부 파일을 지우지 못했다: ${error.message}`); return; }
+    }
     finishTip(tip, 'rejected', null);
   };
 
@@ -125,7 +166,7 @@ export default function Admin() {
         {tab === 'tips' && (
           <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-              새 제보 {tips.length}건. 채택하면 비공개 기록 초안이 열린다. 초안을 저장하거나 기각하면 이름·연락처가 지워진다.
+              새 제보 {tips.length}건. 채택하면 비공개 기록 초안이 열린다. 초안을 저장하거나 기각하면 이름·연락처가 지워진다. 기각하면 첨부 파일도 지워진다. 채택한 제보의 파일은 비식별화한 뒤 기록 사진으로 올린다.
             </div>
             {tips.length === 0 && <div style={rowStyle}>검수할 새 제보가 없다.</div>}
             {tips.map((t) => (
@@ -137,6 +178,7 @@ export default function Admin() {
                 {(t.links ?? []).map((l) => (
                   <a key={l} href={l} target="_blank" rel="noreferrer noopener" style={{ fontSize: 13 }}>{l}</a>
                 ))}
+                <TipFiles tipId={t.id} />
                 <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
                   연락처(비공개): {t.tip_contacts?.name || '이름 없음'} · {t.tip_contacts?.contact || '연락처 없음'}
                 </div>

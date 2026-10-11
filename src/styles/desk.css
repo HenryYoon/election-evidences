@@ -27,6 +27,8 @@
 .desk-top nav { display: flex; gap: 16px; flex-wrap: wrap; }
 .desk-top nav a { text-decoration: none; font-weight: 600; }
 .desk-top nav a[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
+.desk-top .desk-about { margin-left: auto; text-decoration: none; font-weight: 600; }
+.desk-top .desk-about[aria-current='page'] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 
 .desk-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
 .desk-lead { margin: 8px 0 0; }
@@ -37,6 +39,9 @@
 .rule { border: 0; border-top: 1px solid var(--d-line); margin: 24px 0; }
 
 /* 홈 */
+.home-how { margin: 12px 0 0; padding-left: 20px; font-size: 14px; }
+.home-how li { margin: 2px 0; }
+.home-about { margin: 8px 0 0; font-size: 14px; font-weight: 600; }
 .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 24px; }
 .home-latest { list-style: none; margin: 0; padding: 0; }
 .home-latest li { padding: 12px 0; border-top: 1px solid var(--d-line); }
@@ -46,6 +51,16 @@
 .home-doors section { padding: 16px; border-left: 1px solid var(--d-line); display: flex; flex-direction: column; gap: 6px; }
 .home-doors section:first-child { border-left: 0; }
 .home-doors p { margin: 0; font-size: 14px; }
+.home-doors p.sub { font-size: 13px; }
+
+/* 소개 */
+.about-section { margin-top: 28px; max-width: 720px; }
+.about-section p, .about-section ul { margin: 8px 0 0; }
+.about-dl { margin: 10px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; }
+.about-dl > div { display: contents; }
+.about-dl dt { font-weight: 700; }
+.about-dl dd { margin: 0; }
+@media (max-width: 760px) { .about-dl { grid-template-columns: minmax(0, 1fr); gap: 2px; } .about-dl dd { margin-bottom: 8px; } }
 
 /* 지도 */
 .svgmap { width: 100%; height: auto; display: block; }
@@ -133,4 +148,9 @@
 }
 .tip-submit:disabled { opacity: 0.6; cursor: default; }
 .tip-done { margin-top: 20px; padding: 12px; border: 1px solid var(--d-line); }
+.tip-warn { color: var(--d-status); font-size: 14px; }
+.tip-files { display: flex; flex-direction: column; gap: 6px; }
+.tip-file-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.tip-file-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--d-line); }
+.tip-file-list li span { overflow-wrap: anywhere; }
 @media (max-width: 760px) { .tip-row { grid-template-columns: minmax(0, 1fr); } }
