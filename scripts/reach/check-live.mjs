@@ -44,7 +44,7 @@ if (!details.length) fail('/sitemap.xml', '상세 주소가 없다');
 const recordBudget = 20 * KB + details.length * 0.6 * KB;
 const sample = [details[0], details[Math.floor(details.length / 2)], details.at(-1)].filter(Boolean);
 
-for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/stats', 40 * KB], ['/tips', 40 * KB], ['/about', 40 * KB], ...sample.map((p) => [p, 10 * KB])]) {
+for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/stats', 40 * KB], ['/tips', 40 * KB], ['/about', 40 * KB], ['/privacy', 40 * KB], ...sample.map((p) => [p, 10 * KB])]) {
   const res = await get(path);
   if (!res.ok) { fail(path, `HTTP ${res.status}`); continue; }
   const html = await res.text();

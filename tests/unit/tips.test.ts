@@ -13,14 +13,20 @@ import {
 } from '../../src/lib/tips';
 import { tipToEvidenceDraft, type TipRow } from '../../src/lib/adminTips';
 
-const ok = { ...EMPTY_TIP, place: '종로구 투표소', body: '투표함 봉인지가 뜯겨 있었습니다.', consent: true };
+const ok = { ...EMPTY_TIP, place: '종로구 투표소', body: '투표함 봉인지가 뜯겨 있었습니다.', consent: true, overseasConsent: true };
 
 describe('제보 폼 검사', () => {
   it('필수 항목이 있으면 통과한다', () => {
     expect(validateTip(ok)).toEqual([]);
   });
-  it('동의하지 않으면 막는다', () => {
-    expect(validateTip({ ...ok, consent: false }).join()).toContain('동의');
+  it('필수 동의 두 가지가 없으면 막는다', () => {
+    expect(validateTip({ ...ok, consent: false }).join()).toContain('수집·이용');
+    expect(validateTip({ ...ok, overseasConsent: false }).join()).toContain('국외 이전');
+  });
+  it('이름·연락처를 적었을 때만 선택 동의를 요구한다', () => {
+    expect(validateTip({ ...ok, contact: '010' }).join()).toContain('선택 항목');
+    expect(validateTip({ ...ok, contact: '010', optionalConsent: true })).toEqual([]);
+    expect(validateTip(ok)).toEqual([]);
   });
   it('본문이 짧으면 막는다', () => {
     expect(validateTip({ ...ok, body: '짧다' })).toHaveLength(1);
@@ -42,13 +48,22 @@ describe('제보 전송', () => {
     vi.stubEnv('VITE_SUPABASE_URL', 'https://db.example');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
     const f = vi.fn(async () => new Response('"t1"'));
-    const r = await submitTip({ ...ok, place: ' 종로구 ', links: 'https://a.example', name: ' ', contact: '010' }, f as unknown as typeof fetch);
+    const r = await submitTip({ ...ok, place: ' 종로구 ', links: 'https://a.example', name: ' ', contact: '010', optionalConsent: true }, f as unknown as typeof fetch);
     expect(r).toEqual({ ok: true, id: 't1' });
     const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe('https://db.example/rest/v1/rpc/submit_tip');
     expect(JSON.parse(String(init.body))).toEqual({
       p_place: '종로구', p_occurred: '', p_body: ok.body, p_links: ['https://a.example'], p_name: null, p_contact: '010',
     });
+    vi.unstubAllEnvs();
+  });
+  it('선택 동의가 없으면 이름·연락처를 보내지 않는다', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://db.example');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon');
+    const f = vi.fn(async () => new Response('"t1"'));
+    await submitTip({ ...ok, name: '자리표시', contact: '010' }, f as unknown as typeof fetch);
+    const body = JSON.parse(String((f.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    expect([body.p_name, body.p_contact]).toEqual([null, null]);
     vi.unstubAllEnvs();
   });
   it('DB가 거절하면 그 안내를 보여 준다', async () => {

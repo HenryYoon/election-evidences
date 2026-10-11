@@ -32,6 +32,7 @@
 
 .desk-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
 .desk-lead { margin: 8px 0 0; }
+.desk-foot { max-width: 1120px; margin: 0 auto; padding: 16px 20px 32px; border-top: 1px solid var(--d-line); display: flex; gap: 16px; font-size: 13px; }
 .desk-disclaimer { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
 
 .status { color: var(--d-status); font-weight: 700; white-space: nowrap; }
@@ -140,6 +141,11 @@
 .tip-consent { border: 1px solid var(--d-line); padding: 10px 12px; margin: 0; }
 .tip-consent legend { font-size: 14px; font-weight: 700; padding: 0 4px; }
 .tip-consent p { margin: 0 0 8px; font-size: 13px; }
+.tip-terms { margin: 0 0 8px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; font-size: 13px; }
+.tip-terms dt { font-weight: 700; }
+.tip-terms dd { margin: 0; }
+.tip-terms ul { margin: 0; padding-left: 18px; }
+@media (max-width: 760px) { .tip-terms { grid-template-columns: minmax(0, 1fr); } .tip-terms dd { margin-bottom: 4px; } }
 .tip-form .tip-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; }
 .tip-errors { margin: 0; padding-left: 20px; color: var(--d-status); font-size: 14px; }
 .tip-submit {

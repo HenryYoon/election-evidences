@@ -12,8 +12,10 @@ import {
   uploadTipFiles,
   validateTip,
   validateTipFiles,
+  hasContact,
   type TipForm,
 } from '../lib/tips';
+import { OPTIONAL_ITEMS, OPTIONAL_PURPOSE, REQUIRED_ITEMS, REQUIRED_PURPOSE, RETENTION, SUPABASE_PROCESSOR as SB } from '../lib/privacy';
 
 const sizeLabel = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
 
@@ -65,6 +67,7 @@ export default function TipList() {
         <li>사진·영상·문서 파일을 {MAX_TIP_FILES}개까지 함께 보낼 수 있습니다. 파일 하나는 20MB까지입니다. 더 큰 영상은 공유 링크(드라이브, 유튜브 등)로 보내 주세요.</li>
         <li>파일은 운영진만 봅니다. 공개할 때는 얼굴, 이름, 연락처를 가립니다.</li>
         <li>이름과 연락처는 적지 않아도 됩니다. 적으면 사실 확인 연락에만 쓰고, 검수가 끝나면 지웁니다.</li>
+        <li>정치적 견해 같은 민감정보와 다른 사람의 개인정보는 적지 마세요.</li>
         <li>공개된 기록은 <Link to="/records">기록</Link>에서 볼 수 있습니다.</li>
       </ul>
 
@@ -129,15 +132,48 @@ export default function TipList() {
           </label>
           <fieldset className="tip-consent">
             <legend>개인정보 수집·이용 동의 (필수)</legend>
-            <p>
-              수집 항목: 제보 내용, 첨부 파일(파일 속 촬영 위치·시각 정보 포함), 이름·연락처(적은 경우). 목적: 제보 사실 확인. 보관: 이름과
-              연락처는 검수가 끝나면 지웁니다. 채택하지 않은 제보의 첨부 파일은 검수가 끝나면 지웁니다. 제보 내용과 채택한 파일은 기록 정리에
-              씁니다. 파일은 얼굴, 이름, 연락처를 가린 뒤에만 공개합니다. 이름과 연락처는 어떤 화면에도 공개하지 않습니다.
-            </p>
+            <dl className="tip-terms">
+              <dt>목적</dt><dd>{REQUIRED_PURPOSE}</dd>
+              <dt>항목</dt><dd>{REQUIRED_ITEMS}</dd>
+              <dt>보유 기간</dt>
+              <dd>
+                <ul>{RETENTION.filter(([k]) => k !== '이름·연락처').map(([k, v]) => <li key={k}>{k}: {v}</li>)}</ul>
+              </dd>
+            </dl>
+            <p>동의를 거부할 수 있습니다. 거부하면 이 폼으로 제보할 수 없습니다.</p>
             <label className="tip-check">
-              <input type="checkbox" checked={f.consent} onChange={(e) => set('consent', e.target.checked)} /> 위 내용에 동의합니다
+              <input type="checkbox" checked={f.consent} onChange={(e) => set('consent', e.target.checked)} /> 개인정보 수집·이용에 동의합니다
             </label>
           </fieldset>
+          <fieldset className="tip-consent">
+            <legend>개인정보 국외 이전 동의 (필수)</legend>
+            <dl className="tip-terms">
+              <dt>이전받는 자</dt><dd>{SB.name} ({SB.contact})</dd>
+              <dt>이전 국가</dt><dd>{SB.country}</dd>
+              <dt>이전 항목</dt><dd>{SB.items}</dd>
+              <dt>시기와 방법</dt><dd>{SB.when}</dd>
+              <dt>목적과 기간</dt><dd>{SB.task}. 기간은 위 보유 기간과 같습니다.</dd>
+            </dl>
+            <p>동의를 거부할 수 있습니다. 거부하려면 체크하지 않으면 됩니다. 거부하면 이 폼으로 제보할 수 없습니다.</p>
+            <label className="tip-check">
+              <input type="checkbox" checked={f.overseasConsent} onChange={(e) => set('overseasConsent', e.target.checked)} /> 개인정보 국외 이전에 동의합니다
+            </label>
+          </fieldset>
+          {hasContact(f) && (
+            <fieldset className="tip-consent">
+              <legend>선택 항목 수집·이용 동의 (이름·연락처를 적은 경우)</legend>
+              <dl className="tip-terms">
+                <dt>목적</dt><dd>{OPTIONAL_PURPOSE}</dd>
+                <dt>항목</dt><dd>{OPTIONAL_ITEMS}</dd>
+                <dt>보유 기간</dt><dd>{RETENTION[0][1]}</dd>
+              </dl>
+              <p>동의하지 않아도 제보할 수 있습니다. 동의하지 않으려면 이름과 연락처 칸을 비워 주세요.</p>
+              <label className="tip-check">
+                <input type="checkbox" checked={f.optionalConsent} onChange={(e) => set('optionalConsent', e.target.checked)} /> 이름·연락처 수집·이용에 동의합니다
+              </label>
+            </fieldset>
+          )}
+          <p className="sub">자세한 내용은 <Link to="/privacy">개인정보 처리방침</Link>에 있습니다.</p>
           {errs.length > 0 && (
             <ul className="tip-errors" role="alert">
               {errs.map((m) => <li key={m}>{m}</li>)}

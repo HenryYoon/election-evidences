@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -76,7 +76,14 @@ try {
   if ((await t.locator('.tip-file-list li').count()) !== 1 || (await t.locator('.tip-errors').count())) failures.push('파일을 빼도 목록이나 오류가 그대로다');
   await t.getByLabel('장소 (필수)').fill('종로구 테스트 투표소');
   await t.getByLabel('무슨 일이 있었나요 (필수)').fill('테스트용 제보 본문입니다. 열 글자를 넘습니다.');
-  await t.getByLabel('위 내용에 동의합니다').check();
+  await t.getByLabel('개인정보 수집·이용에 동의합니다').check();
+  await t.getByLabel('개인정보 국외 이전에 동의합니다').check();
+  // 0005: 연락처를 적으면 선택 동의가 나타나고, 동의하지 않으면 막는다.
+  await t.getByLabel('연락처 (선택)').fill('010-0000-0000');
+  await t.getByRole('button', { name: '제보 보내기' }).click();
+  if (!/선택 항목/.test(await t.locator('.tip-errors').innerText().catch(() => ''))) failures.push('연락처를 적었는데 선택 동의를 묻지 않았다');
+  await t.getByLabel('연락처 (선택)').fill('');
+  if (await t.getByLabel('이름·연락처 수집·이용에 동의합니다').count()) failures.push('연락처를 비워도 선택 동의가 남아 있다');
   await t.getByRole('button', { name: '제보 보내기' }).click();
   await t.waitForTimeout(300);
   const tipMsg = (await t.locator('.tip-errors, .tip-done').innerText().catch(() => '')).trim();
@@ -120,4 +127,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일, 소개, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일·동의, 소개·처리방침, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
