@@ -85,7 +85,8 @@ export default function About() {
       <section className="about-section">
         <h2>정정과 문의</h2>
         <p>
-          기록에 틀린 내용이 있으면 <Link to="/tips">제보</Link>로 알려 주세요. 해당 기록의 주소와 틀린 부분을 함께 적어 주세요. 운영진이 확인한 뒤 기록을 고칩니다.
+          기록에 틀린 내용이 있으면 <Link to="/contact">문의</Link>에서 "정정 요청"을 골라 알려 주세요. 해당 기록의 주소와 틀린 부분을 함께 적어 주세요. 운영진이
+          확인한 뒤 기록을 고칩니다. 건의와 그 밖의 문의도 같은 곳에서 받습니다.
         </p>
       </section>
     </DeskLayout>

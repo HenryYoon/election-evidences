@@ -132,7 +132,7 @@
 .tip-notes { margin: 12px 0 0; padding-left: 20px; font-size: 14px; }
 .tip-form { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; max-width: 640px; }
 .tip-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
-.tip-form input, .tip-form textarea {
+.tip-form input, .tip-form textarea, .tip-form select {
   font: inherit; font-weight: 400; color: var(--d-ink); background: var(--d-bg);
   border: 1px solid var(--d-line); border-radius: 4px; padding: 8px 10px;
 }

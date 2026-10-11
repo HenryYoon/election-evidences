@@ -11,6 +11,12 @@ export const RETENTION: readonly (readonly [string, string])[] = [
   ['검수하지 않은 제보의 원문·첨부 파일', '접수 후 1년'],
 ];
 
+// 문의(0006 명세 3장).
+export const INQUIRY_RETENTION: readonly (readonly [string, string])[] = [
+  ['문의 내용과 회신 이메일', '접수 후 1년. 운영자 메일함의 사본도 같은 기간 뒤 지운다'],
+  ['접속 IP 변환값', '접수 후 1일'],
+];
+
 export interface Processor {
   name: string;
   country: string;
@@ -29,6 +35,24 @@ export const SUPABASE_PROCESSOR: Processor = {
   when: '제보를 보낼 때 암호화된 네트워크(HTTPS)로 전송',
 };
 
+export const SUPABASE_INQUIRY: Processor = {
+  name: SUPABASE_PROCESSOR.name,
+  country: SUPABASE_PROCESSOR.country,
+  contact: SUPABASE_PROCESSOR.contact,
+  when: '문의를 보낼 때 암호화된 네트워크(HTTPS)로 전송',
+  task: '문의 저장',
+  items: '문의 종류, 내용, 접속 IP 변환값, 적은 경우 회신 이메일',
+};
+
+export const RESEND_PROCESSOR: Processor = {
+  name: 'Resend(Plus Five Five, Inc.)',
+  country: '미국',
+  contact: 'privacy@resend.com',
+  task: '문의를 운영자 메일로 전달',
+  items: '문의 종류, 내용, 적은 경우 회신 이메일',
+  when: '문의를 보낼 때 암호화된 네트워크(HTTPS)로 전송',
+};
+
 export const VERCEL_PROCESSOR: Processor = {
   name: 'Vercel',
   country: '미국',
@@ -42,3 +66,8 @@ export const REQUIRED_ITEMS = '장소, 시각, 내용, 링크, 첨부 파일(파
 export const REQUIRED_PURPOSE = '제보 사실 확인과 검수, 채택한 제보로 기록 작성, 같은 사람의 반복 전송 제한';
 export const OPTIONAL_ITEMS = '이름, 연락처(전화, 이메일, 계정)';
 export const OPTIONAL_PURPOSE = '제보 내용을 확인하기 위한 연락';
+
+export const INQUIRY_ITEMS = '문의 종류, 내용, 접속 IP 변환값';
+export const INQUIRY_PURPOSE = '문의·건의·정정·개인정보 요청 처리, 같은 사람의 반복 전송 제한';
+export const INQUIRY_OPTIONAL_ITEMS = '회신 이메일';
+export const INQUIRY_OPTIONAL_PURPOSE = '문의에 대한 답장';

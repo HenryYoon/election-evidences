@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -90,6 +90,27 @@ try {
   if (!/제보를 받을 수 없습니다|제보를 받았습니다/.test(tipMsg)) failures.push(`제보 전송 결과 안내 없음: ${tipMsg}`);
   await tctx.close();
 
+  // 0006: 문의 폼. 빈 폼은 막고, 회신 이메일을 적으면 선택 동의를 묻는다.
+  const qctx = await browser.newContext();
+  const cq = await qctx.newPage();
+  await cq.goto(`${B}/contact`, { waitUntil: 'load' });
+  await cq.waitForTimeout(300);
+  await cq.getByRole('button', { name: '문의 보내기' }).click();
+  if ((await cq.locator('.tip-errors li').count()) < 4) failures.push('빈 문의 폼을 막지 않았다');
+  await cq.getByLabel('종류 (필수)').selectOption('correction');
+  await cq.getByLabel('내용 (필수)').fill('테스트용 정정 요청입니다. 열 글자를 넘습니다.');
+  await cq.getByLabel('개인정보 수집·이용에 동의합니다').check();
+  await cq.getByLabel('개인정보 국외 이전에 동의합니다').check();
+  await cq.getByLabel('회신 이메일 (선택)').fill('reader@example.com');
+  await cq.getByRole('button', { name: '문의 보내기' }).click();
+  if (!/선택 항목/.test(await cq.locator('.tip-errors').innerText().catch(() => ''))) failures.push('회신 이메일을 적었는데 선택 동의를 묻지 않았다');
+  await cq.getByLabel('회신 이메일 수집·이용에 동의합니다').check();
+  await cq.getByRole('button', { name: '문의 보내기' }).click();
+  await cq.waitForTimeout(300);
+  const qMsg = (await cq.locator('.tip-errors, .tip-done').innerText().catch(() => '')).trim();
+  if (!/문의를 받을 수 없습니다|문의를 받았습니다/.test(qMsg)) failures.push(`문의 전송 결과 안내 없음: ${qMsg}`);
+  await qctx.close();
+
   // 0004: 홈 목적 문장과 소개 페이지.
   const actx = await browser.newContext({ javaScriptEnabled: false });
   const a = await actx.newPage();
@@ -127,4 +148,4 @@ if (failures.length) {
   console.error(`e2e 실패 ${failures.length}건\n- ${failures.join('\n- ')}`);
   process.exit(1);
 }
-console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일·동의, 소개·처리방침, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);
+console.log(`e2e 통과: ${PATHS.length}개 경로 × 2개 폭, JS 없는 상세, 지도 미리보기 카드, 제보 폼·첨부 파일·동의, 소개·처리방침·문의, 인용 복사·마크다운·llms.txt, 클라이언트 내비게이션`);

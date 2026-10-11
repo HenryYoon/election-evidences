@@ -7,6 +7,10 @@ import { storagePath, useSignedMap } from '../lib/media';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, MANUAL_ONLY_STATUSES, VERIFICATION_FIELDS } from '../lib/status';
 import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
 import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
+import { INQUIRY_KINDS } from '../lib/contact';
+
+interface InquiryRow { id: string; kind: string; body: string; reply_to: string | null; handled: boolean; created_at: string }
+const KIND_LABEL: Record<string, string> = Object.fromEntries(INQUIRY_KINDS);
 import type { EvidenceSource } from '../types/evidence';
 import type { EvidenceStatus } from '../lib/status';
 
@@ -64,7 +68,8 @@ export default function Admin() {
   const [editing, setEditing] = useState<Partial<EvidenceRow> | null>(null);
   const [err, setErr] = useState('');
   const [rebuild, setRebuild] = useState('');
-  const [tab, setTab] = useState<'records' | 'tips'>('records');
+  const [tab, setTab] = useState<'records' | 'tips' | 'inquiries'>('records');
+  const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [tips, setTips] = useState<TipRow[]>([]);
   // 채택 중인 제보. 기록 초안을 저장하면 검수를 마치고 연락처를 지운다.
   const [adopting, setAdopting] = useState<TipRow | null>(null);
@@ -90,7 +95,20 @@ export default function Admin() {
       .order('created_at', { ascending: false });
     if (error) setErr(error.message); else setTips((data as unknown as TipRow[]) || []);
   };
-  useEffect(() => { if (session) { load(); loadTips(); } }, [session]);
+  const loadInquiries = async () => {
+    if (!supabase) return;
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('id, kind, body, reply_to, handled, created_at')
+      .order('created_at', { ascending: false });
+    if (error) setErr(error.message); else setInquiries((data as InquiryRow[]) || []);
+  };
+  const markHandled = async (q: InquiryRow) => {
+    const { error } = await supabase!.from('inquiries').update({ handled: !q.handled }).eq('id', q.id);
+    if (error) setErr(error.message);
+    loadInquiries();
+  };
+  useEffect(() => { if (session) { load(); loadTips(); loadInquiries(); } }, [session]);
 
   const finishTip = async (tip: TipRow, review: 'accepted' | 'rejected', evidenceId: string | null) => {
     const { error } = await supabase!.rpc('finish_tip_review', { p_tip: tip.id, p_review: review, p_evidence: evidenceId });
@@ -162,6 +180,7 @@ export default function Admin() {
         <div style={{ maxWidth: 1000, margin: '0 auto 12px', display: 'flex', gap: 8 }}>
           <button className="chip" onClick={() => setTab('records')} style={tab === 'records' ? activeTab : undefined}>기록</button>
           <button className="chip" onClick={() => setTab('tips')} style={tab === 'tips' ? activeTab : undefined}>제보 검수 ({tips.length})</button>
+          <button className="chip" onClick={() => setTab('inquiries')} style={tab === 'inquiries' ? activeTab : undefined}>문의 ({inquiries.filter((q) => !q.handled).length})</button>
         </div>
         {tab === 'tips' && (
           <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -186,6 +205,24 @@ export default function Admin() {
                   <button className="chip" onClick={() => adopt(t)}>채택 → 기록 초안</button>
                   <button className="chip" onClick={() => reject(t)} style={{ color: '#b4533a' }}>기각</button>
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {tab === 'inquiries' && (
+          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
+              문의는 접수 후 1년이 지나면 자동으로 지워진다. 메일함의 사본도 같은 기간 뒤 지운다.
+            </div>
+            {inquiries.length === 0 && <div style={rowStyle}>문의가 없다.</div>}
+            {inquiries.map((q) => (
+              <div key={q.id} style={{ ...rowStyle, alignItems: 'flex-start', flexDirection: 'column', opacity: q.handled ? 0.6 : 1 }}>
+                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                  {new Date(q.created_at).toLocaleString('ko-KR')} · {KIND_LABEL[q.kind] ?? q.kind}
+                  {q.reply_to ? ` · 회신 ${q.reply_to}` : ' · 회신 이메일 없음'}
+                </div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>{q.body}</div>
+                <button className="chip" onClick={() => markHandled(q)}>{q.handled ? '처리 취소' : '처리 완료'}</button>
               </div>
             ))}
           </div>

@@ -11,6 +11,7 @@ import FeedList from './pages/FeedList';
 import TipList from './pages/TipList';
 import About from './pages/About';
 import Privacy from './pages/Privacy';
+import Contact from './pages/Contact';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
 // 관리자 화면(Supabase 클라이언트 포함)은 공개 페이지 번들에서 뺀다. /admin은 사전 렌더링하지 않는다.
 const Admin = lazy(() => import('./pages/Admin'));
@@ -41,6 +42,7 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
       <Route path="/tips" element={<TipList />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/contact" element={<Contact />} />
     </Routes>
   );
 }
