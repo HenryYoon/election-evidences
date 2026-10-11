@@ -4,6 +4,7 @@
 import type { Dataset } from './data';
 import { toEvidence, compareLedger, type Evidence } from '../types/evidence';
 import { leadSentence, SITE_NAME } from './seo';
+import { SITE_PURPOSE } from './site';
 import {
   EVIDENCE_STATUSES,
   EVIDENCE_STATUS_LABEL,
@@ -28,7 +29,7 @@ export function llmsTxt(ds: Dataset, site: string): string {
   const lines = [
     `# ${SITE_NAME}`,
     '',
-    '> 2026 지방선거 사전투표, 본투표, 개표 과정에서 나온 사진·영상·문서를 날짜, 장소, 상태, 출처와 함께 정리한 증거 기록이다.',
+    `> ${SITE_PURPOSE}`,
     '',
     `${STATUS_DISCLAIMER} 각 기록의 상태는 다음 넷 중 하나다.`,
     '',
@@ -39,6 +40,7 @@ export function llmsTxt(ds: Dataset, site: string): string {
     `- [기록](${site}/records): 사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드.`,
     `- [통계](${site}/stats): 기록과 공식 표를 계산한 분석. 피드와 미확인 제보는 모수에 넣지 않는다.`,
     `- [제보](${site}/tips): 제보 접수 폼. 제보는 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다.`,
+    `- [소개](${site}/about): 목적, 상태의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법.`,
     '- 층끼리 건수를 합치지 않는다. 층마다 기록의 성격이 다르다.',
     '',
     `## 최근 기록 ${LLMS_RECENT}건`,

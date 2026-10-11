@@ -4,6 +4,11 @@ do $$ begin create role authenticated; exception when duplicate_object then null
 create schema if not exists storage;
 create table if not exists storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
 create table if not exists storage.objects (id serial primary key, bucket_id text);
+alter table storage.objects add column if not exists name text;
+alter table storage.objects add column if not exists metadata jsonb;
+alter table storage.objects add column if not exists created_at timestamptz not null default now();
+grant select, insert, update, delete on storage.objects to anon, authenticated;
+grant usage on sequence storage.objects_id_seq to anon, authenticated;
 alter table storage.objects enable row level security;
 create schema if not exists auth;
 create table if not exists auth.users (id uuid primary key);

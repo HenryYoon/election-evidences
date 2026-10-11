@@ -20,6 +20,7 @@ export default function DeskLayout({ children }: { children: ReactNode }) {
             <NavLink key={l.to} to={l.to}>{l.label}</NavLink>
           ))}
         </nav>
+        <NavLink to="/about" className="desk-about">소개</NavLink>
       </header>
       <main className="desk-main">{children}</main>
     </div>

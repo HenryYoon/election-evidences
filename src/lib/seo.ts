@@ -3,6 +3,7 @@
 import type { Dataset } from './data';
 import { toEvidence, type Evidence } from '../types/evidence';
 import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from './status';
+import { SITE_PURPOSE } from './site';
 
 export const SITE_NAME = '선거 증거 데스크';
 const DESCRIPTION_MAX = 150;
@@ -42,7 +43,7 @@ function latest(rows: { updated_at?: string }[]): string | null {
   return best;
 }
 
-// 층 목록 페이지. 키워드를 반복하지 않고 층의 성격만 적는다.
+// 층 목록 페이지와 소개. 키워드를 반복하지 않고 페이지의 성격만 적는다.
 const LAYER_META: Record<string, { title: string; description: string }> = {
   '/records': {
     title: '기록',
@@ -53,7 +54,11 @@ const LAYER_META: Record<string, { title: string; description: string }> = {
     description: `기록과 공식 표를 계산한 분석 목록. 피드, 미확인 제보, 좌표 없는 카드는 모수와 지도에 넣지 않는다. ${STATUS_DISCLAIMER}`,
   },
   '/feed': { title: '피드', description: '외부 발신처의 소식 목록. 피드는 증거가 아니며, 기록 카드가 된 소식에만 기록 링크를 단다.' },
-  '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받는다. 제보는 바로 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다. 이름과 연락처는 공개하지 않는다.' },
+  '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받는다. 사진·영상·문서 파일을 함께 보낼 수 있다. 제보는 바로 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다. 이름과 연락처는 공개하지 않는다.' },
+  '/about': {
+    title: '소개',
+    description: `${SITE_PURPOSE} 상태 네 가지의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법. ${STATUS_DISCLAIMER}`,
+  },
 };
 
 export function pageMeta(path: string, ds: Dataset): PageMeta | null {
@@ -62,7 +67,7 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
       path,
       title: SITE_NAME,
       description: clip(
-        `${SITE_NAME}. 2026 지방선거 사전투표, 본투표, 개표 과정의 사진·영상·문서를 날짜, 장소, 상태, 출처와 함께 정리한 증거 기록. ${STATUS_DISCLAIMER}`
+        `${SITE_NAME}. ${SITE_PURPOSE} ${STATUS_DISCLAIMER}`
       ),
       lastmod: latest(ds.evidence),
     };

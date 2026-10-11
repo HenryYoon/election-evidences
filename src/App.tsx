@@ -9,6 +9,7 @@ import Ledger from './pages/Ledger';
 import StatsList from './pages/StatsList';
 import FeedList from './pages/FeedList';
 import TipList from './pages/TipList';
+import About from './pages/About';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
 // 관리자 화면(Supabase 클라이언트 포함)은 공개 페이지 번들에서 뺀다. /admin은 사전 렌더링하지 않는다.
 const Admin = lazy(() => import('./pages/Admin'));
@@ -37,6 +38,7 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
       <Route path="/stats" element={<StatsList />} />
       <Route path="/feed" element={<FeedList />} />
       <Route path="/tips" element={<TipList />} />
+      <Route path="/about" element={<About />} />
     </Routes>
   );
 }
