@@ -80,10 +80,11 @@ values ('evidence-media', 'evidence-media', true)
 on conflict (id) do nothing;
 
 -- 혹시 비공개로 바뀌었으면 공개로 복구 + 업로드 제한(하드닝)
+-- 운영 버킷에는 영상(mp4)과 음성(mp4, mpeg)도 있다. 운영 설정(50MB)과 맞춘다(0009).
 update storage.buckets
   set public = true,
-      file_size_limit = 10485760,                       -- 10MB
-      allowed_mime_types = array['image/jpeg','image/png','image/webp']
+      file_size_limit = 52428800,                       -- 50MB
+      allowed_mime_types = array['image/jpeg','image/png','image/webp','video/mp4','audio/mp4','audio/mpeg']
   where id = 'evidence-media';
 
 drop policy if exists media_auth_read on storage.objects;

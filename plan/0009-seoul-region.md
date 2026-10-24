@@ -15,6 +15,11 @@
 | 8 | 국외 이전 동의 삭제, 처리방침 수정 PR | Claude |
 | 9 | 확인, 1주일 뒤 옛 프로젝트 삭제 | Claude + 운영자 |
 
+## 진행 기록
+- 2026-10-25: 첫 머지(#23) 때 연동의 "Deploy to production"과 운영 브랜치가 꺼져 있어 적용되지 않았다. 운영자가 켰다.
+- 2026-10-25: 운영 버킷 `evidence-media`의 제한(50MB, 영상·음성 허용)이 스키마 파일(10MB, 이미지만)과 달랐다. 운영 값에 맞추는 마이그레이션 `20261025010000_media_bucket_limits.sql`을 더하고 스키마 파일도 고쳤다.
+- 저장소 복사: `scripts/migrate/copy-storage.mjs`, `.github/workflows/copy-storage.yml`(수동 실행). 이전이 끝나면 지운다.
+
 ## 위험
 | 위험 | 대응 |
 |---|---|
