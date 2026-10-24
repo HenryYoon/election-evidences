@@ -48,8 +48,8 @@ describe('기록 마크다운', () => {
     expect(lead).toBe(leadSentence(ev));
   });
 
-  it('좌표는 위도, 경도 순으로 쓴다', () => {
-    expect(md).toContain(`${ev.lat!.toFixed(5)}, ${ev.lng!.toFixed(5)} (위도, 경도)`);
+  it('좌표를 쓰지 않는다(0008 명세 3장)', () => {
+    expect(md).not.toMatch(/좌표|위도|경도/);
   });
 
   it('마크다운 문법 문자를 이스케이프한다', () => {

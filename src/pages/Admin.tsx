@@ -167,7 +167,7 @@ export default function Admin() {
   return (
     <div className="app" style={{ background: 'var(--bg)' }}>
       <header className="appbar" style={{ justifyContent: 'space-between' }}>
-        <span className="brand">선거 증거 데스크 · 관리자</span>
+        <span className="brand">선진국 · 관리자</span>
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="chip" onClick={() => setEditing(blank())}>+ 새 기록</button>
           <button className="chip" onClick={requestRebuild} title="사전 렌더링 HTML을 최신 DB로 다시 만든다">공개 HTML 갱신</button>

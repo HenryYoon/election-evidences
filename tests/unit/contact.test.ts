@@ -62,7 +62,7 @@ describe('메일 발송 서버 함수', () => {
     const [u, init] = f.mock.calls[1] as unknown as [string, RequestInit];
     expect(u).toBe('https://api.resend.com/emails');
     const mail = JSON.parse(String(init.body));
-    expect(mail).toMatchObject({ to: ['op@example.com'], reply_to: 'a@b.kr', subject: '[선거 증거 데스크] 정정 요청' });
+    expect(mail).toMatchObject({ to: ['op@example.com'], reply_to: 'a@b.kr', subject: '[선진국] 정정 요청' });
   });
   it('이미 보냈거나 없는 문의는 메일을 보내지 않는다', async () => {
     const f = vi.fn(async () => new Response('[]'));

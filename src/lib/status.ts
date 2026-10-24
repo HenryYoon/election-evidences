@@ -43,18 +43,6 @@ export const TIP_STATUS_LEGEND: Record<TipStatus, string> = {
   unverified: '시민이 보낸 제보다. 운영자가 내용을 확인하지 않았다.',
 };
 
-// ── 통계 제외 항목 ────────────────────────────────────────
-// 통계 모수와 지도에 넣지 않는 기록. 통계 범례에 그대로 적는다.
-export const EXCLUDED_KINDS = ['feed', 'unverified_tip', 'no_coordinates', 'allegation_only'] as const;
-export type ExcludedKind = (typeof EXCLUDED_KINDS)[number];
-
-export const EXCLUDED_LABEL: Record<ExcludedKind, string> = {
-  feed: '피드',
-  unverified_tip: '미확인 제보',
-  no_coordinates: '좌표 없는 카드',
-  allegation_only: '주장만 있는 카드',
-};
-
 // 검증 네 줄. 상세 화면과 마크다운이 같은 순서와 이름을 쓴다.
 export const VERIFICATION_FIELDS = [
   ['seen', '보인 것'],

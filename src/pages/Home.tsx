@@ -1,4 +1,4 @@
-// 홈은 입구다. 콘텐츠를 펼치지 않고, 건수를 노출하지 않는다(명세 5장 홈).
+// 홈(0008 명세 2장): 이름, 수집·검증 건수, 면책 한 줄, 지도, 최근 증거, 입구 링크 두 개.
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
@@ -8,6 +8,7 @@ import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
 import SvgMap from '../components/map/SvgMap';
 import { COPY, langPath, type Lang } from '../lib/i18n';
+import { MANUAL_ONLY_STATUSES } from '../lib/status';
 
 const dateOf = (e: Evidence) => (e.occurredAt ? e.occurredAt.slice(0, 10) : null);
 
@@ -18,7 +19,6 @@ function timeOf(e: Evidence): string {
 
 export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) {
   const t = COPY[lang];
-  const ko = t.koOnly;
   const ledger = useMemo(() => ds.evidence.map(toEvidence).sort(compareLedger), [ds]);
   // "오늘 기록"은 기록에서 가장 최근 발생일이다. 빌드 날짜가 아니다.
   const day = ledger.map(dateOf).find(Boolean) ?? null;
@@ -39,20 +39,21 @@ export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) 
         status: t.statusLabel[e.status],
       },
     }));
-  const newest = ledger[0];
+
+  // 검증 건수: 상태가 문서 확인 또는 영상 확인인 증거(0008 플랜). 0건이어도 그대로 보여 준다.
+  const verified = ledger.filter((e) => (MANUAL_ONLY_STATUSES as readonly string[]).includes(e.status)).length;
 
   return (
     <DeskLayout lang={lang}>
-      <h1>{t.siteName}</h1>
-      <p className="desk-lead">
-        {t.purpose} {t.disclaimer}
-      </p>
-      <ol className="home-how">
-        {t.how.map(([k, v]) => (
-          <li key={k}><strong>{k}</strong> {v}</li>
-        ))}
-      </ol>
-      <p className="home-about"><Link to={langPath(lang, '/about')}>{t.home.aboutLink}</Link></p>
+      <header className="home-hero">
+        <h1>{t.siteName}</h1>
+        <p className="home-tagline">{t.tagline}</p>
+        <p className="home-counts">
+          <span>{t.home.collected(ledger.length)}</span>
+          <span>{t.home.verified(verified)}</span>
+        </p>
+        <p className="home-disclaimer">{t.disclaimer}</p>
+      </header>
       {t.home.translationNote && <p className="sub">{t.home.translationNote}</p>}
 
       <div className="home-grid">
@@ -74,36 +75,16 @@ export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) 
                 <div className="meta">{t.home.source} <span lang="ko">{sourceLabel(e)}</span></div>
               </li>
             ))}
+            {!latest.length && <li>{t.home.noRecords}</li>}
           </ul>
         </section>
       </div>
 
-      <div className="home-doors">
-        <section>
-          <h2>{t.nav.records}</h2>
-          <p>{t.layers.records}</p>
-          <p className="sub">{newest ? `${formatOccurred(newest.occurredAt)} · ${newest.placeName || t.home.placeUnknown}` : t.home.noRecords}</p>
-          <Link to="/records">{t.home.view.records}{ko}</Link>
-        </section>
-        <section>
-          <h2>{t.nav.stats}</h2>
-          <p>{t.layers.stats}</p>
-          <p className="sub">{t.home.noStats}</p>
-          <Link to="/stats">{t.home.view.stats}{ko}</Link>
-        </section>
-        <section>
-          <h2>{t.nav.feed}</h2>
-          <p>{t.layers.feed}</p>
-          <p className="sub">{t.home.noFeed}</p>
-          <Link to="/feed">{t.home.view.feed}{ko}</Link>
-        </section>
-        <section>
-          <h2>{t.nav.tips}</h2>
-          <p>{t.layers.tips}</p>
-          <p className="sub">{t.home.tipsNote}</p>
-          <Link to="/tips">{t.home.view.tips}{ko}</Link>
-        </section>
-      </div>
+      <p className="home-doors">
+        <Link to="/records">{t.home.view.records}{t.koOnly}</Link>
+        <Link to="/tips">{t.home.view.tips}{t.koOnly}</Link>
+        <Link to={langPath(lang, '/about')} className="sub">{t.home.aboutLink}</Link>
+      </p>
     </DeskLayout>
   );
 }

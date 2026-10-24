@@ -12,6 +12,7 @@ export default function About({ lang = 'ko' }: { lang?: Lang }) {
     <DeskLayout lang={lang}>
       <h1>{a.title}</h1>
       <p className="desk-lead">{a.lead}</p>
+      <p className="about-civic">{t.civicNote}</p>
 
       <section className="about-section">
         <h2>{a.whatWeDo}</h2>
@@ -27,8 +28,6 @@ export default function About({ lang = 'ko' }: { lang?: Lang }) {
         <p>{a.layersNote}</p>
         <dl className="about-dl">
           <dt><Link to="/records">{t.nav.records}</Link></dt><dd>{t.layers.records}{t.koOnly}</dd>
-          <dt><Link to="/stats">{t.nav.stats}</Link></dt><dd>{t.layers.stats}{t.koOnly}</dd>
-          <dt><Link to="/feed">{t.nav.feed}</Link></dt><dd>{t.layers.feed}{t.koOnly}</dd>
           <dt><Link to="/tips">{t.nav.tips}</Link></dt><dd>{t.layers.tips}{t.koOnly}</dd>
         </dl>
       </section>

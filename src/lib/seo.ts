@@ -6,7 +6,10 @@ import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from './status';
 import { SITE_PURPOSE } from './site';
 import { COPY, LANG_PAIRS, type Lang } from './i18n';
 
-export const SITE_NAME = '선거 증거 데스크';
+export const SITE_NAME = '선거부정진상규명국민신고센터';
+export const SITE_SHORT = '선진국';
+// 증거 화면이 드러내는 선거(0008 명세 3장).
+export const ELECTION_NAME = '2026 지방선거';
 const DESCRIPTION_MAX = 150;
 
 export interface PageMeta {
@@ -26,7 +29,7 @@ const EN_META: Record<string, { title: string; description: string }> = {
   },
   '/en/about': {
     title: `About | ${COPY.en.siteName}`,
-    description: 'What the Election Evidence Desk collects, how it checks material, what each status means, and what it does not do.',
+    description: 'What the Citizen Report Center for Election Integrity collects, how it checks material, what each status means, and what it does not do.',
   },
 };
 
@@ -66,14 +69,9 @@ function latest(rows: { updated_at?: string }[]): string | null {
 // 층 목록 페이지와 소개. 키워드를 반복하지 않고 페이지의 성격만 적는다.
 const LAYER_META: Record<string, { title: string; description: string }> = {
   '/records': {
-    title: '기록',
-    description: `사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드 목록. 유형, 선거, 상태, 지역으로 거른다. ${STATUS_DISCLAIMER}`,
+    title: `${ELECTION_NAME} 증거`,
+    description: `${ELECTION_NAME} 사전투표, 본투표, 개표 과정의 사진, 영상, 문서. 날짜, 장소, 상태, 출처가 붙어 있고 유형, 상태, 지역으로 거른다. ${STATUS_DISCLAIMER}`,
   },
-  '/stats': {
-    title: '통계',
-    description: `기록과 공식 표를 계산한 분석 목록. 피드, 미확인 제보, 좌표 없는 카드는 모수와 지도에 넣지 않는다. ${STATUS_DISCLAIMER}`,
-  },
-  '/feed': { title: '피드', description: '외부 발신처의 소식 목록. 피드는 증거가 아니며, 기록 카드가 된 소식에만 기록 링크를 단다.' },
   '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받는다. 사진·영상·문서 파일을 함께 보낼 수 있다. 제보는 바로 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다. 이름과 연락처는 공개하지 않는다.' },
   '/contact': {
     title: '문의',
@@ -107,7 +105,7 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
       path,
       title: SITE_NAME,
       description: clip(
-        `${SITE_NAME}. ${SITE_PURPOSE} ${STATUS_DISCLAIMER}`
+        `${SITE_NAME}(${SITE_SHORT}). ${SITE_PURPOSE} ${STATUS_DISCLAIMER}`
       ),
       lastmod: latest(ds.evidence),
     };

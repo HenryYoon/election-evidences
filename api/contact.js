@@ -23,9 +23,9 @@ export async function sendInquiryMail(id, env, fetchImpl = fetch) {
 
   const label = KIND_LABEL[row.kind] ?? row.kind;
   const mail = {
-    from: '선거 증거 데스크 <onboarding@resend.dev>',
+    from: '선진국 <onboarding@resend.dev>',
     to: [to],
-    subject: `[선거 증거 데스크] ${label}`,
+    subject: `[선진국] ${label}`,
     text: `${label}\n접수 ${row.created_at}\n회신 이메일 ${row.reply_to ?? '없음'}\n\n${row.body}\n\n이 문의는 관리자 화면 문의 탭에도 있습니다. 보유 기간(1년)이 지나면 메일함 사본도 지워 주세요.`,
     ...(row.reply_to ? { reply_to: row.reply_to } : {}),
   };

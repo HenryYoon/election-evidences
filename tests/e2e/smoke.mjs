@@ -6,7 +6,7 @@ import { chromium } from 'playwright';
 
 const PORT = 4173;
 const B = `http://localhost:${PORT}`;
-const PATHS = ['/', '/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact', '/en', '/en/about', '/e/ev-901', '/e/ev-903'];
+const PATHS = ['/', '/records', '/tips', '/about', '/privacy', '/contact', '/en', '/en/about', '/e/ev-901', '/e/ev-903'];
 // 오프라인 CI에서 나는 외부 요청 실패(지도 타일, Supabase)는 검사 대상이 아니다.
 const NOISE = /Failed to load resource|Failed to fetch|net::ERR|WebGL|GL Driver|GroupMarker|공개 데이터 로드 실패|정적 폴백/;
 
@@ -125,14 +125,16 @@ try {
   await l.goto(`${B}/records`, { waitUntil: 'load' });
   await l.getByRole('link', { name: 'EN', exact: true }).click();
   await l.waitForURL(/\/en$/);
-  if (!/Status is an investigative classification/.test(await l.locator('.desk-lead').innerText())) failures.push('영어 메인 첫 문단이 다르다');
+  if (!/Status is an investigative classification/.test(await l.locator('.home-disclaimer').innerText())) failures.push('영어 메인 면책 문장이 다르다');
+  if (!/collected/.test(await l.locator('.home-counts').innerText())) failures.push('영어 메인에 수집 건수가 없다');
   await lctx.close();
 
   // 0004: 홈 목적 문장과 소개 페이지.
   const actx = await browser.newContext({ javaScriptEnabled: false });
   const a = await actx.newPage();
   await a.goto(`${B}/`, { waitUntil: 'load' });
-  if (!/검증 상태를 붙여 공개한다/.test(await a.locator('.desk-lead').innerText())) failures.push('홈 첫 문단에 목적 문장이 없다');
+  if (!/수집 \d+건/.test(await a.locator('.home-counts').innerText())) failures.push('홈에 수집 건수가 없다');
+  if ((await a.locator('h1').innerText()) !== '선거부정진상규명국민신고센터') failures.push('홈 H1이 사이트 이름이 아니다');
   await a.goto(`${B}/about`, { waitUntil: 'load' });
   if ((await a.locator('h1').innerText()) !== '소개' || !(await a.getByRole('heading', { name: '정정과 문의' }).count())) failures.push('소개 페이지 내용이 없다');
   await actx.close();
