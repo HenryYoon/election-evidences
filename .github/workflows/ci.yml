@@ -17,7 +17,7 @@ concurrency:
 jobs:
   web:
     name: 빌드·단위·회수·e2e
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest는 26.04로 바뀌어 Playwright 1.56이 Chromium을 설치하지 못한다(2026-10-24)
     timeout-minutes: 15
     env:
       # 합성 데이터로만 빌드한다. 실제 제보와 Supabase 키를 CI에 두지 않는다.
@@ -43,7 +43,7 @@ jobs:
 
   python:
     name: Python 매핑 테스트
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest는 26.04로 바뀌어 Playwright 1.56이 Chromium을 설치하지 못한다(2026-10-24)
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -54,7 +54,7 @@ jobs:
 
   sql:
     name: 스키마·RLS·마이그레이션
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest는 26.04로 바뀌어 Playwright 1.56이 Chromium을 설치하지 못한다(2026-10-24)
     timeout-minutes: 5
     services:
       postgres:

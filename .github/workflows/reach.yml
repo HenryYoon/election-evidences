@@ -22,7 +22,7 @@ env:
 jobs:
   live:
     name: 운영 사이트 회수 점검
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest는 26.04로 바뀌어 Playwright 1.56이 Chromium을 설치하지 못한다(2026-10-24)
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
 
   scores:
     name: Lighthouse·agentic-seo 점수
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest는 26.04로 바뀌어 Playwright 1.56이 Chromium을 설치하지 못한다(2026-10-24)
     timeout-minutes: 15
     continue-on-error: true
     permissions:
