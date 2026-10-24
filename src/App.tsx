@@ -6,8 +6,6 @@ import type { Dataset } from './lib/data';
 import { pageMeta } from './lib/seo';
 import Home from './pages/Home';
 import Ledger from './pages/Ledger';
-import StatsList from './pages/StatsList';
-import FeedList from './pages/FeedList';
 import TipList from './pages/TipList';
 import About from './pages/About';
 import Privacy from './pages/Privacy';
@@ -40,8 +38,9 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
       <Route path="/records" element={<Ledger ds={ds} />} />
       <Route path="/ledger" element={<Navigate to="/records" replace />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />
-      <Route path="/stats" element={<StatsList />} />
-      <Route path="/feed" element={<FeedList />} />
+      {/* 통계·피드 층은 없앴다(0008). 옛 주소는 홈으로 보낸다. vercel.json도 같은 리다이렉트를 둔다. */}
+      <Route path="/stats" element={<Navigate to="/" replace />} />
+      <Route path="/feed" element={<Navigate to="/" replace />} />
       <Route path="/tips" element={<TipList />} />
       <Route path="/about" element={<About />} />
       <Route path="/privacy" element={<Privacy />} />

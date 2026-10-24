@@ -1,6 +1,6 @@
 // 한국어·영어 화면 문구(0007 명세). 한국어 문구는 기존 상수를 그대로 가리킨다.
 // 영어판은 메인과 소개만 있다. 나머지 페이지 링크는 한국어 페이지로 간다.
-import { HOW_STEPS, LAYER_LINES, SITE_PURPOSE } from './site';
+import { CIVIC_NOTE, HOW_STEPS, LAYER_LINES, SITE_PURPOSE } from './site';
 import {
   EVIDENCE_STATUS_LABEL,
   EVIDENCE_STATUS_LEGEND,
@@ -34,17 +34,22 @@ export function hasPair(path: string): boolean {
 
 export interface Copy {
   siteName: string;
+  siteShort: string;
+  tagline: string;   // 홈 이름 아래 한 줄
+  civicNote: string; // 민간 운영 표시
   purpose: string;
   disclaimer: string;
   how: readonly (readonly [string, string])[];
-  layers: { records: string; stats: string; feed: string; tips: string };
+  layers: { records: string; tips: string };
   statusLabel: Record<EvidenceStatus, string>;
   statusLegend: Record<EvidenceStatus, string>;
   verificationLabel: Record<VerificationKey, string>;
   verificationHelp: Record<VerificationKey, string>;
-  nav: { records: string; stats: string; feed: string; tips: string; about: string; contact: string; privacy: string; toggle: string };
+  nav: { records: string; tips: string; about: string; contact: string; privacy: string; toggle: string };
   koOnly: string; // 한국어 페이지로 가는 링크 옆 표시. 한국어판은 빈 문자열
   home: {
+    collected: (n: number) => string;
+    verified: (n: number) => string;
     aboutLink: string;
     mapLabel: string;
     mapTitle: string;
@@ -55,10 +60,7 @@ export interface Copy {
     placeUnknown: string;
     source: string;
     noRecords: string;
-    noStats: string;
-    noFeed: string;
-    tipsNote: string;
-    view: { records: string; stats: string; feed: string; tips: string };
+    view: { records: string; tips: string };
     translationNote: string;
   };
   about: {
@@ -82,7 +84,10 @@ const VERIFICATION_LABEL_KO = Object.fromEntries(VERIFICATION_FIELDS) as Record<
 
 export const COPY: Record<Lang, Copy> = {
   ko: {
-    siteName: '선거 증거 데스크',
+    siteName: '선거부정진상규명국민신고센터',
+    siteShort: '선진국',
+    tagline: '2026 지방선거 증거 신고센터',
+    civicNote: CIVIC_NOTE,
     purpose: SITE_PURPOSE,
     disclaimer: STATUS_DISCLAIMER,
     how: HOW_STEPS,
@@ -96,35 +101,34 @@ export const COPY: Record<Lang, Copy> = {
       when: '시각을 무엇으로 확인했는지.',
       notClaimed: '이 자료만으로는 말할 수 없는 것.',
     },
-    nav: { records: '기록', stats: '통계', feed: '피드', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
+    nav: { records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
     koOnly: '',
     home: {
+      collected: (n) => `수집 ${n}건`,
+      verified: (n) => `검증 ${n}건`,
       aboutLink: '이 사이트 소개',
-      mapLabel: '기록 지도',
-      mapTitle: '기록 카드 위치',
-      mapNote: '점은 좌표가 있는 기록 카드다. 점을 누르면 카드로 간다. 피드와 제보는 찍지 않는다.',
-      latestLabel: '최근 기록',
-      latestDay: (day) => `${day} 기록`,
-      latestNone: '최근 기록',
+      mapLabel: '증거 지도',
+      mapTitle: '증거 위치',
+      mapNote: '점은 장소가 확인된 증거다. 점을 누르면 증거로 간다.',
+      latestLabel: '최근 증거',
+      latestDay: (day) => `${day} 증거`,
+      latestNone: '최근 증거',
       placeUnknown: '장소 미상',
       source: '출처',
-      noRecords: '아직 기록이 없다.',
-      noStats: '아직 공개한 분석이 없다.',
-      noFeed: '아직 수집한 소식이 없다.',
-      tipsNote: '사진·영상·문서 파일을 함께 보낼 수 있다.',
-      view: { records: '기록 보기', stats: '통계 보기', feed: '피드 보기', tips: '제보하기' },
+      noRecords: '아직 증거가 없다.',
+      view: { records: '2026 지방선거 증거 보기', tips: '제보하기' },
       translationNote: '',
     },
     about: {
       title: '소개',
-      lead: `선거 증거 데스크는 ${SITE_PURPOSE} ${STATUS_DISCLAIMER}`,
+      lead: `선거부정진상규명국민신고센터(선진국)는 ${SITE_PURPOSE} ${STATUS_DISCLAIMER}`,
       whatWeDo: '하는 일',
-      layersTitle: '네 층',
-      layersNote: '층마다 기록의 성격이 다르다. 그래서 층끼리 건수를 합치지 않는다.',
+      layersTitle: '두 층',
+      layersNote: '증거와 제보는 성격이 다르다. 제보는 검수를 거쳐야 증거가 된다. 두 층의 건수를 합치지 않는다.',
       statusTitle: '상태',
-      statusNote: `기록마다 상태 하나를 붙인다. ${STATUS_DISCLAIMER} 문서 확인과 영상 확인은 운영진이 검증 네 줄을 채운 뒤에만 붙인다.`,
+      statusNote: `증거마다 상태 하나를 붙인다. ${STATUS_DISCLAIMER} 문서 확인과 영상 확인은 운영진이 검증 네 줄을 채운 뒤에만 붙인다. 홈의 "검증" 건수는 이 두 상태의 증거 수다.`,
       verificationTitle: '검증 네 줄',
-      verificationNote: '기록 상세 화면에는 아래 네 줄을 적는다. 확인한 것과 확인하지 않은 것을 나누기 위해서다.',
+      verificationNote: '증거 상세 화면에는 아래 네 줄을 적는다. 확인한 것과 확인하지 않은 것을 나누기 위해서다.',
       dontTitle: '하지 않는 것',
       dont: [
         '상태로 위법 여부를 판단하지 않는다.',
@@ -135,13 +139,16 @@ export const COPY: Record<Lang, Copy> = {
       ],
       contactTitle: '정정과 문의',
       contact: () => [
-        '기록에 틀린 내용이 있으면 ',
-        '에서 "정정 요청"을 골라 알려 주세요. 해당 기록의 주소와 틀린 부분을 함께 적어 주세요. 운영진이 확인한 뒤 기록을 고칩니다. 건의와 그 밖의 문의도 같은 곳에서 받습니다.',
+        '증거에 틀린 내용이 있으면 ',
+        '에서 "정정 요청"을 골라 알려 주세요. 해당 증거의 주소와 틀린 부분을 함께 적어 주세요. 운영진이 확인한 뒤 고칩니다. 건의와 그 밖의 문의도 같은 곳에서 받습니다.',
       ],
     },
   },
   en: {
-    siteName: 'Election Evidence Desk',
+    siteName: 'Citizen Report Center for Election Integrity',
+    siteShort: 'SeonJinGuk',
+    tagline: "Evidence from Korea's 2026 local elections",
+    civicNote: 'This site is run by private citizens. It is not affiliated with the National Election Commission or any public body.',
     purpose:
       "We collect photos, videos, and documents from the early voting, election-day voting, and vote counting of Korea's June 3, 2026 local elections, and publish each one with its date, place, source, and verification status.",
     disclaimer: 'Status is an investigative classification, not a legal conclusion.',
@@ -152,9 +159,7 @@ export const COPY: Record<Lang, Copy> = {
     ],
     layers: {
       records: 'Evidence cards with a verification status.',
-      stats: 'Analysis comparing Korean and international election data. In preparation.',
-      feed: 'Outside news. Not evidence.',
-      tips: 'Send what you saw or experienced. Reviewed tips become records.',
+      tips: 'Send what you saw or experienced. Reviewed tips become evidence.',
     },
     statusLabel: {
       document: 'Document verified',
@@ -175,36 +180,35 @@ export const COPY: Record<Lang, Copy> = {
       when: 'How the time was confirmed.',
       notClaimed: 'What cannot be concluded from this material alone.',
     },
-    nav: { records: 'Records', stats: 'Stats', feed: 'Feed', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
+    nav: { records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
     koOnly: ' (in Korean)',
     home: {
+      collected: (n) => `${n} collected`,
+      verified: (n) => `${n} verified`,
       aboutLink: 'About this site',
-      mapLabel: 'Record map',
-      mapTitle: 'Locations of record cards',
-      mapNote: 'Each dot is a record card with coordinates. Select a dot to open the card. Feed items and tips are not mapped.',
-      latestLabel: 'Latest records',
-      latestDay: (day) => `Records from ${day}`,
-      latestNone: 'Latest records',
+      mapLabel: 'Evidence map',
+      mapTitle: 'Locations of evidence',
+      mapNote: 'Each dot is a piece of evidence with a confirmed location. Select a dot to open it.',
+      latestLabel: 'Latest evidence',
+      latestDay: (day) => `Evidence from ${day}`,
+      latestNone: 'Latest evidence',
       placeUnknown: 'Place unknown',
       source: 'Source',
-      noRecords: 'No records yet.',
-      noStats: 'No analysis published yet.',
-      noFeed: 'No news collected yet.',
-      tipsNote: 'You can attach photos, videos, and documents.',
-      view: { records: 'View records', stats: 'View stats', feed: 'View feed', tips: 'Send a tip' },
-      translationNote: 'Record cards are in Korean for now. Status labels are translated.',
+      noRecords: 'No evidence yet.',
+      view: { records: 'View 2026 local election evidence', tips: 'Send a tip' },
+      translationNote: 'Evidence cards are in Korean for now. Status labels are translated.',
     },
     about: {
       title: 'About',
       lead: '',
       whatWeDo: 'What we do',
-      layersTitle: 'Four layers',
-      layersNote: 'Each layer holds a different kind of record, so we never add their counts together.',
+      layersTitle: 'Two layers',
+      layersNote: 'Evidence and tips are different kinds of records. A tip becomes evidence only after review. We never add their counts together.',
       statusTitle: 'Status',
       statusNote:
-        'Each record gets one status. Status is an investigative classification, not a legal conclusion. "Document verified" and "Video verified" are assigned only after our editors fill in all four verification lines.',
+        'Each piece of evidence gets one status. Status is an investigative classification, not a legal conclusion. "Document verified" and "Video verified" are assigned only after our editors fill in all four verification lines. The "verified" count on the home page is the number of evidence with one of those two statuses.',
       verificationTitle: 'Four verification lines',
-      verificationNote: 'Each record page lists these four lines, to separate what we checked from what we did not.',
+      verificationNote: 'Each evidence page lists these four lines, to separate what we checked from what we did not.',
       dontTitle: 'What we do not do',
       dont: [
         'We do not use status to judge whether anything was illegal.',
@@ -215,12 +219,12 @@ export const COPY: Record<Lang, Copy> = {
       ],
       contactTitle: 'Corrections and contact',
       contact: () => [
-        'If a record is wrong, use the ',
-        ' form and choose "정정 요청" (correction request). Include the record address and what is wrong. You may write in English. We will check and fix the record. Suggestions and other questions go to the same form.',
+        'If a piece of evidence is wrong, use the ',
+        ' form and choose "정정 요청" (correction request). Include the evidence address and what is wrong. You may write in English. We will check and fix it. Suggestions and other questions go to the same form.',
       ],
     },
   },
 };
-COPY.en.about.lead = `${COPY.en.siteName}: ${COPY.en.purpose} ${COPY.en.disclaimer}`;
+COPY.en.about.lead = `${COPY.en.siteName} (${COPY.en.siteShort}): ${COPY.en.purpose} ${COPY.en.disclaimer}`;
 
 export const langPath = (lang: Lang, path: string) => (lang === 'en' ? (path === '/' ? '/en' : `/en${path}`) : path);

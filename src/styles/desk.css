@@ -33,27 +33,29 @@
 
 .desk-main { max-width: 1120px; margin: 0 auto; padding: 24px 20px 64px; }
 .desk-lead { margin: 8px 0 0; }
-.desk-foot { max-width: 1120px; margin: 0 auto; padding: 16px 20px 32px; border-top: 1px solid var(--d-line); display: flex; gap: 16px; font-size: 13px; }
+.desk-foot { max-width: 1120px; margin: 0 auto; padding: 16px 20px 32px; border-top: 1px solid var(--d-line); font-size: 13px; }
+.desk-foot nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.desk-civic { margin: 8px 0 0; }
+.about-civic { margin: 8px 0 0; font-size: 14px; font-weight: 600; }
 .desk-disclaimer { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
 
 .status { color: var(--d-status); font-weight: 700; white-space: nowrap; }
 
 .rule { border: 0; border-top: 1px solid var(--d-line); margin: 24px 0; }
 
-/* 홈 */
-.home-how { margin: 12px 0 0; padding-left: 20px; font-size: 14px; }
-.home-how li { margin: 2px 0; }
-.home-about { margin: 8px 0 0; font-size: 14px; font-weight: 600; }
+/* 홈(0008): 이름 중앙 정렬, 숫자 둘, 면책 한 줄 */
+.home-hero { text-align: center; padding: 24px 0 8px; }
+.home-hero h1 { font-size: 34px; letter-spacing: -0.01em; word-break: keep-all; }
+.home-tagline { margin: 6px 0 0; font-size: 16px; font-weight: 600; }
+.home-counts { margin: 18px 0 0; display: flex; justify-content: center; gap: 28px; font-size: 22px; font-weight: 800; }
+.home-disclaimer { margin: 10px 0 0; font-size: 13px; }
+.home-doors { margin: 28px 0 0; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; font-weight: 700; }
+.home-doors a.sub { font-weight: 400; }
 .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 24px; }
 .home-latest { list-style: none; margin: 0; padding: 0; }
 .home-latest li { padding: 12px 0; border-top: 1px solid var(--d-line); }
 .home-latest li:last-child { border-bottom: 1px solid var(--d-line); }
 .home-latest .meta { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
-.home-doors { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 32px; border: 1px solid var(--d-line); }
-.home-doors section { padding: 16px; border-left: 1px solid var(--d-line); display: flex; flex-direction: column; gap: 6px; }
-.home-doors section:first-child { border-left: 0; }
-.home-doors p { margin: 0; font-size: 14px; }
-.home-doors p.sub { font-size: 13px; }
 
 /* 소개 */
 .about-section { margin-top: 28px; max-width: 720px; }
@@ -121,16 +123,15 @@
   .desk-main { padding: 18px 16px 48px; }
   .desk h1 { font-size: 22px; }
   .home-grid, .detail-grid { grid-template-columns: minmax(0, 1fr); }
-  .home-doors { grid-template-columns: minmax(0, 1fr); }
-  .home-doors section { border-left: 0; border-top: 1px solid var(--d-line); }
-  .home-doors section:first-child { border-top: 0; }
+  .home-hero h1 { font-size: 24px; }
+  .home-counts { font-size: 18px; gap: 18px; }
   .ledger-map { height: 320px; }
 }
 
 .linklike { font: inherit; background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* 제보 폼(0001 플랜 5단계) */
-.tip-notes { margin: 12px 0 0; padding-left: 20px; font-size: 14px; }
+.tip-notes { margin: 12px 0 0; font-size: 14px; }
 .tip-form { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; max-width: 640px; }
 .tip-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; font-weight: 600; }
 .tip-form input, .tip-form textarea, .tip-form select {
@@ -139,15 +140,17 @@
 }
 .tip-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .tip-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
-.tip-consent { border: 1px solid var(--d-line); padding: 10px 12px; margin: 0; }
-.tip-consent legend { font-size: 14px; font-weight: 700; padding: 0 4px; }
-.tip-consent p { margin: 0 0 8px; font-size: 13px; }
-.tip-terms { margin: 0 0 8px; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; font-size: 13px; }
+.tip-consent { border: 1px solid var(--d-line); padding: 8px 12px; margin: 0; }
+.tip-consent p { margin: 6px 0 0; font-size: 13px; }
+.tip-detail { margin: 4px 0 0 24px; font-size: 13px; }
+.tip-detail summary { cursor: pointer; }
+.tip-terms { margin: 6px 0 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 12px; font-size: 13px; }
 .tip-terms dt { font-weight: 700; }
 .tip-terms dd { margin: 0; }
 .tip-terms ul { margin: 0; padding-left: 18px; }
 @media (max-width: 760px) { .tip-terms { grid-template-columns: minmax(0, 1fr); } .tip-terms dd { margin-bottom: 4px; } }
-.tip-form .tip-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; }
+.tip-form .tip-check { flex-direction: row; align-items: flex-start; gap: 8px; font-weight: 400; }
+.tip-form .tip-check input { margin-top: 4px; }
 .tip-errors { margin: 0; padding-left: 20px; color: var(--d-status); font-size: 14px; }
 .tip-submit {
   align-self: flex-start; font: inherit; font-weight: 700; color: var(--d-bg); background: var(--d-ink);

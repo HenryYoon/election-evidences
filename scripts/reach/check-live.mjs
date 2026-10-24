@@ -44,7 +44,7 @@ if (!details.length) fail('/sitemap.xml', '상세 주소가 없다');
 const recordBudget = 20 * KB + details.length * 0.6 * KB;
 const sample = [details[0], details[Math.floor(details.length / 2)], details.at(-1)].filter(Boolean);
 
-for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/stats', 40 * KB], ['/tips', 40 * KB], ['/about', 40 * KB], ['/privacy', 40 * KB], ['/contact', 40 * KB], ['/en', 40 * KB], ['/en/about', 40 * KB], ...sample.map((p) => [p, 10 * KB])]) {
+for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/tips', 40 * KB], ['/about', 40 * KB], ['/privacy', 40 * KB], ['/contact', 40 * KB], ['/en', 40 * KB], ['/en/about', 40 * KB], ...sample.map((p) => [p, 10 * KB])]) {
   const res = await get(path);
   if (!res.ok) { fail(path, `HTTP ${res.status}`); continue; }
   const html = await res.text();
@@ -57,10 +57,10 @@ for (const [path, max] of [['/', 40 * KB], ['/records', recordBudget], ['/stats'
   }
 }
 
-for (const [from, to] of [['/ledger', '/records'], ['/e/ev-009', '/e/ev-098']]) {
+for (const [from, to] of [['/ledger', '/records'], ['/e/ev-009', '/e/ev-098'], ['/stats', '/'], ['/feed', '/']]) {
   const res = await get(from, { redirect: 'manual' });
   const loc = res.headers.get('location') || '';
-  if (![301, 308].includes(res.status) || !loc.endsWith(to)) fail(from, `영구 리다이렉트가 아니다: ${res.status} ${loc}`);
+  if (![301, 308].includes(res.status) || !(loc === SITE + to || loc.endsWith(to) && to !== '/')) fail(from, `영구 리다이렉트가 아니다: ${res.status} ${loc}`);
 }
 
 const llms = await get('/llms.txt');

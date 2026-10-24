@@ -11,6 +11,16 @@
       "source": "/e/ev-009",
       "destination": "/e/ev-098",
       "permanent": true
+    },
+    {
+      "source": "/stats",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/feed",
+      "destination": "/",
+      "permanent": true
     }
   ],
   "rewrites": [

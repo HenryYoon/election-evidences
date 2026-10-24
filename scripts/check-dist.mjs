@@ -47,17 +47,27 @@ for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
   if (!/출처 \S/.test(lead)) fail(relative(DIST, f), `첫 문단에 출처 없음: ${lead}`);
 }
 
-// 홈: 층 건수를 노출하지 않는다(CLAUDE.md, 명세 2장).
+const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
+
+// 홈(0008 명세 2장): 수집 건수는 공개 증거 수와 같아야 한다. 다른 건수 표현은 두지 않는다.
 const home = readFileSync(join(DIST, 'index.html'), 'utf-8');
-const homeText = home.slice(home.indexOf('<div id="root">'), home.indexOf('<script>window.')).replace(/<[^>]+>/g, ' ');
-if (/\d+\s*건/.test(homeText)) fail('index.html', `홈 본문에 건수 표현: ${homeText.match(/\d+\s*건/)[0]}`);
-for (const layer of ['/records', '/stats', '/feed', '/tips', '/about', '/privacy', '/contact']) {
+const homeText = home.slice(home.indexOf('<div id="root">')).replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ');
+const counts = [...homeText.matchAll(/(수집|검증|조건에 맞는 증거)?\s*(\d+)\s*건/g)];
+const collected = counts.find((m) => m[1] === '수집');
+if (!collected) fail('index.html', '홈에 "수집 N건"이 없다');
+else if (Number(collected[2]) !== recordCount) fail('index.html', `수집 건수 ${collected[2]}가 공개 증거 수 ${recordCount}와 다르다`);
+if (!counts.some((m) => m[1] === '검증')) fail('index.html', '홈에 "검증 N건"이 없다');
+for (const m of counts) if (!m[1]) fail('index.html', `홈 본문에 허용하지 않은 건수 표현: ${m[0]}`);
+for (const [a, b] of [['수집', '세 단계'], ['검증', '모은다']]) if (homeText.includes(b)) fail('index.html', `홈에 뺀 문구가 남아 있다: ${b} (${a} 옆)`);
+for (const layer of ['/records', '/tips', '/about', '/privacy', '/contact']) {
   if (!home.includes(`href="${layer}"`)) fail('index.html', `${layer} 입구 링크 없음`);
+}
+for (const gone of ['/stats', '/feed']) {
+  if (home.includes(`href="${gone}"`)) fail('index.html', `없앤 층 링크가 남아 있다: ${gone}`);
 }
 
 // HTML 예산(0002 명세 1장): 스냅샷과 지도 경계선을 HTML 밖으로 뺐는지 본다.
 const KB = 1024;
-const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
 const budgets = [
   ['index.html', 40 * KB],
   ['en.html', 40 * KB],
@@ -71,6 +81,15 @@ for (const [rel, max] of budgets) {
 if (/window\.__DESK__=/.test(home)) fail('index.html', '전체 스냅샷이 HTML 안에 있다');
 
 // 영어 페이지(0007 명세): lang="en"과 언어 짝 hreflang.
+// 좌표는 보여 주지 않는다(0008 명세 3장). 상세 HTML 본문과 마크다운에 좌표 줄이 없어야 한다.
+for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
+  const html = readFileSync(f, 'utf-8');
+  const body = html.slice(html.indexOf('<div id="root">')).replace(/<script[\s\S]*?<\/script>/g, ' ');
+  if (/<dt>좌표<\/dt>|\d{2}\.\d{5},\s*\d{3}\.\d{5}/.test(body)) fail(relative(DIST, f), '상세 본문에 좌표가 있다');
+  const md = f.replace(/\.html$/, '.md');
+  if (existsSync(md) && /^- 좌표:/m.test(readFileSync(md, 'utf-8'))) fail(relative(DIST, md), '마크다운에 좌표 줄이 있다');
+}
+
 for (const [ko, en] of [['index.html', 'en.html'], ['about.html', 'en/about.html']]) {
   for (const rel of [ko, en]) {
     if (!existsSync(join(DIST, rel))) { fail(rel, '파일 없음'); continue; }

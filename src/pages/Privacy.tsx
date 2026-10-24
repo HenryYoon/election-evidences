@@ -42,7 +42,7 @@ export default function Privacy() {
     <DeskLayout>
       <h1>개인정보 처리방침</h1>
       <p className="desk-lead">
-        선거 증거 데스크는 제보와 문의를 받는 데 필요한 최소한의 개인정보만 처리합니다. 이 방침은 무엇을 왜 얼마 동안 처리하는지와 정보주체가 요청할 수 있는 것을 적습니다.
+        선거부정진상규명국민신고센터(선진국)는 제보와 문의를 받는 데 필요한 최소한의 개인정보만 처리합니다. 이 방침은 무엇을 왜 얼마 동안 처리하는지와 정보주체가 요청할 수 있는 것을 적습니다.
       </p>
 
       <section className="about-section">
@@ -124,7 +124,7 @@ export default function Privacy() {
 
       <section className="about-section">
         <h2>9. 개인정보 보호책임자</h2>
-        <p>선거 증거 데스크 운영자가 보호책임자를 맡습니다. 연락은 <Link to="/contact">문의</Link> 페이지로 받습니다. 보낸 내용은 보호책임자의 이메일로 바로 전달됩니다.</p>
+        <p>선진국 운영자가 보호책임자를 맡습니다. 연락은 <Link to="/contact">문의</Link> 페이지로 받습니다. 보낸 내용은 보호책임자의 이메일로 바로 전달됩니다.</p>
       </section>
 
       <section className="about-section">

@@ -1,5 +1,5 @@
-// 증거 카드 상세(명세 5장 기록).
-// 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 좌표, 선거, 유형.
+// 증거 상세(명세 5장, 0008 명세 3장).
+// 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 선거, 유형. 좌표는 보여 주지 않는다.
 // 그 아래 검증 네 줄과 출처 목록.
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -17,8 +17,8 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
   if (!row) {
     return (
       <DeskLayout>
-        <h1>카드를 찾을 수 없다</h1>
-        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/records">기록 목록</Link>에서 찾을 수 있다.</p>
+        <h1>증거를 찾을 수 없다</h1>
+        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/records">증거 목록</Link>에서 찾을 수 있다.</p>
       </DeskLayout>
     );
   }
@@ -61,8 +61,6 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
               <br />
               <small>{EVIDENCE_STATUS_LEGEND[ev.status]}</small>
             </dd>
-            <dt>좌표</dt>
-            <dd>{ev.lat !== null && ev.lng !== null ? `${ev.lat.toFixed(5)}, ${ev.lng.toFixed(5)}` : '좌표 없음'}</dd>
             <dt>선거</dt>
             <dd>{ev.election ?? '미기재'}</dd>
             <dt>유형</dt>
@@ -109,7 +107,7 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
       <p className="cite-tools">
         <CopyCitation text={`${ev.claim}\n${leadSentence(ev)}\n출처: ${sourceLabel(ev)}`} path={`/e/${encodeURIComponent(ev.id)}`} />
         <a href={markdownPath(ev.id)} type="text/markdown">마크다운 원문</a>
-        <Link to="/records">기록 목록으로</Link>
+        <Link to="/records">증거 목록으로</Link>
       </p>
     </DeskLayout>
   );

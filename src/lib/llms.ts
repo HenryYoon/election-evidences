@@ -3,7 +3,7 @@
 // 공개 행만 받는다. 제보자 이름, 연락처, 비공개 기록은 여기에 오지 않는다.
 import type { Dataset } from './data';
 import { toEvidence, compareLedger, type Evidence } from '../types/evidence';
-import { leadSentence, SITE_NAME } from './seo';
+import { ELECTION_NAME, leadSentence, SITE_NAME, SITE_SHORT } from './seo';
 import { SITE_PURPOSE } from './site';
 import {
   EVIDENCE_STATUSES,
@@ -27,29 +27,28 @@ const recordLine = (ev: Evidence, site: string) => `- [${inline(ev.claim)}](${si
 export function llmsTxt(ds: Dataset, site: string): string {
   const records = ds.evidence.map(toEvidence).sort(compareLedger).slice(0, LLMS_RECENT);
   const lines = [
-    `# ${SITE_NAME}`,
+    `# ${SITE_NAME}(${SITE_SHORT})`,
     '',
     `> ${SITE_PURPOSE}`,
     '',
-    `${STATUS_DISCLAIMER} 각 기록의 상태는 다음 넷 중 하나다.`,
+    `${STATUS_DISCLAIMER} 각 증거의 상태는 다음 넷 중 하나다.`,
     '',
     ...EVIDENCE_STATUSES.map((s) => `- ${EVIDENCE_STATUS_LABEL[s]}: ${EVIDENCE_STATUS_LEGEND[s]}`),
     '',
     '## 층',
     '',
-    `- [기록](${site}/records): 사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드.`,
-    `- [통계](${site}/stats): 기록과 공식 표를 계산한 분석. 피드와 미확인 제보는 모수에 넣지 않는다.`,
-    `- [제보](${site}/tips): 제보 접수 폼. 제보는 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다.`,
+    `- [${ELECTION_NAME} 증거](${site}/records): 사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드.`,
+    `- [제보](${site}/tips): 제보 접수 폼. 제보는 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 증거로 공개한다.`,
     `- [소개](${site}/about): 목적, 상태의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법.`,
-    `- [문의](${site}/contact): 문의, 건의, 기록 정정 요청, 개인정보 요청.`,
-    `- [English](${site}/en): 메인과 소개의 영어판. 기록 카드는 아직 한국어다.`,
-    '- 층끼리 건수를 합치지 않는다. 층마다 기록의 성격이 다르다.',
+    `- [문의](${site}/contact): 문의, 건의, 증거 정정 요청, 개인정보 요청.`,
+    `- [English](${site}/en): 메인과 소개의 영어판. 증거 카드는 아직 한국어다.`,
+    '- 증거와 제보의 건수를 합치지 않는다. 제보는 검수를 거쳐야 증거가 된다.',
     '',
-    `## 최근 기록 ${LLMS_RECENT}건`,
+    `## 최근 증거 ${LLMS_RECENT}건`,
     '',
-    `전체 기록 목록: [${site}${RECORDS_MD}](${site}${RECORDS_MD})`,
+    `전체 증거 목록: [${site}${RECORDS_MD}](${site}${RECORDS_MD})`,
     '',
-    '각 줄은 기록 하나다. 링크는 마크다운 판이고, 같은 내용의 HTML은 `.md`를 뺀 주소에 있다.',
+    '각 줄은 증거 하나다. 링크는 마크다운 판이고, 같은 내용의 HTML은 `.md`를 뺀 주소에 있다.',
     '',
     ...records.map((ev) => recordLine(ev, site)),
     '',
@@ -61,11 +60,11 @@ export function llmsTxt(ds: Dataset, site: string): string {
 export function recordsMarkdown(ds: Dataset, site: string): string {
   const records = ds.evidence.map(toEvidence).sort(compareLedger);
   return [
-    `# 기록 | ${SITE_NAME}`,
+    `# ${ELECTION_NAME} 증거 | ${SITE_NAME}`,
     '',
-    `사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드 전체 목록이다. ${STATUS_DISCLAIMER}`,
+    `${ELECTION_NAME} 사전투표, 본투표, 개표 과정의 사진, 영상, 문서 전체 목록이다. 날짜, 장소, 상태, 출처가 붙어 있다. ${STATUS_DISCLAIMER}`,
     '',
-    '각 줄은 기록 하나다. 링크는 마크다운 판이고, 같은 내용의 HTML은 `.md`를 뺀 주소에 있다.',
+    '각 줄은 증거 하나다. 링크는 마크다운 판이고, 같은 내용의 HTML은 `.md`를 뺀 주소에 있다.',
     '',
     ...records.map((ev) => recordLine(ev, site)),
     '',
@@ -76,14 +75,12 @@ export function recordsMarkdown(ds: Dataset, site: string): string {
 
 export function evidenceMarkdown(ev: Evidence, site: string): string {
   const html = `${site}/e/${encodeURIComponent(ev.id)}`;
-  const coord = ev.lat !== null && ev.lng !== null ? `${ev.lat.toFixed(5)}, ${ev.lng.toFixed(5)} (위도, 경도)` : '좌표 없음';
   const lines = [
     `# ${inline(ev.claim)}`,
     '',
     inline(leadSentence(ev)),
     '',
     `- 상태: ${EVIDENCE_STATUS_LABEL[ev.status]}. ${EVIDENCE_STATUS_LEGEND[ev.status]}`,
-    `- 좌표: ${coord}`,
     `- 선거: ${ev.election ?? '미기재'}`,
     `- 유형: ${ev.type}`,
     '',

@@ -1,8 +1,8 @@
 // 데이터 모델. 명세 4장(`spec/0001-evidence-desk.md`)을 따른다.
 // - EvidenceRow: Supabase `evidence` 테이블 행 그대로(snake_case). 기존 페이지가 쓴다.
-// - Evidence, FeedItem, Tip, Analysis: 층별 공개 레코드(camelCase). 새 페이지가 쓴다.
+// - Evidence, Tip: 층별 공개 레코드(camelCase). 새 페이지가 쓴다.
 // 상태 값과 라벨은 `src/lib/status.ts`에 있다.
-import type { EvidenceStatus, TipStatus, ExcludedKind } from '../lib/status';
+import type { EvidenceStatus, TipStatus } from '../lib/status';
 import { defaultEvidenceStatus, EVIDENCE_STATUSES } from '../lib/status';
 
 export type EvidenceType = '사진' | '영상' | '음성' | '문서';
@@ -66,7 +66,8 @@ export interface EvidenceRow {
 }
 
 // ── 층별 공개 레코드 ──────────────────────────────────────
-export type Layer = 'ledger' | 'feed' | 'tip' | 'stats';
+// 통계·피드 층은 없앴다(0008).
+export type Layer = 'ledger' | 'tip';
 
 interface LayerRecord {
   id: string;
@@ -95,15 +96,6 @@ export interface Evidence extends LayerRecord {
   mediaOther: EvidenceMediaOther[];
 }
 
-export interface FeedItem extends LayerRecord {
-  layer: 'feed';
-  source: string;            // feed_sources.id (olgung, jahyeok, ...)
-  sentAt: string;
-  text: string;
-  url: string;
-  evidenceId?: string;       // 기록으로 승격된 경우에만
-}
-
 // 공개 필드만 둔다. 제보자 이름, 전화, 계정은 `tip_contacts`에만 있다.
 export interface Tip extends LayerRecord {
   layer: 'tip';
@@ -114,25 +106,6 @@ export interface Tip extends LayerRecord {
   notClaimed: string;        // 확인하지 않은 항목 한 줄
 }
 
-export interface AnalysisRow {
-  area: string;              // 구역 또는 장소
-  value: number;
-  unit: string;
-}
-
-export interface Analysis extends LayerRecord {
-  layer: 'stats';
-  title: string;
-  question: string;
-  period: string;
-  universe: string;          // 모수
-  method: [string, string, string, string]; // 방법 네 줄
-  sourceTable: string;
-  includedEvidenceIds: string[];
-  excluded: ExcludedKind[];
-  geo: 'choropleth' | 'dots'; // 한 분석에 하나만
-  rows: AnalysisRow[];
-}
 
 export const EVIDENCE_TYPES: EvidenceType[] = ['사진', '영상', '음성', '문서'];
 
