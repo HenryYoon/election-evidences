@@ -1,0 +1,537 @@
+-- 0009 기준 마이그레이션: scripts/supabase_schema.sql(0001~0008 반영)과 같은 내용이다.
+-- Supabase GitHub 연동이 빈 서울 프로젝트에 처음 한 번 적용한다. 앞으로의 변경은 이 폴더에 새 파일로 더한다.
+
+-- 선거 증거 아카이브 — Supabase 스키마
+-- 실행: Supabase 대시보드 → SQL Editor 에 붙여넣고 Run.
+
+-- 1) 증거 테이블 ---------------------------------------------------------
+create table if not exists public.evidence (
+  id                 text primary key,      -- ev-002
+  num                int,
+  title              text not null,
+  description        text,
+  evidence_type      text,                  -- 사진/영상/음성/문서
+  published          boolean not null default true,   -- 공개/비공개 토글
+  region_wide        text,
+  region_wide_label  text,
+  region_basic       text,
+  place              text,
+  place_raw          text,
+  coordinates        jsonb,                 -- [lng, lat] or null
+  located            boolean default false,
+  occurred_raw       text,
+  source             text,
+  source_url         text,
+  reporter           text,
+  photos             jsonb default '[]'::jsonb,       -- [{thumb,view}]
+  media_other        jsonb default '[]'::jsonb,       -- [{kind}]
+  withheld           int default 0,
+  media_count        int default 0,
+  created_at         timestamptz not null default now(),
+  updated_at         timestamptz not null default now()
+);
+
+create index if not exists evidence_published_idx on public.evidence (published);
+create index if not exists evidence_region_idx on public.evidence (region_wide, region_basic);
+
+-- updated_at 자동 갱신
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql set search_path = '' as $$
+begin new.updated_at = now(); return new; end $$;
+drop trigger if exists evidence_touch on public.evidence;
+create trigger evidence_touch before update on public.evidence
+  for each row execute function public.touch_updated_at();
+
+-- 1b) 관리자 허용 목록 -------------------------------------------------
+--    로그인한 계정 전체가 아니라 admins에 있는 계정만 관리자로 본다.
+--    Auth 가입 설정이 나중에 켜져도 가입자는 관리자 권한을 얻지 못한다.
+--    관리자 추가: insert into public.admins (user_id)
+--                 select id from auth.users where email = '<관리자 이메일>';
+create table if not exists public.admins (
+  user_id     uuid primary key references auth.users (id) on delete cascade,
+  created_at  timestamptz not null default now()
+);
+alter table public.admins enable row level security;
+revoke all on public.admins from anon, authenticated;
+
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (select 1 from public.admins where user_id = auth.uid())
+$$;
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- 2) RLS: 공개는 published=true만 읽기, 쓰기는 관리자(admins)만 -----------
+--    공개 앱은 로그인 없음(비식별화로 보호). 관리자(/admin)만 로그인해 편집.
+alter table public.evidence enable row level security;
+
+drop policy if exists evidence_public_read on public.evidence;
+create policy evidence_public_read on public.evidence
+  for select using (published = true);                 -- 익명도 공개분 조회
+
+drop policy if exists evidence_admin_read on public.evidence;
+create policy evidence_admin_read on public.evidence
+  for select to authenticated using (public.is_admin());  -- 관리자는 비공개도 조회
+
+drop policy if exists evidence_admin_write on public.evidence;
+create policy evidence_admin_write on public.evidence
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- 3) 미디어 스토리지 버킷 (공개 읽기) -----------------------------------
+insert into storage.buckets (id, name, public)
+values ('evidence-media', 'evidence-media', true)
+on conflict (id) do nothing;
+
+-- 혹시 비공개로 바뀌었으면 공개로 복구 + 업로드 제한(하드닝)
+update storage.buckets
+  set public = true,
+      file_size_limit = 10485760,                       -- 10MB
+      allowed_mime_types = array['image/jpeg','image/png','image/webp']
+  where id = 'evidence-media';
+
+drop policy if exists media_auth_read on storage.objects;
+-- 공개 버킷 주소(/object/public/)는 정책 없이 열린다. anon 읽기 정책을 두면 객체 목록까지 조회된다(0005).
+drop policy if exists media_public_read on storage.objects;
+
+drop policy if exists media_admin_write on storage.objects;
+create policy media_admin_write on storage.objects
+  for all to authenticated
+  using (bucket_id = 'evidence-media' and public.is_admin())
+  with check (bucket_id = 'evidence-media' and public.is_admin());
+
+-- 4) 관리자 계정만 생성: 대시보드 → Authentication → Users → Add user.
+--    /admin 편집용. 공개 열람자는 계정 불필요(로그인 없음).
+
+-- ======================================================================
+-- 0001 선거 증거 데스크 마이그레이션 (plan/0001-evidence-desk.md 1단계)
+-- 여러 번 실행해도 결과가 같다. 상태 값은 src/lib/status.ts와 같다.
+-- ======================================================================
+
+-- 5) 기록 컬럼 ----------------------------------------------------------
+--    status는 기본값 없이 추가한다. 기존 행은 migrate_to_ledger.py가 채운다.
+--    document, video_confirmed는 관리자가 수동으로만 지정한다.
+alter table public.evidence add column if not exists status text;
+alter table public.evidence add column if not exists claim text;          -- 한 문장 주장
+alter table public.evidence add column if not exists election text;
+alter table public.evidence add column if not exists occurred_at text;    -- ISO 8601. 시각을 모르면 날짜만
+alter table public.evidence add column if not exists sources jsonb not null default '[]'::jsonb;
+                                                                          -- [{title,url,archiveUrl?}]
+alter table public.evidence add column if not exists verification jsonb not null default '{}'::jsonb;
+                                                                          -- {seen,where,when,notClaimed}
+alter table public.evidence drop constraint if exists evidence_status_check;
+alter table public.evidence add constraint evidence_status_check
+  check (status is null or status in ('document', 'video_confirmed', 'reported', 'allegation'));
+create index if not exists evidence_status_idx on public.evidence (status);
+
+-- migrate_to_ledger.py --apply 로 모든 행에 status가 채워진 뒤 아래를 실행한다.
+--   alter table public.evidence alter column status set default 'allegation';
+--   alter table public.evidence alter column status set not null;
+
+-- 6) 피드 --------------------------------------------------------------
+create table if not exists public.feed_sources (
+  id           text primary key,                -- olgung, jahyeok
+  name         text not null,
+  platform     text not null,                   -- youtube, ...
+  channel_url  text,
+  feed_url     text,                            -- 유튜브 채널 RSS
+  active       boolean not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists public.feed_items (
+  id           text primary key,                -- 플랫폼 항목 ID
+  source       text not null references public.feed_sources (id),
+  sent_at      timestamptz not null,
+  text         text not null,                   -- 한 줄
+  url          text not null unique,
+  evidence_id  text references public.evidence (id) on delete set null,  -- 기록 승격 시에만
+  published    boolean not null default true,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create index if not exists feed_items_source_idx on public.feed_items (source, sent_at desc);
+
+-- 7) 제보 --------------------------------------------------------------
+--    tips는 공개 필드만 둔다. 원문과 연락처는 tip_contacts(관리자 전용)에 둔다.
+create table if not exists public.tips (
+  id           text primary key default gen_random_uuid()::text,
+  status       text not null default 'unverified' check (status in ('unverified')),
+  place_name   text not null default '',
+  sent_at      timestamptz not null default now(),
+  heard        text not null default '',        -- 관리자가 쓴 공개용 한 줄
+  not_claimed  text not null default '',        -- 관리자가 쓴 공개용 한 줄
+  published    boolean not null default false,  -- 관리자 검수 후 공개
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+
+create table if not exists public.tip_contacts (
+  tip_id       text primary key references public.tips (id) on delete cascade,
+  body         text not null,                   -- 제보 원문
+  name         text,
+  contact      text,                            -- 전화, 이메일, 계정
+  created_at   timestamptz not null default now()
+);
+
+-- 8) 통계 --------------------------------------------------------------
+create table if not exists public.analyses (
+  id                     text primary key,
+  title                  text not null,
+  question               text not null,
+  period                 text not null,
+  universe               text not null,                 -- 모수
+  method                 jsonb not null check (jsonb_typeof(method) = 'array' and jsonb_array_length(method) = 4),
+  source_table           text not null,
+  included_evidence_ids  text[] not null default '{}',
+  excluded               text[] not null default '{feed,unverified_tip,no_coordinates,allegation_only}'
+    check (excluded <@ array['feed', 'unverified_tip', 'no_coordinates', 'allegation_only']),
+  geo                    text not null check (geo in ('choropleth', 'dots')),
+  published              boolean not null default false,
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+
+create table if not exists public.analysis_rows (
+  id           bigint generated always as identity primary key,
+  analysis_id  text not null references public.analyses (id) on delete cascade,
+  position     int not null default 0,
+  area         text not null,                   -- 구역 또는 장소
+  value        numeric not null,
+  unit         text not null
+);
+create index if not exists analysis_rows_analysis_idx on public.analysis_rows (analysis_id, position);
+
+-- 9) updated_at 자동 갱신 ---------------------------------------------
+drop trigger if exists feed_sources_touch on public.feed_sources;
+create trigger feed_sources_touch before update on public.feed_sources
+  for each row execute function public.touch_updated_at();
+drop trigger if exists feed_items_touch on public.feed_items;
+create trigger feed_items_touch before update on public.feed_items
+  for each row execute function public.touch_updated_at();
+drop trigger if exists tips_touch on public.tips;
+create trigger tips_touch before update on public.tips
+  for each row execute function public.touch_updated_at();
+drop trigger if exists analyses_touch on public.analyses;
+create trigger analyses_touch before update on public.analyses
+  for each row execute function public.touch_updated_at();
+
+-- 10) RLS -------------------------------------------------------------
+--    공개 테이블: 익명은 공개 행만 읽는다. 쓰기는 관리자(admins)만.
+--    tip_contacts: 익명 정책을 두지 않는다. 관리자(admins)와 서버 함수(service_role)만 접근한다.
+alter table public.feed_sources  enable row level security;
+alter table public.feed_items    enable row level security;
+alter table public.tips          enable row level security;
+alter table public.tip_contacts  enable row level security;
+alter table public.analyses      enable row level security;
+alter table public.analysis_rows enable row level security;
+
+drop policy if exists feed_sources_public_read on public.feed_sources;
+create policy feed_sources_public_read on public.feed_sources
+  for select using (true);
+drop policy if exists feed_sources_admin_write on public.feed_sources;
+create policy feed_sources_admin_write on public.feed_sources
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists feed_items_public_read on public.feed_items;
+create policy feed_items_public_read on public.feed_items
+  for select using (published = true);
+drop policy if exists feed_items_admin_all on public.feed_items;
+create policy feed_items_admin_all on public.feed_items
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists tips_admin_all on public.tips;
+create policy tips_admin_all on public.tips
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists tip_contacts_admin_all on public.tip_contacts;
+create policy tip_contacts_admin_all on public.tip_contacts
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+revoke all on public.tip_contacts from anon;
+
+drop policy if exists analyses_public_read on public.analyses;
+create policy analyses_public_read on public.analyses
+  for select using (published = true);
+drop policy if exists analyses_admin_all on public.analyses;
+create policy analyses_admin_all on public.analyses
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists analysis_rows_public_read on public.analysis_rows;
+create policy analysis_rows_public_read on public.analysis_rows
+  for select using (
+    exists (select 1 from public.analyses a where a.id = analysis_id and a.published = true)
+  );
+drop policy if exists analysis_rows_admin_all on public.analysis_rows;
+create policy analysis_rows_admin_all on public.analysis_rows
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- 11) 피드 발신처 초기값. 발신처 추가는 이 테이블에 행을 넣는 것으로 끝난다.
+--     채널 주소는 운영자가 채운다.
+insert into public.feed_sources (id, name, platform) values
+  ('olgung', '올공', 'youtube'),
+  ('jahyeok', '자혁', 'youtube')
+on conflict (id) do nothing;
+
+-- 12) 제보 접수·검수(0001 플랜 5단계). 제보는 어떤 경로로도 공개되지 않는다.
+alter table public.tips add column if not exists occurred_text text not null default '';
+alter table public.tips add column if not exists links text[] not null default '{}';
+alter table public.tips add column if not exists review text not null default 'new';
+alter table public.tips add column if not exists ip_hash text;
+alter table public.tips add column if not exists evidence_id text references public.evidence (id) on delete set null;
+alter table public.tips drop constraint if exists tips_review_check;
+alter table public.tips add constraint tips_review_check check (review in ('new', 'accepted', 'rejected'));
+create index if not exists tips_ip_recent_idx on public.tips (ip_hash, created_at);
+
+-- 익명 읽기를 없앤다. 관리자 정책(tips_admin_all)만 남는다.
+drop policy if exists tips_public_read on public.tips;
+
+-- 접수: anon이 부르는 유일한 쓰기 경로. 테이블 쓰기 권한은 주지 않는다.
+-- IP는 원문을 저장하지 않고 해시만 비율 제한에 쓴다.
+create or replace function public.submit_tip(
+  p_place text, p_occurred text, p_body text, p_links text[], p_name text, p_contact text
+) returns text language plpgsql security definer set search_path = '' as $$
+declare
+  hdr json;
+  ip text;
+  h text;
+  new_id text;
+  l text;
+begin
+  p_place := btrim(coalesce(p_place, ''));
+  p_occurred := btrim(coalesce(p_occurred, ''));
+  p_body := btrim(coalesce(p_body, ''));
+  p_links := coalesce(p_links, '{}');
+  if char_length(p_place) < 2 or char_length(p_place) > 200 then
+    raise exception '장소는 2~200자로 적어 주세요' using errcode = '22023';
+  end if;
+  if char_length(p_body) < 10 or char_length(p_body) > 5000 then
+    raise exception '내용은 10~5000자로 적어 주세요' using errcode = '22023';
+  end if;
+  if char_length(p_occurred) > 200 or char_length(coalesce(p_name, '')) > 100 or char_length(coalesce(p_contact, '')) > 200 then
+    raise exception '입력이 너무 깁니다' using errcode = '22023';
+  end if;
+  if coalesce(array_length(p_links, 1), 0) > 5 then
+    raise exception '링크는 5개까지 받습니다' using errcode = '22023';
+  end if;
+  foreach l in array p_links loop
+    if l !~ '^https?://' or char_length(l) > 500 then
+      raise exception '링크는 http(s) 주소여야 합니다' using errcode = '22023';
+    end if;
+  end loop;
+
+  -- cf-connecting-ip는 Cloudflare가 덮어써서 요청자가 위조하지 못한다. 없으면 x-forwarded-for 첫 값.
+  hdr := coalesce(current_setting('request.headers', true), '{}')::json;
+  ip := coalesce(nullif(btrim(hdr ->> 'cf-connecting-ip'), ''),
+                 btrim(split_part(coalesce(hdr ->> 'x-forwarded-for', ''), ',', 1)));
+  h := md5('desk-tip:' || coalesce(nullif(ip, ''), 'unknown'));
+  if (select count(*) from public.tips where ip_hash = h and created_at > now() - interval '1 hour') >= 5 then
+    raise exception '잠시 뒤에 다시 보내 주세요' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.tips where created_at > now() - interval '1 hour') >= 100 then
+    raise exception '지금은 제보가 많아 잠시 뒤에 다시 보내 주세요' using errcode = 'P0001';
+  end if;
+
+  insert into public.tips (place_name, occurred_text, links, ip_hash, published, review)
+    values (p_place, p_occurred, p_links, h, false, 'new')
+    returning id into new_id;
+  insert into public.tip_contacts (tip_id, body, name, contact)
+    values (new_id, p_body, nullif(btrim(coalesce(p_name, '')), ''), nullif(btrim(coalesce(p_contact, '')), ''));
+  return new_id;
+end $$;
+revoke all on function public.submit_tip(text, text, text, text[], text, text) from public;
+grant execute on function public.submit_tip(text, text, text, text[], text, text) to anon, authenticated;
+
+-- 검수 마감. 기각하면 원문·이름·연락처를 지우고 장소·시각·링크를 비운다(0005 명세 4장).
+-- 채택하면 이름·연락처만 지운다. 첨부 파일은 관리자 화면이 Storage API로 먼저 지운다.
+create or replace function public.finish_tip_review(p_tip text, p_review text, p_evidence text)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.is_admin() then
+    raise exception '관리자만 검수를 마칠 수 있습니다' using errcode = '42501';
+  end if;
+  if p_review not in ('accepted', 'rejected') then
+    raise exception '검수 결과는 accepted 또는 rejected' using errcode = '22023';
+  end if;
+  update public.tips set review = p_review, evidence_id = p_evidence where id = p_tip;
+  if p_review = 'rejected' then
+    delete from public.tip_contacts where tip_id = p_tip;
+    update public.tips set place_name = '', occurred_text = '', links = '{}', ip_hash = null where id = p_tip;
+  else
+    update public.tip_contacts set name = null, contact = null where tip_id = p_tip;
+  end if;
+end $$;
+revoke all on function public.finish_tip_review(text, text, text) from public;
+revoke execute on function public.finish_tip_review(text, text, text) from anon;
+grant execute on function public.finish_tip_review(text, text, text) to authenticated;
+
+
+-- 13) 제보 첨부 파일 업로드(0004 명세 3장).
+-- 제보 첨부 파일 버킷: 비공개. 파일당 20MB, 사진·영상·PDF만.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('tip-uploads', 'tip-uploads', false, 20971520,
+        array['image/jpeg','image/png','image/webp','image/heic','image/heif','video/mp4','video/quicktime','application/pdf'])
+on conflict (id) do update
+  set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+-- 업로드 허용 검사. API로 노출되지 않는 private 스키마에 둔다.
+-- 경로: <제보 id>/<순번>.<확장자>. 접수 30분 안, 검수 전, 제보당 5개, 버킷 1시간 60개, 누적 500MB.
+create schema if not exists private;
+grant usage on schema private to anon, authenticated;
+create or replace function private.tip_upload_ok(p_name text)
+returns boolean language plpgsql stable security definer set search_path = '' as $$
+declare
+  tip text;
+begin
+  if p_name is null
+     or p_name !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9]{1,2}\.(jpg|png|webp|heic|heif|mp4|mov|pdf)$' then
+    return false;
+  end if;
+  tip := split_part(p_name, '/', 1);
+  if not exists (select 1 from public.tips t
+                 where t.id = tip and t.review = 'new' and t.created_at > now() - interval '30 minutes') then
+    return false;
+  end if;
+  if (select count(*) from storage.objects o where o.bucket_id = 'tip-uploads' and o.name like tip || '/%') >= 5 then
+    return false;
+  end if;
+  if (select count(*) from storage.objects o where o.bucket_id = 'tip-uploads' and o.created_at > now() - interval '1 hour') >= 60 then
+    return false;
+  end if;
+  if (select coalesce(sum((o.metadata ->> 'size')::bigint), 0) from storage.objects o where o.bucket_id = 'tip-uploads') >= 524288000 then
+    return false;
+  end if;
+  return true;
+end $$;
+revoke all on function private.tip_upload_ok(text) from public;
+grant execute on function private.tip_upload_ok(text) to anon, authenticated;
+
+-- anon은 조건을 만족할 때 올리기만 한다. 읽기·목록·덮어쓰기·삭제 정책은 두지 않는다.
+drop policy if exists tip_upload_insert on storage.objects;
+create policy tip_upload_insert on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'tip-uploads' and private.tip_upload_ok(name));
+
+-- 관리자는 첨부 파일을 보고 지운다.
+drop policy if exists tip_upload_admin on storage.objects;
+create policy tip_upload_admin on storage.objects
+  for all to authenticated
+  using (bucket_id = 'tip-uploads' and public.is_admin())
+  with check (bucket_id = 'tip-uploads' and public.is_admin());
+
+-- 14) 문의(0006 명세 2장).
+-- 문의(0006 명세). 공개 화면 어디에도 나오지 않는다. 관리자만 읽는다.
+create table if not exists public.inquiries (
+  id         text primary key default gen_random_uuid()::text,
+  kind       text not null check (kind in ('question', 'suggestion', 'correction', 'privacy')),
+  body       text not null,
+  reply_to   text,                 -- 선택 동의한 경우에만 저장하는 회신 이메일
+  ip_hash    text,                 -- 비율 제한용. 1일 뒤 파기
+  mailed_at  timestamptz,          -- 운영자에게 메일을 보낸 시각. 한 번만 보낸다
+  handled    boolean not null default false,
+  created_at timestamptz not null default now()
+);
+alter table public.inquiries enable row level security;
+-- Supabase 기본 권한으로 anon에 붙은 테이블 권한을 회수한다. 접수는 submit_inquiry로만 한다.
+revoke all on public.inquiries from anon;
+drop policy if exists inquiries_admin on public.inquiries;
+create policy inquiries_admin on public.inquiries
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+create or replace function public.submit_inquiry(p_kind text, p_body text, p_reply_to text)
+returns text language plpgsql security definer set search_path = '' as $$
+declare
+  hdr json;
+  ip text;
+  h text;
+  new_id text;
+begin
+  p_body := btrim(coalesce(p_body, ''));
+  p_reply_to := nullif(btrim(coalesce(p_reply_to, '')), '');
+  if p_kind is null or p_kind not in ('question', 'suggestion', 'correction', 'privacy') then
+    raise exception '문의 종류를 골라 주세요' using errcode = '22023';
+  end if;
+  if char_length(p_body) < 10 or char_length(p_body) > 5000 then
+    raise exception '내용은 10~5000자로 적어 주세요' using errcode = '22023';
+  end if;
+  if p_reply_to is not null and (char_length(p_reply_to) > 200 or p_reply_to !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$') then
+    raise exception '회신 이메일 형식이 맞지 않습니다' using errcode = '22023';
+  end if;
+
+  -- cf-connecting-ip는 Cloudflare가 덮어써서 요청자가 위조하지 못한다. 없으면 x-forwarded-for 첫 값.
+  hdr := coalesce(current_setting('request.headers', true), '{}')::json;
+  ip := coalesce(nullif(btrim(hdr ->> 'cf-connecting-ip'), ''),
+                 btrim(split_part(coalesce(hdr ->> 'x-forwarded-for', ''), ',', 1)));
+  h := md5('desk-inquiry:' || coalesce(nullif(ip, ''), 'unknown'));
+  if (select count(*) from public.inquiries where ip_hash = h and created_at > now() - interval '1 hour') >= 3 then
+    raise exception '잠시 뒤에 다시 보내 주세요' using errcode = 'P0001';
+  end if;
+  if (select count(*) from public.inquiries where created_at > now() - interval '1 hour') >= 50 then
+    raise exception '지금은 문의가 많아 잠시 뒤에 다시 보내 주세요' using errcode = 'P0001';
+  end if;
+
+  insert into public.inquiries (kind, body, reply_to, ip_hash) values (p_kind, p_body, p_reply_to, h)
+    returning id into new_id;
+  return new_id;
+end $$;
+revoke all on function public.submit_inquiry(text, text, text) from public;
+grant execute on function public.submit_inquiry(text, text, text) to anon, authenticated;
+
+-- 메일 발송용. 접수 10분 안이고 아직 보내지 않은 문의만 한 번 돌려준다. id(UUID)는 접수한 사람만 안다.
+create or replace function public.claim_inquiry_mail(p_id text)
+returns table (kind text, body text, reply_to text, created_at timestamptz)
+language sql security definer set search_path = '' as $$
+  update public.inquiries i set mailed_at = now()
+    where i.id = p_id and i.mailed_at is null and i.created_at > now() - interval '10 minutes'
+    returning i.kind, i.body, i.reply_to, i.created_at
+$$;
+revoke all on function public.claim_inquiry_mail(text) from public;
+grant execute on function public.claim_inquiry_mail(text) to anon, authenticated;
+
+-- 15) 개인정보 보유 기간과 파기(0005 명세 1·4장, 0006 명세 3장).
+-- 파기 대상 제보: 검수 없이 1년 지난 제보, 기각한 제보, 기록이 사라진 채택 제보.
+-- 매일 retention.yml이 이 목록의 첨부 파일을 지운 뒤 apply_retention을 부른다.
+create or replace function public.retention_due_tips()
+returns setof text language sql stable security definer set search_path = '' as $$
+  select t.id from public.tips t
+  where (t.review = 'new' and t.created_at < now() - interval '1 year')
+     or t.review = 'rejected'
+     or (t.review = 'accepted' and not exists (select 1 from public.evidence e where e.id = t.evidence_id))
+$$;
+revoke all on function public.retention_due_tips() from public;
+revoke execute on function public.retention_due_tips() from anon, authenticated;
+grant execute on function public.retention_due_tips() to service_role;
+
+-- 보유 기간이 지난 개인정보 파기. p_purged는 첨부 파일을 지운 제보 id다. 그중 아직 파기 대상인 행만 지운다.
+-- 문의(0006): IP 변환값 1일, 문의 내용과 회신 이메일 1년.
+create or replace function public.apply_retention(p_purged text[])
+returns json language plpgsql security definer set search_path = '' as $$
+declare
+  n_ip int;
+  n_contact int;
+  n_tip int;
+  n_inq_ip int;
+  n_inq int;
+begin
+  update public.tips set ip_hash = null
+    where ip_hash is not null and created_at < now() - interval '1 day';
+  get diagnostics n_ip = row_count;
+  update public.tip_contacts tc set name = null, contact = null
+    from public.tips t
+    where t.id = tc.tip_id and t.created_at < now() - interval '90 days'
+      and (tc.name is not null or tc.contact is not null);
+  get diagnostics n_contact = row_count;
+  delete from public.tips t
+    where t.id = any(coalesce(p_purged, '{}'))
+      and t.id in (select public.retention_due_tips());
+  get diagnostics n_tip = row_count;
+  update public.inquiries set ip_hash = null
+    where ip_hash is not null and created_at < now() - interval '1 day';
+  get diagnostics n_inq_ip = row_count;
+  delete from public.inquiries where created_at < now() - interval '1 year';
+  get diagnostics n_inq = row_count;
+  return json_build_object('ip_cleared', n_ip, 'contacts_cleared', n_contact, 'tips_deleted', n_tip,
+                           'inquiry_ip_cleared', n_inq_ip, 'inquiries_deleted', n_inq);
+end $$;
+revoke all on function public.apply_retention(text[]) from public;
+revoke execute on function public.apply_retention(text[]) from anon, authenticated;
+grant execute on function public.apply_retention(text[]) to service_role;
