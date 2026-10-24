@@ -6,7 +6,7 @@
 - 변경은 `intent/` → `spec/` → `plan/` 순서로 문서를 커밋한 뒤 구현한다. 파일 이름은 같은 번호(`0001-...`)를 쓴다.
 - 우선순위: `spec/`의 원본 PDF > `spec/*.md` > `plan/` > 이 문서 > 스킬.
 - 구현이 플랜과 달라지면 같은 커밋에서 `plan/` 문서를 고친다.
-- 현재 작업: `plan/0008-redesign.md`
+- 현재 작업: `plan/0009-seoul-region.md`
 
 ## 명령어
 - `npm run dev`: 개발 서버 (5173)
@@ -25,6 +25,7 @@
 - `src/lib/data.ts`: Supabase에서 공개 레코드를 읽고, 실패하면 정적 JSON으로 대체한다.
 - `scripts/`: Python ETL과 비식별화(`deident_*`, `reencode_view.py`). SDK 없이 `urllib`로 Supabase REST를 호출한다.
 - `scripts/supabase_schema.sql`: 테이블, RLS, 스토리지 버킷 정의.
+- `supabase/migrations/`: Supabase GitHub 연동이 main 머지 때 서울 프로젝트(`rndprqktwlfdmokzgaab`)에 자동 적용한다. 스키마를 바꾸면 이 폴더에 새 파일을 더하고 `scripts/supabase_schema.sql`도 같은 커밋에서 고친다(0009). `scripts/migrations/`는 옛 시드니 프로젝트 기록이다.
 - `api/rebuild.js`: 관리자 "공개 HTML 갱신" 버튼이 부르는 Vercel 함수. 서버 환경변수 `DEPLOY_HOOK_URL`(Vercel Deploy Hook)이 필요하다. `VITE_` 접두사를 붙이지 않는다.
 - `api/contact.js`: 문의 메일 발송. 서버 환경변수 `RESEND_API_KEY`, `CONTACT_TO`가 필요하다. `VITE_` 접두사를 붙이지 않는다. 운영자 이메일 주소를 저장소에 쓰지 않는다.
 - `scripts/retention.mjs`, `.github/workflows/retention.yml`: 매일 개인정보 파기. GitHub Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`가 필요하다.
