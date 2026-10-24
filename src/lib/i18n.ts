@@ -35,7 +35,6 @@ export function hasPair(path: string): boolean {
 export interface Copy {
   siteName: string;
   siteShort: string;
-  tagline: string;   // 홈 이름 아래 한 줄
   civicNote: string; // 민간 운영 표시
   purpose: string;
   disclaimer: string;
@@ -86,7 +85,6 @@ export const COPY: Record<Lang, Copy> = {
   ko: {
     siteName: '선거부정진상규명국민신고센터',
     siteShort: '선진국',
-    tagline: '2026 지방선거 증거 신고센터',
     civicNote: CIVIC_NOTE,
     purpose: SITE_PURPOSE,
     disclaimer: STATUS_DISCLAIMER,
@@ -147,7 +145,6 @@ export const COPY: Record<Lang, Copy> = {
   en: {
     siteName: 'Citizen Report Center for Election Integrity',
     siteShort: 'SeonJinGuk',
-    tagline: "Evidence from Korea's 2026 local elections",
     civicNote: 'This site is run by private citizens. It is not affiliated with the National Election Commission or any public body.',
     purpose:
       "We collect photos, videos, and documents from the early voting, election-day voting, and vote counting of Korea's June 3, 2026 local elections, and publish each one with its date, place, source, and verification status.",

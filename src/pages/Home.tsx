@@ -47,11 +47,8 @@ export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) 
     <DeskLayout lang={lang}>
       <header className="home-hero">
         <h1>{t.siteName}</h1>
-        <p className="home-tagline">{t.tagline}</p>
-        <p className="home-counts">
-          <span>{t.home.collected(ledger.length)}</span>
-          <span>{t.home.verified(verified)}</span>
-        </p>
+        {/* 한 텍스트 노드로 둔다. H1 바로 뒤 첫 문단 검사(check:dist)가 이 문단을 읽는다. */}
+        <p className="home-counts">{`${t.home.collected(ledger.length)} · ${t.home.verified(verified)}`}</p>
         <p className="home-disclaimer">{t.disclaimer}</p>
       </header>
       {t.home.translationNote && <p className="sub">{t.home.translationNote}</p>}

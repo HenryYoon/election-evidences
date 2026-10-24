@@ -91,10 +91,6 @@ export default function TipList() {
             무슨 일이 있었나요 (필수)
             <textarea value={f.body} onChange={(e) => set('body', e.target.value)} rows={7} maxLength={5000} required />
           </label>
-          <label>
-            사진·영상 링크 (선택, 줄마다 하나, 5개까지)
-            <textarea value={f.links} onChange={(e) => set('links', e.target.value)} rows={3} placeholder="https://" />
-          </label>
           <div className="tip-files">
             <label>
               사진·영상·문서 파일 (선택, {MAX_TIP_FILES}개까지, 파일당 20MB)
@@ -111,6 +107,10 @@ export default function TipList() {
               </ul>
             )}
           </div>
+          <label>
+            파일이 크면 공유 링크 (선택, 줄마다 하나, 5개까지)
+            <textarea value={f.links} onChange={(e) => set('links', e.target.value)} rows={3} placeholder="https://" />
+          </label>
           <div className="tip-row">
             <label>
               이름 (선택)
