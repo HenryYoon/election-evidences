@@ -46,7 +46,6 @@
 /* 홈(0008): 이름 중앙 정렬, 숫자 둘, 면책 한 줄 */
 .home-hero { text-align: center; padding: 24px 0 8px; }
 .home-hero h1 { font-size: 34px; letter-spacing: -0.01em; word-break: keep-all; }
-.home-tagline { margin: 6px 0 0; font-size: 16px; font-weight: 600; }
 .home-counts { margin: 18px 0 0; display: flex; justify-content: center; gap: 28px; font-size: 22px; font-weight: 800; }
 .home-disclaimer { margin: 10px 0 0; font-size: 13px; }
 .home-doors { margin: 28px 0 0; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; font-weight: 700; }
