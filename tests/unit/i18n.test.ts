@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { COPY, counterpart, langOf, langPath } from '../../src/lib/i18n';
 import { SITE_NAME } from '../../src/lib/seo';
-import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER, VERIFICATION_FIELDS } from '../../src/lib/status';
+import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from '../../src/lib/status';
 import { pageMeta, prerenderPaths } from '../../src/lib/seo';
 
 const ds = { evidence: [] } as unknown as Parameters<typeof pageMeta>[1];
@@ -36,7 +36,6 @@ describe('문구', () => {
       expect(COPY.en.statusLabel[s]).toBeTruthy();
       expect(COPY.en.statusLegend[s]).toBeTruthy();
     }
-    for (const [k] of VERIFICATION_FIELDS) expect(COPY.en.verificationLabel[k]).toBeTruthy();
   });
 });
 

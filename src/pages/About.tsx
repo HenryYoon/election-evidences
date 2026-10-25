@@ -1,8 +1,8 @@
-// 소개(0004 명세 2장, 영어판 0007). 목적, 네 층, 상태, 검증 네 줄, 하지 않는 것, 정정과 문의.
+// 소개(0004 명세 2장, 영어판 0007). 목적, 층, 상태, 하지 않는 것, 정정과 문의.
 import { Link } from 'react-router-dom';
 import DeskLayout from '../components/layout/DeskLayout';
 import { COPY, type Lang } from '../lib/i18n';
-import { EVIDENCE_STATUSES, VERIFICATION_FIELDS } from '../lib/status';
+import { EVIDENCE_STATUSES } from '../lib/status';
 
 export default function About({ lang = 'ko' }: { lang?: Lang }) {
   const t = COPY[lang];
@@ -40,19 +40,6 @@ export default function About({ lang = 'ko' }: { lang?: Lang }) {
             <div key={s}>
               <dt>{t.statusLabel[s]}</dt>
               <dd>{t.statusLegend[s]}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-
-      <section className="about-section">
-        <h2>{a.verificationTitle}</h2>
-        <p>{a.verificationNote}</p>
-        <dl className="about-dl">
-          {VERIFICATION_FIELDS.map(([k]) => (
-            <div key={k}>
-              <dt>{t.verificationLabel[k]}</dt>
-              <dd>{t.verificationHelp[k]}</dd>
             </div>
           ))}
         </dl>

@@ -5,12 +5,10 @@ import {
   EVIDENCE_STATUS_LABEL,
   EVIDENCE_STATUS_LEGEND,
   STATUS_DISCLAIMER,
-  VERIFICATION_FIELDS,
   type EvidenceStatus,
 } from './status';
 
 export type Lang = 'ko' | 'en';
-type VerificationKey = (typeof VERIFICATION_FIELDS)[number][0];
 
 // 한국어 주소 ↔ 영어 주소. 짝이 없는 한국어 페이지에서 토글하면 영어 메인으로 간다.
 export const LANG_PAIRS: readonly (readonly [string, string])[] = [
@@ -42,8 +40,6 @@ export interface Copy {
   layers: { records: string; tips: string };
   statusLabel: Record<EvidenceStatus, string>;
   statusLegend: Record<EvidenceStatus, string>;
-  verificationLabel: Record<VerificationKey, string>;
-  verificationHelp: Record<VerificationKey, string>;
   nav: { cases: string; records: string; tips: string; about: string; contact: string; privacy: string; toggle: string };
   koOnly: string; // 한국어 페이지로 가는 링크 옆 표시. 한국어판은 빈 문자열
   home: {
@@ -70,8 +66,6 @@ export interface Copy {
     layersNote: string;
     statusTitle: string;
     statusNote: string;
-    verificationTitle: string;
-    verificationNote: string;
     dontTitle: string;
     dont: readonly string[];
     contactTitle: string;
@@ -79,7 +73,6 @@ export interface Copy {
   };
 }
 
-const VERIFICATION_LABEL_KO = Object.fromEntries(VERIFICATION_FIELDS) as Record<VerificationKey, string>;
 
 export const COPY: Record<Lang, Copy> = {
   ko: {
@@ -92,13 +85,6 @@ export const COPY: Record<Lang, Copy> = {
     layers: LAYER_LINES,
     statusLabel: EVIDENCE_STATUS_LABEL,
     statusLegend: EVIDENCE_STATUS_LEGEND,
-    verificationLabel: VERIFICATION_LABEL_KO,
-    verificationHelp: {
-      seen: '사진·영상·문서에 실제로 보이는 것입니다.',
-      where: '장소를 무엇으로 확인했는지 적습니다.',
-      when: '시각을 무엇으로 확인했는지 적습니다.',
-      notClaimed: '이 자료만으로는 말할 수 없는 것입니다.',
-    },
     nav: { cases: '대표 사례', records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
     koOnly: '',
     home: {
@@ -125,8 +111,6 @@ export const COPY: Record<Lang, Copy> = {
       layersNote: '증거와 제보는 성격이 다릅니다. 제보는 검수를 거쳐야 증거가 됩니다. 두 층의 건수를 합치지 않습니다.',
       statusTitle: '상태',
       statusNote: `증거마다 상태 하나를 붙입니다. ${STATUS_DISCLAIMER} 자료 확인은 운영진이 자료와 장소를 보고 직접 붙입니다. 홈의 "자료 확인" 건수는 이 상태의 증거 수입니다.`,
-      verificationTitle: '검증 네 줄',
-      verificationNote: '증거 상세 화면에는 아래 네 줄을 적습니다. 확인한 것과 확인하지 않은 것을 나누기 위해서입니다.',
       dontTitle: '하지 않는 것',
       dont: [
         '상태로 위법 여부를 판단하지 않습니다.',
@@ -147,7 +131,7 @@ export const COPY: Record<Lang, Copy> = {
     siteShort: 'SeonJinGuk',
     civicNote: 'This site is run by private citizens. It is not affiliated with the National Election Commission or any public body.',
     purpose:
-      "We collect photos, videos, and documents from the early voting, election-day voting, and vote counting of Korea's June 3, 2026 local elections, and publish each one with its date, place, source, and verification status.",
+      "We collect photos, videos, and documents from the early voting, election-day voting, and vote counting of Korea's June 3, 2026 local elections, and publish each one with its date, place, source, and status.",
     disclaimer: 'Status is an investigative classification, not a legal conclusion.',
     how: [
       ['Collect', 'We gather photos, videos, and documents from citizen tips and public sources.'],
@@ -155,7 +139,7 @@ export const COPY: Record<Lang, Copy> = {
       ['Publish', 'We publish only as much as we have checked, with a status label. Readers draw their own conclusions.'],
     ],
     layers: {
-      records: 'Evidence cards with a verification status.',
+      records: 'Evidence cards with a status.',
       tips: 'Send what you saw or experienced. Reviewed tips become evidence.',
     },
     statusLabel: {
@@ -165,13 +149,6 @@ export const COPY: Record<Lang, Copy> = {
     statusLegend: {
       confirmed: 'Our editors reviewed the photos, videos, or documents and confirmed the place is identified down to the polling or counting station. This is not a judgment on authenticity or legality.',
       reported: 'A tip without material or without an identified place. Our editors have not reviewed the material yet.',
-    },
-    verificationLabel: { seen: 'What is shown', where: 'Place', when: 'Time', notClaimed: 'What this does not claim' },
-    verificationHelp: {
-      seen: 'What actually appears in the photo, video, or document.',
-      where: 'How the place was confirmed.',
-      when: 'How the time was confirmed.',
-      notClaimed: 'What cannot be concluded from this material alone.',
     },
     nav: { cases: 'Key cases', records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
     koOnly: ' (in Korean)',
@@ -200,8 +177,6 @@ export const COPY: Record<Lang, Copy> = {
       statusTitle: 'Status',
       statusNote:
         'Each piece of evidence gets one status. Status is an investigative classification, not a legal conclusion. "Material checked" is assigned only by our editors after they review the material and the place. The "material checked" count on the home page is the number of evidence with that status.',
-      verificationTitle: 'Four verification lines',
-      verificationNote: 'Each evidence page lists these four lines, to separate what we checked from what we did not.',
       dontTitle: 'What we do not do',
       dont: [
         'We do not use status to judge whether anything was illegal.',

@@ -11,7 +11,6 @@ import {
   EVIDENCE_STATUS_LABEL,
   EVIDENCE_STATUS_LEGEND,
   STATUS_DISCLAIMER,
-  VERIFICATION_FIELDS,
 } from './status';
 
 export const markdownPath = (id: string) => `/e/${encodeURIComponent(id)}.md`;
@@ -40,7 +39,7 @@ export function llmsTxt(ds: Dataset, site: string): string {
     '',
     `- [${ELECTION_NAME} 증거](${site}/records): 사진, 영상, 문서가 있고 날짜, 장소, 상태, 출처가 붙은 증거 카드.`,
     `- [제보](${site}/tips): 제보 접수 폼. 제보는 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 증거로 공개합니다.`,
-    `- [소개](${site}/about): 목적, 상태의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법.`,
+    `- [소개](${site}/about): 목적, 상태의 뜻, 하지 않는 것, 정정 요청 방법.`,
     `- [문의](${site}/contact): 문의, 건의, 증거 정정 요청, 개인정보 요청.`,
     `- [English](${site}/en): 메인과 소개의 영어판. 증거 카드는 아직 한국어입니다.`,
     '- 증거와 제보의 건수를 합치지 않습니다. 제보는 검수를 거쳐야 증거가 됩니다.',
@@ -86,10 +85,6 @@ export function evidenceMarkdown(ev: Evidence, site: string): string {
     `- 상태: ${EVIDENCE_STATUS_LABEL[ev.status]}. ${EVIDENCE_STATUS_LEGEND[ev.status]}`,
     `- 선거: ${ev.election ?? '미기재'}`,
     `- 유형: ${ev.type}`,
-    '',
-    '## 검증',
-    '',
-    ...VERIFICATION_FIELDS.map(([k, label]) => `- ${label}: ${ev.verification[k] ? inline(ev.verification[k]!) : '미기재'}`),
     '',
     '## 출처',
     '',

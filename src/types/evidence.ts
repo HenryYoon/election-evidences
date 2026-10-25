@@ -86,7 +86,6 @@ export interface Evidence extends LayerRecord {
   election: string | null;
   type: EvidenceType;
   sources: EvidenceSource[];
-  verification: EvidenceVerification;
   // 상세 화면의 매체 칸과 기록 지역 필터용
   description: string;
   regionWide: string | null;
@@ -116,8 +115,6 @@ export function compareLedger(a: Evidence, b: Evidence): number {
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
 }
 
-const blankVerification: EvidenceVerification = { seen: null, where: null, when: null, notClaimed: null };
-
 // 행을 기록 레코드로 바꾼다. 기록 컬럼이 비어 있으면
 // `scripts/migrate_to_ledger.py`와 같은 규칙으로 기존 컬럼에서 채운다.
 export function toEvidence(row: EvidenceRow): Evidence {
@@ -138,7 +135,6 @@ export function toEvidence(row: EvidenceRow): Evidence {
     election: row.election ?? null,
     type: row.evidence_type,
     sources: row.sources?.length ? row.sources : legacySource,
-    verification: { ...blankVerification, ...row.verification },
     description: row.description,
     regionWide: row.region_wide,
     regionWideLabel: row.region_wide_label,
