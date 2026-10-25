@@ -5,7 +5,7 @@ import type { Dataset } from './data';
 import { toEvidence, compareLedger, type Evidence } from '../types/evidence';
 import { ELECTION_NAME, leadSentence, SITE_NAME, SITE_SHORT } from './seo';
 import { SITE_PURPOSE } from './site';
-import { casePath, visibleCases } from './cases';
+import { CASES_PATH, casesDraft, casesVisible } from './cases';
 import {
   EVIDENCE_STATUSES,
   EVIDENCE_STATUS_LABEL,
@@ -27,7 +27,6 @@ const recordLine = (ev: Evidence, site: string) => `- [${inline(ev.claim)}](${si
 
 export function llmsTxt(ds: Dataset, site: string): string {
   const records = ds.evidence.map(toEvidence).sort(compareLedger).slice(0, LLMS_RECENT);
-  const published = visibleCases().filter((c) => c.state === 'published');
   const lines = [
     `# ${SITE_NAME}(${SITE_SHORT})`,
     '',
@@ -45,8 +44,8 @@ export function llmsTxt(ds: Dataset, site: string): string {
     `- [문의](${site}/contact): 문의, 건의, 증거 정정 요청, 개인정보 요청.`,
     `- [English](${site}/en): 메인과 소개의 영어판. 증거 카드는 아직 한국어다.`,
     '- 증거와 제보의 건수를 합치지 않는다. 제보는 검수를 거쳐야 증거가 된다.',
-    // 공개한 정리 글만 싣는다. 초안은 넣지 않는다(0010 명세 4장).
-    ...published.flatMap((c, i) => [...(i ? [] : ['', '## 정리', '']), `- [${inline(c.title)}](${site}${casePath(c)}): ${inline(c.summary)}`]),
+    // 공개한 대표 사례만 싣는다. 초안은 넣지 않는다(0010 명세 4장).
+    ...(casesVisible() && !casesDraft() ? [`- [대표 사례](${site}${CASES_PATH}): 제보가 많은 유형별 대표 증거 한 건씩. 사진과 두 줄 설명.`] : []),
     '',
     `## 최근 증거 ${LLMS_RECENT}건`,
     '',

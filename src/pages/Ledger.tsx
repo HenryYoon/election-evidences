@@ -1,13 +1,12 @@
 // 증거 목록(0008 명세 3장). 행: 사진 칸, 시각, 장소, 상태, 한 줄, 출처.
 import { lazy, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { applyFilters, NO_FILTERS, type Dataset, type LedgerFilters } from '../lib/data';
 import { toEvidence, compareLedger } from '../types/evidence';
-import { ELECTION_NAME } from '../lib/seo';
+import { ELECTION_NAME, formatOccurred, sourceLabel } from '../lib/seo';
 import DeskLayout, { Disclaimer } from '../components/layout/DeskLayout';
 import FilterBar from '../components/evidence/FilterBar';
-import StatusLegend from '../components/evidence/StatusLegend';
-import EvidenceRow from '../components/evidence/EvidenceRow';
+import StatusLegend, { StatusMark } from '../components/evidence/StatusLegend';
 import ClientOnly from '../components/ClientOnly';
 
 // MapLibre는 window를 참조한다. "지도 보기"를 켰을 때 브라우저에서만 불러온다.
@@ -49,7 +48,22 @@ export default function Ledger({ ds }: { ds: Dataset }) {
       )}
 
       <ul className="ledger-rows">
-        {rows.map((e) => <EvidenceRow key={e.id} e={e} />)}
+        {rows.map((e) => (
+          <li key={e.id} className="ledger-row">
+            <div className="ledger-thumb">
+              {e.photos[0]?.thumb ? <img src={e.photos[0].thumb} alt="" loading="lazy" /> : e.type}
+            </div>
+            <div>
+              <div className="meta">
+                <span>{formatOccurred(e.occurredAt)}</span>
+                <span>{e.placeName || '장소 미상'}</span>
+                <StatusMark status={e.status} />
+              </div>
+              <Link className="claim" to={`/e/${e.id}`}>{e.claim}</Link>
+              <div className="meta">출처 {sourceLabel(e)}</div>
+            </div>
+          </li>
+        ))}
       </ul>
       {!rows.length && <p>조건에 맞는 증거가 없다.</p>}
     </DeskLayout>

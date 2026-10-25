@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// 정리 글 초안은 PR 미리보기와 CASE_DRAFTS=1(CI·로컬)에서만 보인다(0010 명세 4장).
+// 대표 사례 초안은 PR 미리보기와 CASE_DRAFTS=1(CI·로컬)에서만 보인다(0010 명세 4장).
 // 운영 빌드(VERCEL_ENV=production)에는 둘 다 없다.
 // @types/node 없이 쓴다. 이 파일은 Node에서만 실행된다.
 declare const process: { env: Record<string, string | undefined> }

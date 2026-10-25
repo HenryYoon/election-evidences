@@ -99,7 +99,7 @@ export const COPY: Record<Lang, Copy> = {
       when: '시각을 무엇으로 확인했는지.',
       notClaimed: '이 자료만으로는 말할 수 없는 것.',
     },
-    nav: { cases: '정리', records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
+    nav: { cases: '대표 사례', records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
     koOnly: '',
     home: {
       collected: (n) => `수집 ${n}건`,
@@ -177,7 +177,7 @@ export const COPY: Record<Lang, Copy> = {
       when: 'How the time was confirmed.',
       notClaimed: 'What cannot be concluded from this material alone.',
     },
-    nav: { cases: 'Case files', records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
+    nav: { cases: 'Key cases', records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
     koOnly: ' (in Korean)',
     home: {
       collected: (n) => `${n} collected`,
