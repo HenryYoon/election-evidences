@@ -8,7 +8,7 @@
 | 1 | 서울 프로젝트 생성, GitHub 연동 | 운영자(완료, 2026-10-25) |
 | 2 | `supabase/` 폴더와 baseline PR. 머지하면 연동이 새 프로젝트에 적용 | Claude |
 | 3 | 적용 결과 확인(MCP: 테이블, 함수, 정책, 보안 경고) | Claude |
-| 4 | 증거·피드 발신처 복사, 사진 주소 교체 | Claude(MCP) |
+| 4 | 증거·피드 발신처 복사, 사진 주소 교체 | `copy-storage.yml`의 행 복사 단계(5단계와 함께 실행) |
 | 5 | 저장소 파일 복사 워크플로. 운영자가 Secrets 4개를 넣고 실행 | Claude + 운영자 |
 | 6 | 관리자 계정, Auth 설정 | 운영자 |
 | 7 | Vercel 환경변수, GitHub Secrets, 로컬 `.env` 교체, 재배포 | 운영자 |
@@ -19,6 +19,8 @@
 - 2026-10-25: 첫 머지(#23) 때 연동의 "Deploy to production"과 운영 브랜치가 꺼져 있어 적용되지 않았다. 운영자가 켰다.
 - 2026-10-25: 운영 버킷 `evidence-media`의 제한(50MB, 영상·음성 허용)이 스키마 파일(10MB, 이미지만)과 달랐다. 운영 값에 맞추는 마이그레이션 `20261025010000_media_bucket_limits.sql`을 더하고 스키마 파일도 고쳤다.
 - 저장소 복사: `scripts/migrate/copy-storage.mjs`, `.github/workflows/copy-storage.yml`(수동 실행). 이전이 끝나면 지운다.
+- 2026-10-25: 연동이 서울 프로젝트에 마이그레이션 두 개(baseline, media_bucket_limits)를 적용했다(MCP 확인: 테이블 9, 정책 17, 버킷 2).
+- 2026-10-25: 행 복사도 같은 워크플로에 넣었다(`scripts/migrate/copy-rows.mjs`). JSON 약 10만 자를 MCP로 옮겨 적으면 글자가 틀릴 위험이 있어서다. 4단계(MCP 복사)를 이것으로 바꾼다.
 
 ## 위험
 | 위험 | 대응 |
