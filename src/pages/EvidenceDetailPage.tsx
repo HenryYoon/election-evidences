@@ -17,8 +17,8 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
   if (!row) {
     return (
       <DeskLayout>
-        <h1>증거를 찾을 수 없다</h1>
-        <p className="desk-lead">비공개로 바뀌었거나 없는 주소다. <Link to="/records">증거 목록</Link>에서 찾을 수 있다.</p>
+        <h1>증거를 찾을 수 없습니다</h1>
+        <p className="desk-lead">비공개로 바뀌었거나 없는 주소입니다. <Link to="/records">증거 목록</Link>에서 찾을 수 있습니다.</p>
       </DeskLayout>
     );
   }
@@ -48,9 +48,9 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
           )}
           {lost.length > 0 && <p className="sub">원본이 유실되어 재생할 수 없는 매체 {lost.length}개.</p>}
           {row.withheld > 0 && (
-            <p className="sub">개인정보(서명, 연락처, 이름, 대화 내용)가 담긴 자료 {row.withheld}개는 공개하지 않는다.</p>
+            <p className="sub">개인정보(서명, 연락처, 이름, 대화 내용)가 담긴 자료 {row.withheld}개는 공개하지 않습니다.</p>
           )}
-          {!ev.photos.some((p) => p.view) && !playable.length && <p className="sub">공개한 매체가 없다.</p>}
+          {!ev.photos.some((p) => p.view) && !playable.length && <p className="sub">공개한 매체가 없습니다.</p>}
         </section>
 
         <section aria-label="분류">
@@ -127,7 +127,7 @@ function CopyCitation({ text, path }: { text: string; path: string }) {
   };
   return (
     <button type="button" className="linklike" onClick={copy} aria-live="polite">
-      {done ? '복사했다' : '인용 복사'}
+      {done ? '복사했습니다' : '인용 복사'}
     </button>
   );
 }

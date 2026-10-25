@@ -27,7 +27,7 @@ export default function Ledger({ ds }: { ds: Dataset }) {
   return (
     <DeskLayout>
       <h1>{`${ELECTION_NAME} 증거`}</h1>
-      <p className="desk-lead">{`${ELECTION_NAME}(2026-06-03) 사전투표, 본투표, 개표 과정의 사진, 영상, 문서. 날짜, 장소, 상태, 출처를 붙여 발생 시각 최신순으로 둔다.`}</p>
+      <p className="desk-lead">{`${ELECTION_NAME}(2026-06-03) 사전투표, 본투표, 개표 과정의 사진, 영상, 문서. 날짜, 장소, 상태, 출처를 붙여 발생 시각 최신순으로 보여 드립니다.`}</p>
       <Disclaimer />
 
       <FilterBar all={all} value={filters} onChange={setFilters} />
@@ -65,7 +65,7 @@ export default function Ledger({ ds }: { ds: Dataset }) {
           </li>
         ))}
       </ul>
-      {!rows.length && <p>조건에 맞는 증거가 없다.</p>}
+      {!rows.length && <p>조건에 맞는 증거가 없습니다.</p>}
     </DeskLayout>
   );
 }

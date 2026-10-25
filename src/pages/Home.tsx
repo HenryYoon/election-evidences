@@ -80,7 +80,7 @@ export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) 
       <p className="home-doors">
         <Link to="/records">{t.home.view.records}{t.koOnly}</Link>
         <Link to="/tips">{t.home.view.tips}{t.koOnly}</Link>
-        <Link to={langPath(lang, '/about')} className="sub">{t.home.aboutLink}</Link>
+        <Link to={langPath(lang, '/about')}>{t.home.aboutLink}</Link>
       </p>
     </DeskLayout>
   );

@@ -49,7 +49,6 @@
 .home-counts { margin: 18px 0 0; display: flex; justify-content: center; gap: 28px; font-size: 22px; font-weight: 800; }
 .home-disclaimer { margin: 10px 0 0; font-size: 13px; }
 .home-doors { margin: 28px 0 0; display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; font-weight: 700; }
-.home-doors a.sub { font-weight: 400; }
 .home-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 24px; }
 .home-latest { list-style: none; margin: 0; padding: 0; }
 .home-latest li { padding: 12px 0; border-top: 1px solid var(--d-line); }

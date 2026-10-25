@@ -13,7 +13,7 @@ export const RETENTION: readonly (readonly [string, string])[] = [
 
 // 문의(0006 명세 3장).
 export const INQUIRY_RETENTION: readonly (readonly [string, string])[] = [
-  ['문의 내용과 회신 이메일', '접수 후 1년. 운영자 메일함의 사본도 같은 기간 뒤 지운다'],
+  ['문의 내용과 회신 이메일', '접수 후 1년. 운영자 메일함의 사본도 같은 기간 뒤 지웁니다'],
   ['접속 IP 변환값', '접수 후 1일'],
 ];
 
