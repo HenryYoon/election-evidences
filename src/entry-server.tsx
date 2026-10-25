@@ -12,6 +12,7 @@ export { snapshotScript, snapshotRefScript };
 export { basemapSvg, BASEMAP_HREF } from './components/map/SvgMap';
 export { llmsTxt, recordsMarkdown, evidenceMarkdown, markdownPath, RECORDS_MD, jsonLd, jsonLdScript } from './lib/llms';
 export { toEvidence } from './types/evidence';
+export { casePathRecordIds } from './lib/cases';
 
 export function render(url: string, ds: Dataset): string {
   return renderToString(

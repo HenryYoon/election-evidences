@@ -3,8 +3,9 @@
 import type { Dataset } from './data';
 import { toEvidence, type Evidence } from '../types/evidence';
 import { EVIDENCE_STATUS_LABEL, STATUS_DISCLAIMER } from './status';
-import { SITE_PURPOSE } from './site';
+import { CASES_LEAD, SITE_PURPOSE } from './site';
 import { COPY, LANG_PAIRS, type Lang } from './i18n';
+import { casePath, findCase, visibleCases } from './cases';
 
 export const SITE_NAME = '선거부정진상규명국민신고센터';
 export const SITE_SHORT = '선진국';
@@ -19,6 +20,7 @@ export interface PageMeta {
   lastmod: string | null; // ISO 8601. 사이트맵 lastmod
   lang?: Lang; // 없으면 한국어
   alternates?: { ko: string; en: string }; // 언어 짝이 있는 페이지(0007)
+  noindex?: boolean; // 정리 글 초안(0010 명세 4장). 사이트맵·llms.txt에서도 뺀다
 }
 
 // 영어 페이지(0007 명세). description은 한국어판과 같은 150자 상한을 지킨다.
@@ -120,6 +122,17 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
       alternates: pairOf(path),
     };
   }
+  if (path === '/cases' && visibleCases().length) {
+    // 공개 글이 없고 초안만 보이면 목록도 색인하지 않는다.
+    const noindex = !visibleCases().some((c) => c.state === 'published');
+    return { path, title: `정리 | ${SITE_NAME}`, description: clip(`${ELECTION_NAME} 제보를 종류별로 묶은 정리 글. ${CASES_LEAD}`), lastmod: null, noindex };
+  }
+  const cm = path.match(/^\/cases\/([^/]+)$/);
+  if (cm) {
+    const c = findCase(decodeURIComponent(cm[1]));
+    if (!c) return null;
+    return { path, title: `${c.title} | ${SITE_NAME}`, description: clip(c.summary), lastmod: c.updated, noindex: c.state === 'draft' };
+  }
   const m = path.match(/^\/e\/([^/]+)$/);
   if (m) {
     const row = ds.evidence.find((e) => e.id === decodeURIComponent(m[1]));
@@ -137,5 +150,12 @@ export function pageMeta(path: string, ds: Dataset): PageMeta | null {
 
 // 빌드 때 HTML을 만드는 경로. /admin은 넣지 않는다.
 export function prerenderPaths(ds: Dataset): string[] {
-  return ['/', ...Object.keys(LAYER_META), ...Object.keys(EN_META), ...ds.evidence.map((e) => `/e/${encodeURIComponent(e.id)}`)];
+  const cases = visibleCases();
+  return [
+    '/',
+    ...Object.keys(LAYER_META),
+    ...Object.keys(EN_META),
+    ...(cases.length ? ['/cases', ...cases.map(casePath)] : []),
+    ...ds.evidence.map((e) => `/e/${encodeURIComponent(e.id)}`),
+  ];
 }

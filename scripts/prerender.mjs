@@ -86,6 +86,8 @@ function headFor(meta, site, markdown, origin) {
   const url = site + meta.path;
   return [
     ...(SITE_VERIFICATION ? [`<meta name="google-site-verification" content="${esc(SITE_VERIFICATION)}" />`] : []),
+    // 정리 글 초안(0010 명세 4장)은 색인하지 않는다.
+    ...(meta.noindex ? ['<meta name="robots" content="noindex" />'] : []),
     ...(origin ? [`<link rel="preconnect" href="${esc(origin)}" />`] : []),
     `<meta name="description" content="${esc(meta.description)}" />`,
     `<link rel="canonical" href="${esc(url)}" />`,
@@ -142,11 +144,16 @@ async function main() {
   for (const path of paths) {
     const meta = server.pageMeta(path, ds);
     if (!meta) throw new Error(`메타 정보가 없는 경로: ${path}`);
-    // 페이지가 그리는 데이터만 심는다. 홈과 기록은 전체, 상세는 그 카드 하나, 나머지 층은 빈 기록.
+    // 페이지가 그리는 데이터만 심는다. 홈과 기록은 전체, 상세는 그 카드 하나, 정리는 연결 증거, 나머지 층은 빈 기록.
     // 전체 데이터는 하이드레이션 뒤에 다시 읽는다.
     // 홈과 기록 목록의 전체 스냅샷은 HTML 밖 해시 파일로 뺀다(0002 명세 1장).
     const whole = path === '/' || path === '/en' || path === '/records';
-    const slice = whole ? ds : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
+    const caseIds = server.casePathRecordIds(path);
+    const slice = whole
+      ? ds
+      : caseIds
+        ? { evidence: ds.evidence.filter((e) => caseIds.includes(e.id)) }
+        : { evidence: ds.evidence.filter((e) => `/e/${encodeURIComponent(e.id)}` === path) };
     const body = server.render(path, slice);
     const snapshot = whole ? server.snapshotRefScript(snapshotFile) : server.snapshotScript(slice);
     // JSON-LD는 홈(WebSite)과 상세(Article)에만 둔다.
@@ -169,7 +176,7 @@ async function main() {
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, html);
     if (row) writeFileSync(join(DIST, decodeURIComponent(server.markdownPath(row.id))), server.evidenceMarkdown(server.toEvidence(row), site));
-    sitemap.push({ loc: site + meta.path, lastmod: sitemapDate(meta.lastmod) });
+    if (!meta.noindex) sitemap.push({ loc: site + meta.path, lastmod: sitemapDate(meta.lastmod) });
   }
 
   writeFileSync(

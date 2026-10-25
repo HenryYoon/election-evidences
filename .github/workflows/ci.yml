@@ -22,6 +22,8 @@ jobs:
     env:
       # 합성 데이터로만 빌드한다. 실제 제보와 Supabase 키를 CI에 두지 않는다.
       PRERENDER_DATA: tests/fixtures/evidence.json
+      # 정리 글 초안까지 빌드해 검사한다(0010 명세 4장). 운영 빌드에는 이 값이 없다.
+      CASE_DRAFTS: '1'
       SITE_URL: https://desk.example
     steps:
       - uses: actions/checkout@v4

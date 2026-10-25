@@ -47,6 +47,22 @@ for (const f of pages.filter((p) => relative(DIST, p).startsWith('e/'))) {
   if (!/출처 \S/.test(lead)) fail(relative(DIST, f), `첫 문단에 출처 없음: ${lead}`);
 }
 
+// 정리 글 초안(0010 명세 4장): noindex가 있어야 하고 사이트맵·llms.txt에 없어야 한다.
+const sitemapXml = existsSync(join(DIST, 'sitemap.xml')) ? readFileSync(join(DIST, 'sitemap.xml'), 'utf-8') : '';
+const llmsText = existsSync(join(DIST, 'llms.txt')) ? readFileSync(join(DIST, 'llms.txt'), 'utf-8') : '';
+for (const f of pages) {
+  const rel = relative(DIST, f);
+  const html = readFileSync(f, 'utf-8');
+  const noindex = html.includes('<meta name="robots" content="noindex" />');
+  const path = '/' + rel.replace(/\.html$/, '').replace(/^index$/, '');
+  if (html.includes('승인 전 초안') && !noindex) fail(rel, '정리 글 초안에 noindex가 없다');
+  if (noindex && sitemapXml.includes(`${path}</loc>`)) fail('sitemap.xml', `noindex 페이지가 들어 있다: ${path}`);
+  if (html.includes('승인 전 초안')) {
+    const title = html.match(/<h1[^>]*>([^<]+)<\/h1>/)?.[1];
+    if (title && llmsText.includes(title)) fail('llms.txt', `정리 글 초안이 들어 있다: ${title}`);
+  }
+}
+
 const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
 
 // 홈(0008 명세 2장): 수집 건수는 공개 증거 수와 같아야 한다. 다른 건수 표현은 두지 않는다.

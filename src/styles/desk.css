@@ -163,3 +163,14 @@
 .tip-file-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--d-line); }
 .tip-file-list li span { overflow-wrap: anywhere; }
 @media (max-width: 760px) { .tip-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* 정리 글(0010) */
+.case-row { padding: 12px 0; border-top: 1px solid var(--d-line); }
+.case-row:last-child { border-bottom: 1px solid var(--d-line); }
+.case-row .claim { font-weight: 700; display: block; }
+.case-row p { margin: 4px 0; }
+.case-row .meta { font-size: 13px; }
+.case-draft { margin: 8px 0 0; font-weight: 700; color: var(--d-status); }
+.case-status { margin-top: 16px; padding: 12px; border: 1px solid var(--d-line); max-width: 720px; }
+.case-status p { margin: 0 0 6px; }
+.case-refs { font-size: 13px; white-space: nowrap; }

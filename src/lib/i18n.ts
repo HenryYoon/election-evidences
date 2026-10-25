@@ -44,7 +44,7 @@ export interface Copy {
   statusLegend: Record<EvidenceStatus, string>;
   verificationLabel: Record<VerificationKey, string>;
   verificationHelp: Record<VerificationKey, string>;
-  nav: { records: string; tips: string; about: string; contact: string; privacy: string; toggle: string };
+  nav: { cases: string; records: string; tips: string; about: string; contact: string; privacy: string; toggle: string };
   koOnly: string; // 한국어 페이지로 가는 링크 옆 표시. 한국어판은 빈 문자열
   home: {
     collected: (n: number) => string;
@@ -99,7 +99,7 @@ export const COPY: Record<Lang, Copy> = {
       when: '시각을 무엇으로 확인했는지.',
       notClaimed: '이 자료만으로는 말할 수 없는 것.',
     },
-    nav: { records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
+    nav: { cases: '정리', records: '증거', tips: '제보', about: '소개', contact: '문의', privacy: '개인정보 처리방침', toggle: 'EN' },
     koOnly: '',
     home: {
       collected: (n) => `수집 ${n}건`,
@@ -177,7 +177,7 @@ export const COPY: Record<Lang, Copy> = {
       when: 'How the time was confirmed.',
       notClaimed: 'What cannot be concluded from this material alone.',
     },
-    nav: { records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
+    nav: { cases: 'Case files', records: 'Evidence', tips: 'Tips', about: 'About', contact: 'Contact', privacy: 'Privacy policy', toggle: '한국어' },
     koOnly: ' (in Korean)',
     home: {
       collected: (n) => `${n} collected`,
