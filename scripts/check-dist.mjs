@@ -149,7 +149,7 @@ if (!existsSync(llmsPath)) fail('llms.txt', '없다');
 else {
   const llms = readFileSync(llmsPath, 'utf-8');
   if (!llms.startsWith('# ')) fail('llms.txt', 'H1로 시작하지 않는다');
-  if (!llms.includes('법적 결론이 아니다')) fail('llms.txt', '상태 고지 문장이 없다');
+  if (!llms.includes('법적 결론이 아닙니다')) fail('llms.txt', '상태 고지 문장이 없다');
   if (llms.length > 12000) fail('llms.txt', `${llms.length}자. 색인은 짧게 두고 전체 목록은 records.md에 둔다`);
   if (!existsSync(join(DIST, 'records.md'))) fail('records.md', '전체 기록 목록이 없다');
 }

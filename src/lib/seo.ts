@@ -72,20 +72,20 @@ function latest(rows: { updated_at?: string }[]): string | null {
 const LAYER_META: Record<string, { title: string; description: string }> = {
   '/records': {
     title: `${ELECTION_NAME} 증거`,
-    description: `${ELECTION_NAME} 사전투표, 본투표, 개표 과정의 사진, 영상, 문서. 날짜, 장소, 상태, 출처가 붙어 있고 유형, 상태, 지역으로 거른다. ${STATUS_DISCLAIMER}`,
+    description: `${ELECTION_NAME} 사전투표, 본투표, 개표 과정의 사진, 영상, 문서. 날짜, 장소, 상태, 출처가 붙어 있고 유형, 상태, 지역으로 거를 수 있습니다. ${STATUS_DISCLAIMER}`,
   },
-  '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받는다. 사진·영상·문서 파일을 함께 보낼 수 있다. 제보는 바로 공개하지 않고, 운영진 검수를 거쳐 채택한 내용만 기록으로 공개한다. 이름과 연락처는 공개하지 않는다.' },
+  '/tips': { title: '제보', description: '선거 과정에서 보거나 겪은 일을 제보받습니다. 사진·영상·문서 파일을 함께 보낼 수 있습니다. 운영진 검수를 거쳐 채택한 내용만 공개하고, 이름과 연락처는 공개하지 않습니다.' },
   '/contact': {
     title: '문의',
-    description: '문의, 건의, 기록 정정 요청, 개인정보 요청을 받는다. 보낸 내용은 운영진에게만 전달되고 공개하지 않는다.',
+    description: '문의, 건의, 기록 정정 요청, 개인정보 요청을 받습니다. 보낸 내용은 운영진에게만 전달되고 공개하지 않습니다.',
   },
   '/privacy': {
     title: '개인정보 처리방침',
-    description: '제보를 받는 데 필요한 개인정보의 처리 목적, 항목, 보유 기간, 파기, 처리 위탁과 국외 이전, 정보주체의 권리와 행사 방법, 안전성 확보 조치.',
+    description: '제보와 문의를 받는 데 필요한 개인정보의 처리 목적, 항목, 보유 기간, 파기, 처리 위탁과 국외 이전, 정보주체의 권리와 행사 방법, 안전성 확보 조치를 안내합니다.',
   },
   '/about': {
     title: '소개',
-    description: `${SITE_PURPOSE} 상태 두 가지의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법. ${STATUS_DISCLAIMER}`,
+    description: `${SITE_PURPOSE} 상태 두 가지의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법을 안내합니다. ${STATUS_DISCLAIMER}`,
   },
 };
 

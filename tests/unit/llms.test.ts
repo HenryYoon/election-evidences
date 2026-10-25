@@ -14,7 +14,7 @@ describe('llms.txt', () => {
   it('사이트 이름 H1, 요약 인용 블록, 상태 고지로 시작한다', () => {
     expect(txt.startsWith('# ')).toBe(true);
     expect(txt).toMatch(/\n> .+/);
-    expect(txt).toContain('상태는 조사 분류이며 법적 결론이 아니다.');
+    expect(txt).toContain('상태는 조사 분류이며 법적 결론이 아닙니다.');
   });
 
   it('최근 기록만 싣고 전체 목록 주소를 둔다', () => {
@@ -65,7 +65,7 @@ describe('JSON-LD', () => {
     const a = jsonLd(toEvidence(rows[0]), SITE, '설명');
     expect(a['@type']).toBe('Article');
     expect(JSON.stringify(a)).not.toContain('ClaimReview');
-    expect(String(a.genre)).toContain('법적 결론이 아니다');
+    expect(String(a.genre)).toContain('법적 결론이 아닙니다');
   });
 
   it('좌표는 위도·경도를 바르게 넣는다', async () => {
