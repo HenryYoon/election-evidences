@@ -11,6 +11,8 @@ import About from './pages/About';
 import Privacy from './pages/Privacy';
 import Contact from './pages/Contact';
 import EvidenceDetailPage from './pages/EvidenceDetailPage';
+import Cases from './pages/Cases';
+import { casesVisible } from './lib/cases';
 // 관리자 화면(Supabase 클라이언트 포함)은 공개 페이지 번들에서 뺀다. /admin은 사전 렌더링하지 않는다.
 const Admin = lazy(() => import('./pages/Admin'));
 
@@ -38,6 +40,8 @@ function PublicRoutes({ ds }: { ds: Dataset }) {
       <Route path="/records" element={<Ledger ds={ds} />} />
       <Route path="/ledger" element={<Navigate to="/records" replace />} />
       <Route path="/e/:evidenceId" element={<EvidenceDetailPage ds={ds} />} />
+      {/* 대표 사례(0010). 승인 전 초안은 운영 빌드에 경로를 두지 않는다. */}
+      {casesVisible() && <Route path="/cases" element={<Cases ds={ds} />} />}
       {/* 통계·피드 층은 없앴다(0008). 옛 주소는 홈으로 보낸다. vercel.json도 같은 리다이렉트를 둔다. */}
       <Route path="/stats" element={<Navigate to="/" replace />} />
       <Route path="/feed" element={<Navigate to="/" replace />} />

@@ -2,13 +2,16 @@ import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { STATUS_DISCLAIMER } from '../../lib/status';
 import { COPY, counterpart, langPath, type Lang } from '../../lib/i18n';
+import { casesVisible } from '../../lib/cases';
 
-// 공통 레이아웃: 상단 줄임 이름, 두 층 내비게이션, 소개, 언어 토글(0007), 아래 링크와 민간 운영 표시(0008).
+// 공통 레이아웃: 상단 줄임 이름, 층 내비게이션(대표 사례·증거·제보), 소개, 언어 토글(0007), 아래 링크와 민간 운영 표시(0008).
 // 영어판은 메인과 소개만 있다. 층·문의·처리방침 링크는 한국어 페이지로 가고 "(in Korean)"을 붙인다.
 export default function DeskLayout({ children, lang = 'ko' }: { children: ReactNode; lang?: Lang }) {
   const t = COPY[lang];
   const { pathname } = useLocation();
   const layers = [
+    // 대표 사례(0010)는 보일 때만 둔다.
+    ...(casesVisible() ? [{ to: '/cases', label: t.nav.cases }] : []),
     { to: '/records', label: t.nav.records },
     { to: '/tips', label: t.nav.tips },
   ];

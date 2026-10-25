@@ -163,3 +163,13 @@
 .tip-file-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--d-line); }
 .tip-file-list li span { overflow-wrap: anywhere; }
 @media (max-width: 760px) { .tip-row { grid-template-columns: minmax(0, 1fr); } }
+
+/* 대표 사례(0010) */
+.case-list { list-style: none; margin: 16px 0 0; padding: 0; max-width: 720px; }
+.case-item { padding: 16px 0; border-top: 1px solid var(--d-line); }
+.case-item h2 { margin: 0 0 8px; }
+.case-photo { display: block; }
+.case-photo img { display: block; width: 100%; height: auto; max-height: 480px; object-fit: contain; border: 1px solid var(--d-line); }
+.case-caption { margin: 8px 0 4px; font-weight: 700; }
+.case-item .meta { font-size: 13px; display: flex; gap: 8px; flex-wrap: wrap; }
+.case-draft { margin: 8px 0 0; font-weight: 700; color: var(--d-status); }
