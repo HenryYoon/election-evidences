@@ -58,3 +58,8 @@
 | Vercel 함수(`api/`) | Vercel이 관리하는 Node 런타임. 운영자가 Node 버전 설정을 확인하고 재배포한다. 함수는 신뢰하는 곳(Supabase, Resend, Deploy Hook)에만 요청한다 |
 | 정적 페이지 | Vercel CDN이 서빙한다. Node가 압축을 풀지 않는다 |
 | Python 스크립트 | `urllib`만 쓴다. Brotli를 풀지 않는다 |
+
+### npm audit (2026-10-25)
+- 운영 번들: 4건, 지난 점검과 같다(maplibre-gl XSS 정제기, react-router). 쓰지 않는 기능이라 닿지 않는다.
+- 개발 도구: 11건(vitest, vite 개발 서버, esbuild 개발 서버, postcss, browserslist, nanoid 등). 배포물에는 들어가지 않는다.
+- `npm audit fix`(메이저 변경 없음)로 5건을 줄일 수 있지만 올라가는 판 일부가 배포된 지 0~6일이다(baseline-browser-mapping 2.11.33은 당일). 공급망 웜이 새 판으로 퍼진 전례가 있어 7일 뒤(2026-11-01 이후)에 적용한다.
