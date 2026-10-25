@@ -12,13 +12,13 @@ import { CASES_LEAD } from '../lib/site';
 
 export default function Cases({ ds }: { ds: Dataset }) {
   const rows = useMemo(() => caseRows(ds.evidence.map(toEvidence)), [ds]);
-  const verified = rows.some((r) => MANUAL_ONLY_STATUSES.includes(r.evidence.status));
+  const checked = rows.some((r) => MANUAL_ONLY_STATUSES.includes(r.evidence.status));
   return (
     <DeskLayout>
       <h1>대표 사례</h1>
       <p className="desk-lead">{CASES_LEAD}</p>
       {casesDraft() && <p className="case-draft">승인 전 초안입니다. 운영 사이트에는 공개되지 않습니다.</p>}
-      {!verified && <p className="desk-disclaimer">아래 사례는 운영진이 아직 확인하지 않은 제보입니다.</p>}
+      {!checked && <p className="desk-disclaimer">아래 사례는 운영진이 아직 자료를 확인하지 않은 제보입니다.</p>}
       <Disclaimer />
       <ol className="case-list">
         {rows.map(({ item, evidence: e }) => (

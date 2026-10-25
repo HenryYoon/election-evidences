@@ -103,7 +103,7 @@ export const COPY: Record<Lang, Copy> = {
     koOnly: '',
     home: {
       collected: (n) => `수집 ${n}건`,
-      verified: (n) => `검증 ${n}건`,
+      verified: (n) => `자료 확인 ${n}건`,
       aboutLink: '이 사이트 소개',
       mapLabel: '증거 지도',
       mapTitle: '증거 위치',
@@ -124,7 +124,7 @@ export const COPY: Record<Lang, Copy> = {
       layersTitle: '두 층',
       layersNote: '증거와 제보는 성격이 다르다. 제보는 검수를 거쳐야 증거가 된다. 두 층의 건수를 합치지 않는다.',
       statusTitle: '상태',
-      statusNote: `증거마다 상태 하나를 붙인다. ${STATUS_DISCLAIMER} 문서 확인과 영상 확인은 운영진이 검증 네 줄을 채운 뒤에만 붙인다. 홈의 "검증" 건수는 이 두 상태의 증거 수다.`,
+      statusNote: `증거마다 상태 하나를 붙인다. ${STATUS_DISCLAIMER} 자료 확인은 운영진이 자료와 장소를 보고 직접 붙인다. 홈의 "자료 확인" 건수는 이 상태의 증거 수다.`,
       verificationTitle: '검증 네 줄',
       verificationNote: '증거 상세 화면에는 아래 네 줄을 적는다. 확인한 것과 확인하지 않은 것을 나누기 위해서다.',
       dontTitle: '하지 않는 것',
@@ -159,16 +159,12 @@ export const COPY: Record<Lang, Copy> = {
       tips: 'Send what you saw or experienced. Reviewed tips become evidence.',
     },
     statusLabel: {
-      document: 'Document verified',
-      video_confirmed: 'Video verified',
-      reported: 'Material received',
-      allegation: 'Claim only',
+      confirmed: 'Material checked',
+      reported: 'Tip',
     },
     statusLegend: {
-      document: 'The content was confirmed against official documents or records.',
-      video_confirmed: 'The place and time were confirmed from the original video.',
-      reported: 'Photos or videos exist. The place and time have not been confirmed yet.',
-      allegation: 'A claim without supporting material.',
+      confirmed: 'Our editors reviewed the photos, videos, or documents and confirmed the place is identified down to the polling or counting station. This is not a judgment on authenticity or legality.',
+      reported: 'A tip without material or without an identified place. Our editors have not reviewed the material yet.',
     },
     verificationLabel: { seen: 'What is shown', where: 'Place', when: 'Time', notClaimed: 'What this does not claim' },
     verificationHelp: {
@@ -181,7 +177,7 @@ export const COPY: Record<Lang, Copy> = {
     koOnly: ' (in Korean)',
     home: {
       collected: (n) => `${n} collected`,
-      verified: (n) => `${n} verified`,
+      verified: (n) => `${n} material checked`,
       aboutLink: 'About this site',
       mapLabel: 'Evidence map',
       mapTitle: 'Locations of evidence',
@@ -203,7 +199,7 @@ export const COPY: Record<Lang, Copy> = {
       layersNote: 'Evidence and tips are different kinds of records. A tip becomes evidence only after review. We never add their counts together.',
       statusTitle: 'Status',
       statusNote:
-        'Each piece of evidence gets one status. Status is an investigative classification, not a legal conclusion. "Document verified" and "Video verified" are assigned only after our editors fill in all four verification lines. The "verified" count on the home page is the number of evidence with one of those two statuses.',
+        'Each piece of evidence gets one status. Status is an investigative classification, not a legal conclusion. "Material checked" is assigned only by our editors after they review the material and the place. The "material checked" count on the home page is the number of evidence with that status.',
       verificationTitle: 'Four verification lines',
       verificationNote: 'Each evidence page lists these four lines, to separate what we checked from what we did not.',
       dontTitle: 'What we do not do',

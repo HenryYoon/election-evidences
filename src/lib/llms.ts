@@ -32,7 +32,7 @@ export function llmsTxt(ds: Dataset, site: string): string {
     '',
     `> ${SITE_PURPOSE}`,
     '',
-    `${STATUS_DISCLAIMER} 각 증거의 상태는 다음 넷 중 하나다.`,
+    `${STATUS_DISCLAIMER} 각 증거의 상태는 다음 둘 중 하나다.`,
     '',
     ...EVIDENCE_STATUSES.map((s) => `- ${EVIDENCE_STATUS_LABEL[s]}: ${EVIDENCE_STATUS_LEGEND[s]}`),
     '',

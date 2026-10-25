@@ -1,6 +1,6 @@
 // 관리자 기록 편집의 검사와 정리(0001 플랜 7단계). 화면과 분리해 단위 테스트한다.
 import type { EvidenceRow, EvidenceSource, EvidenceVerification } from '../types/evidence';
-import { EVIDENCE_STATUSES, MANUAL_ONLY_STATUSES, VERIFICATION_FIELDS } from './status';
+import { EVIDENCE_STATUSES, VERIFICATION_FIELDS, type EvidenceStatus } from './status';
 
 // 날짜만(YYYY-MM-DD) 또는 KST 오프셋을 붙인 시각.
 const OCCURRED_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z))?$/;
@@ -8,7 +8,7 @@ const OCCURRED_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)
 export function validateLedgerDraft(d: Partial<EvidenceRow>): string[] {
   const errs: string[] = [];
   if (!(d.claim ?? '').trim()) errs.push('주장을 한 문장으로 적어야 한다.');
-  if (d.status && !EVIDENCE_STATUSES.includes(d.status)) errs.push(`알 수 없는 상태: ${d.status}`);
+  if (d.status && !EVIDENCE_STATUSES.includes(d.status as EvidenceStatus)) errs.push(`알 수 없는 상태: ${d.status}`);
   const occurred = (d.occurred_at ?? '').trim();
   if (occurred && !OCCURRED_RE.test(occurred)) errs.push('발생 시각은 2026-06-03 또는 2026-06-03T14:37:00+09:00 형식이어야 한다.');
   for (const [i, s] of (d.sources ?? []).entries()) {
@@ -16,11 +16,10 @@ export function validateLedgerDraft(d: Partial<EvidenceRow>): string[] {
     if (!s.title.trim()) errs.push(`출처 ${i + 1}: 이름이 없다.`);
     if (s.url && !/^https?:\/\//.test(s.url.trim())) errs.push(`출처 ${i + 1}: 주소는 http(s)로 시작해야 한다.`);
   }
-  // 문서 확인·영상 확인은 검증 네 줄을 채운 뒤에만 고를 수 있다(status.ts).
-  if (d.status && MANUAL_ONLY_STATUSES.includes(d.status)) {
-    const v = d.verification ?? {};
-    const missing = VERIFICATION_FIELDS.filter(([k]) => !(v[k] ?? '').toString().trim()).map(([, label]) => label);
-    if (missing.length) errs.push(`이 상태는 검증 네 줄을 모두 채워야 한다. 빈 줄: ${missing.join(', ')}`);
+  // 자료 확인은 장소와 매체가 있어야 고를 수 있다(0011 명세 3장). 검증 네 줄은 선택이다.
+  if (d.status === 'confirmed') {
+    if (!(d.place ?? '').trim()) errs.push('자료 확인은 장소가 있어야 한다.');
+    if (!(d.photos?.length ?? 0) && !(d.media_other?.length ?? 0)) errs.push('자료 확인은 사진·영상·문서가 하나 이상 있어야 한다.');
   }
   return errs;
 }

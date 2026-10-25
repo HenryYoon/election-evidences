@@ -117,9 +117,9 @@ describe('채택 초안', () => {
   };
   const d = tipToEvidenceDraft(tip, 'ev-x');
 
-  it('비공개·주장 상태로 시작한다', () => {
+  it('비공개·제보 상태로 시작한다', () => {
     expect(d.published).toBe(false);
-    expect(d.status).toBe('allegation');
+    expect(d.status).toBe('reported');
   });
   it('제보자 이름과 연락처를 넣지 않는다', () => {
     const s = JSON.stringify(d);

@@ -4,7 +4,7 @@ import type { EvidenceRow, EvidenceType } from '../types/evidence';
 import { EVIDENCE_TYPES } from '../types/evidence';
 import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
-import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, MANUAL_ONLY_STATUSES, VERIFICATION_FIELDS } from '../lib/status';
+import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, VERIFICATION_FIELDS, normalizeEvidenceStatus } from '../lib/status';
 import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
 import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
 import { INQUIRY_KINDS } from '../lib/contact';
@@ -57,7 +57,7 @@ const blank = (): Partial<EvidenceRow> => ({
   occurred_raw: '', source: '', source_url: '', reporter: '익명 제보자',
   photos: [], media_other: [], withheld: 0, media_count: 0,
   // 기록 필드. 새 카드는 비공개·주장 상태로 시작한다. 상태는 관리자만 올린다.
-  status: 'allegation', claim: '', election: '2026 지방선거', occurred_at: null,
+  status: 'reported', claim: '', election: '2026 지방선거', occurred_at: null,
   sources: [], verification: {},
 });
 
@@ -241,7 +241,7 @@ export default function Admin() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.claim || e.title}</div>
                 <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {e.status ? EVIDENCE_STATUS_LABEL[e.status] : '상태 없음'} · {e.occurred_at ?? '날짜 미상'} · {e.place} · {e.evidence_type}
+                  {EVIDENCE_STATUS_LABEL[normalizeEvidenceStatus(e.status)]} · {e.occurred_at ?? '날짜 미상'} · {e.place} · {e.evidence_type}
                   <span style={{ marginLeft: 6, opacity: 0.6 }}>#{e.num}{e.withheld ? ` · 비공개자료 ${e.withheld}` : ''}</span>
                 </div>
               </div>
@@ -327,18 +327,18 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
         <Field label="주장(상세 H1, 한 문장)"><textarea style={{ ...inp, height: 56 }} value={d.claim ?? ''} onChange={(e) => set('claim', e.target.value)} /></Field>
         <Row>
           <Field label="상태">
-            <select style={inp} value={d.status ?? 'allegation'} onChange={(e) => set('status', e.target.value as EvidenceStatus)}>
+            <select style={inp} value={normalizeEvidenceStatus(d.status)} onChange={(e) => set('status', e.target.value as EvidenceStatus)}>
               {EVIDENCE_STATUSES.map((s) => <option key={s} value={s}>{EVIDENCE_STATUS_LABEL[s]}</option>)}
             </select>
           </Field>
           <Field label="선거"><input style={inp} value={d.election ?? ''} onChange={(e) => set('election', e.target.value)} /></Field>
         </Row>
         <div style={{ fontSize: 12, color: 'var(--ink-3)', margin: '-4px 0 10px' }}>
-          {EVIDENCE_STATUS_LEGEND[(d.status ?? 'allegation') as EvidenceStatus]}
-          {MANUAL_ONLY_STATUSES.includes((d.status ?? 'allegation') as EvidenceStatus) && ' 이 상태는 아래 검증 네 줄을 모두 채워야 저장된다.'}
+          {EVIDENCE_STATUS_LEGEND[normalizeEvidenceStatus(d.status)]}
+          {normalizeEvidenceStatus(d.status) === 'confirmed' && ' 장소와 사진·영상·문서가 있어야 저장된다.'}
         </div>
         <Field label="발생 시각(2026-06-03 또는 2026-06-03T14:37:00+09:00)"><input style={inp} value={d.occurred_at ?? ''} onChange={(e) => set('occurred_at', e.target.value)} /></Field>
-        <Field label="검증 네 줄">
+        <Field label="검증 네 줄(선택)">
           {VERIFICATION_FIELDS.map(([k, label]) => (
             <input key={k} style={{ ...inp, marginBottom: 6 }} placeholder={label} value={(d.verification ?? {})[k] ?? ''}
               onChange={(e) => set('verification', { ...(d.verification ?? {}), [k]: e.target.value })} />
