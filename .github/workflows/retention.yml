@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          # 러너에 깔린 옛 22.x 대신 최신 패치를 받는다. CVE-2026-111497(Brotli 디코더) 수정은 22.23.4부터다.
+          check-latest: true
       - run: node scripts/retention.mjs
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

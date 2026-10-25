@@ -29,6 +29,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          # 러너에 깔린 옛 22.x 대신 최신 패치를 받는다. CVE-2026-111497(Brotli 디코더) 수정은 22.23.4부터다.
+          check-latest: true
       - run: node scripts/reach/check-live.mjs "$SITE"
 
   scores:
@@ -44,6 +46,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          # 러너에 깔린 옛 22.x 대신 최신 패치를 받는다. CVE-2026-111497(Brotli 디코더) 수정은 22.23.4부터다.
+          check-latest: true
       - name: 측정할 상세 주소 고르기
         run: |
           DETAIL=$(curl -sf "$SITE/sitemap.xml" | grep -o '<loc>[^<]*/e/[^<]*</loc>' | head -1 | sed 's/<[^>]*>//g')

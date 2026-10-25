@@ -49,3 +49,12 @@
 | Supabase 보안 경고 | `touch_updated_at` 경고 해소. 남은 경고(anon의 `is_admin`·`submit_tip` 실행, `admins` 정책 없음)는 의도한 설정 |
 | 유출 비밀번호 차단 | Free 플랜이라 켤 수 없다. 운영자가 비밀번호 기준을 올렸다 |
 | 신규 가입 | 꺼져 있음(운영자 확인) |
+
+## 2026-10-25 CVE-2026-111497(Brotli 디코더, Node2Shell/HTTP2Shell)
+| 경로 | 판단 |
+|---|---|
+| npm 의존성 | `brotli` 계열 패키지 없음(`npm ls`). Node 내장 zlib만 해당 |
+| GitHub Actions | `setup-node`가 러너의 옛 22.x를 쓸 수 있었다. 모든 워크플로에 `check-latest: true`, CI에 22.23.4 미만이면 실패하는 확인 단계 |
+| Vercel 함수(`api/`) | Vercel이 관리하는 Node 런타임. 운영자가 Node 버전 설정을 확인하고 재배포한다. 함수는 신뢰하는 곳(Supabase, Resend, Deploy Hook)에만 요청한다 |
+| 정적 페이지 | Vercel CDN이 서빙한다. Node가 압축을 풀지 않는다 |
+| Python 스크립트 | `urllib`만 쓴다. Brotli를 풀지 않는다 |
