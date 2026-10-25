@@ -63,8 +63,8 @@ describe('기록 매핑', () => {
     expect(ev.sources).toEqual([{ title: '언론 보도', url: 'https://example.com/a' }]);
   });
 
-  it('검증 네 줄은 비어 있으면 null이다', () => {
-    expect(toEvidence(row({ verification: {} })).verification).toEqual({ seen: null, where: null, when: null, notClaimed: null });
+  it('공개 레코드에 검증 네 줄을 싣지 않는다(0013)', () => {
+    expect('verification' in toEvidence(row({ verification: { seen: '봉인지' } }))).toBe(false);
   });
 
   it('기록은 발생 시각 최신순이고 시각 없는 카드는 뒤로 간다', () => {

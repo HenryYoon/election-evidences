@@ -63,6 +63,13 @@ for (const f of pages) {
   }
 }
 
+// 검증 네 줄은 공개 화면에서 뺐다(0013). 상세 HTML과 마크다운에 다시 나오지 않게 한다.
+for (const f of files.filter((p) => relative(DIST, p).startsWith('e/'))) {
+  const text = readFileSync(f, 'utf-8');
+  if (f.endsWith('.html') && text.includes('<h2>검증</h2>')) fail(relative(DIST, f), '빈 검증 네 줄 칸이 남아 있다(0013)');
+  if (f.endsWith('.md') && text.includes('## 검증')) fail(relative(DIST, f), '마크다운에 검증 네 줄이 남아 있다(0013)');
+}
+
 const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
 
 // 홈(0008 명세 2장, 0011): 수집 건수는 공개 증거 수, 자료 확인 건수는 스냅샷의 자료 확인 수와 같아야 한다. 다른 건수 표현은 두지 않는다.

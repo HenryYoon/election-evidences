@@ -4,7 +4,7 @@ import type { EvidenceRow, EvidenceType } from '../types/evidence';
 import { EVIDENCE_TYPES } from '../types/evidence';
 import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
-import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, VERIFICATION_FIELDS, normalizeEvidenceStatus } from '../lib/status';
+import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, normalizeEvidenceStatus } from '../lib/status';
 import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
 import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
 import { INQUIRY_KINDS } from '../lib/contact';
@@ -338,12 +338,6 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
           {normalizeEvidenceStatus(d.status) === 'confirmed' && ' 장소와 사진·영상·문서가 있어야 저장된다.'}
         </div>
         <Field label="발생 시각(2026-06-03 또는 2026-06-03T14:37:00+09:00)"><input style={inp} value={d.occurred_at ?? ''} onChange={(e) => set('occurred_at', e.target.value)} /></Field>
-        <Field label="검증 네 줄(선택)">
-          {VERIFICATION_FIELDS.map(([k, label]) => (
-            <input key={k} style={{ ...inp, marginBottom: 6 }} placeholder={label} value={(d.verification ?? {})[k] ?? ''}
-              onChange={(e) => set('verification', { ...(d.verification ?? {}), [k]: e.target.value })} />
-          ))}
-        </Field>
         <Field label="출처(이름, 주소)">
           {(d.sources ?? []).map((src, i) => (
             <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>

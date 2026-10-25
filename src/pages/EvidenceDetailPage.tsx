@@ -1,13 +1,13 @@
 // 증거 상세(명세 5장, 0008 명세 3장).
 // 첫 문장: 날짜, 장소, 상태, 출처. 왼쪽: 매체. 오른쪽: 상태, 선거, 유형. 좌표는 보여 주지 않는다.
-// 그 아래 검증 네 줄과 출처 목록.
+// 그 아래 출처 목록. 검증 네 줄은 0013에서 뺐다(자료 확인 상태가 대신한다).
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
 import { toEvidence } from '../types/evidence';
 import { leadSentence, sourceLabel } from '../lib/seo';
 import { markdownPath } from '../lib/llms';
-import { EVIDENCE_STATUS_LEGEND, VERIFICATION_FIELDS } from '../lib/status';
+import { EVIDENCE_STATUS_LEGEND } from '../lib/status';
 import DeskLayout from '../components/layout/DeskLayout';
 import { StatusMark } from '../components/evidence/StatusLegend';
 
@@ -68,17 +68,6 @@ export default function EvidenceDetailPage({ ds }: { ds: Dataset }) {
           </dl>
         </section>
       </div>
-
-      <hr className="rule" />
-      <h2>검증</h2>
-      <dl className="facts">
-        {VERIFICATION_FIELDS.map(([k, label]) => (
-          <div key={k} style={{ display: 'contents' }}>
-            <dt>{label}</dt>
-            <dd>{ev.verification[k] || '미기재'}</dd>
-          </div>
-        ))}
-      </dl>
 
       <hr className="rule" />
       <h2>출처</h2>

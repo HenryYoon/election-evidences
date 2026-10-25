@@ -40,7 +40,7 @@ export const TIP_STATUS_LEGEND: Record<TipStatus, string> = {
   unverified: '시민이 보낸 제보입니다. 운영자가 내용을 확인하지 않았습니다.',
 };
 
-// 검증 네 줄. 상세 화면과 마크다운이 같은 순서와 이름을 쓴다.
+// 검증 네 줄. DB 칸(verification)만 남아 있다. 공개 화면에는 쓰지 않는다(0013). 관리 저장 때 빈 값 정리에만 쓴다.
 export const VERIFICATION_FIELDS = [
   ['seen', '보인 것'],
   ['where', '장소'],

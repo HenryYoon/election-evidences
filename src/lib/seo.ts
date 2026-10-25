@@ -85,7 +85,7 @@ const LAYER_META: Record<string, { title: string; description: string }> = {
   },
   '/about': {
     title: '소개',
-    description: `${SITE_PURPOSE} 상태 두 가지의 뜻, 검증 네 줄, 하지 않는 것, 정정 요청 방법을 안내합니다. ${STATUS_DISCLAIMER}`,
+    description: `${SITE_PURPOSE} 상태 두 가지의 뜻, 하지 않는 것, 정정 요청 방법을 안내합니다. ${STATUS_DISCLAIMER}`,
   },
 };
 
