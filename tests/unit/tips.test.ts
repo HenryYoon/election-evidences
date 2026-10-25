@@ -13,15 +13,17 @@ import {
 } from '../../src/lib/tips';
 import { tipToEvidenceDraft, type TipRow } from '../../src/lib/adminTips';
 
-const ok = { ...EMPTY_TIP, place: '종로구 투표소', body: '투표함 봉인지가 뜯겨 있었습니다.', consent: true, overseasConsent: true };
+const ok = { ...EMPTY_TIP, place: '종로구 투표소', body: '투표함 봉인지가 뜯겨 있었습니다.', consent: true };
 
 describe('제보 폼 검사', () => {
   it('필수 항목이 있으면 통과한다', () => {
     expect(validateTip(ok)).toEqual([]);
   });
-  it('필수 동의 두 가지가 없으면 막는다', () => {
+  it('필수 동의가 없으면 막는다', () => {
     expect(validateTip({ ...ok, consent: false }).join()).toContain('수집·이용');
-    expect(validateTip({ ...ok, overseasConsent: false }).join()).toContain('국외 이전');
+  });
+  it('국외 이전 동의를 묻지 않는다(0009)', () => {
+    expect('overseasConsent' in EMPTY_TIP).toBe(false);
   });
   it('이름·연락처를 적었을 때만 선택 동의를 요구한다', () => {
     expect(validateTip({ ...ok, contact: '010' }).join()).toContain('선택 항목');

@@ -26,12 +26,14 @@ const REMEDIES: readonly (readonly [string, string])[] = [
   ['경찰청', '국번 없이 182, ecrm.police.go.kr'],
 ];
 
-function ProcessorRows({ p }: { p: Processor }) {
+function ProcessorRows({ p, overseas = false }: { p: Processor; overseas?: boolean }) {
   return (
     <>
       <dt>{p.name}</dt>
       <dd>
-        {p.task}. 이전 국가: {p.country}. 이전 항목: {p.items}. 시기와 방법: {p.when}. 연락처: {p.contact}.
+        {overseas
+          ? `${p.task}. 이전 국가: ${p.country}. 이전 항목: ${p.items}. 시기와 방법: ${p.when}. 연락처: ${p.contact}.`
+          : `${p.task}. 처리 위치: ${p.country}. 항목: ${p.items}. 연락처: ${p.contact}.`}
       </dd>
     </>
   );
@@ -85,16 +87,19 @@ export default function Privacy() {
 
       <section className="about-section">
         <h2>5. 처리 위탁과 국외 이전</h2>
-        <p>아래 업체에 처리를 맡깁니다. 모두 국외에 있습니다. 제보와 문의 정보의 국외 이전은 보낼 때 별도 동의를 받습니다.</p>
+        <p>아래 업체에 처리를 맡깁니다. 제보와 문의는 국내(서울)에 있는 저장소에 둡니다.</p>
         <dl className="about-dl">
           <ProcessorRows p={SUPABASE_PROCESSOR} />
           <ProcessorRows p={{ ...SUPABASE_INQUIRY, name: `${SUPABASE_INQUIRY.name}(문의)` }} />
-          <ProcessorRows p={RESEND_PROCESSOR} />
-          <ProcessorRows p={VERCEL_PROCESSOR} />
+        </dl>
+        <p>아래 업체는 국외에 있습니다. 문의 메일 전달과 사이트 전송을 위해 정보가 국외로 이전됩니다.</p>
+        <dl className="about-dl">
+          <ProcessorRows p={RESEND_PROCESSOR} overseas />
+          <ProcessorRows p={VERCEL_PROCESSOR} overseas />
         </dl>
         <p>
-          보유 기간은 2장과 같습니다. 국외 이전을 거부하려면 제보 폼이나 문의 폼의 국외 이전 동의를 체크하지 않으면 됩니다. 거부하면 그 폼을 쓸 수 없습니다.
-          사이트 접속 기록의 이전을 피하려면 사이트에 접속하지 않아야 합니다.
+          보유 기간은 2장과 같습니다. 문의 정보의 국외 이전은 보낼 때 별도 동의를 받습니다. 거부하려면 문의 폼의 국외 이전 동의를 체크하지 않으면 됩니다.
+          거부하면 문의 폼을 쓸 수 없습니다. 사이트 접속 기록의 이전을 피하려면 사이트에 접속하지 않아야 합니다.
         </p>
       </section>
 
@@ -140,6 +145,10 @@ export default function Privacy() {
       <section className="about-section">
         <h2>11. 시행일</h2>
         <p>이 방침은 {PRIVACY_EFFECTIVE_DATE}부터 적용합니다. 바뀌면 이 페이지에 바뀐 날짜와 내용을 적습니다.</p>
+        <ul>
+          <li>2026-10-25: 제보·문의 저장소를 호주(시드니)에서 대한민국(서울)으로 옮겼습니다. 제보는 더 이상 국외로 이전하지 않습니다.</li>
+          <li>2026-10-11: 처음 시행.</li>
+        </ul>
       </section>
     </DeskLayout>
   );

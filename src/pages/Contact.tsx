@@ -10,7 +10,6 @@ import {
   INQUIRY_PURPOSE,
   INQUIRY_RETENTION,
   RESEND_PROCESSOR,
-  SUPABASE_INQUIRY,
 } from '../lib/privacy';
 
 export default function Contact() {
@@ -92,7 +91,7 @@ export default function Contact() {
           <fieldset className="tip-consent">
             <legend>개인정보 국외 이전 동의 (필수)</legend>
             <dl className="tip-terms">
-              {[SUPABASE_INQUIRY, RESEND_PROCESSOR].map((p) => (
+              {[RESEND_PROCESSOR].map((p) => (
                 <div key={p.name} style={{ display: 'contents' }}>
                   <dt>{p.name}</dt>
                   <dd>{p.task}. 국가: {p.country}. 항목: {p.items}. {p.when}. 연락처: {p.contact}.</dd>

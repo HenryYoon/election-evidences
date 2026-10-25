@@ -77,7 +77,7 @@ try {
   await t.getByLabel('장소 (필수)').fill('종로구 테스트 투표소');
   await t.getByLabel('무슨 일이 있었나요 (필수)').fill('테스트용 제보 본문입니다. 열 글자를 넘습니다.');
   await t.getByLabel('개인정보 수집·이용에 동의합니다').check();
-  await t.getByLabel('개인정보 국외 이전에 동의합니다').check();
+  if (await t.getByLabel('개인정보 국외 이전에 동의합니다').count()) failures.push('제보 폼에 국외 이전 동의가 남아 있다(0009)');
   // 0005: 연락처를 적으면 선택 동의가 나타나고, 동의하지 않으면 막는다.
   await t.getByLabel('연락처 (선택)').fill('010-0000-0000');
   await t.getByRole('button', { name: '제보 보내기' }).click();
