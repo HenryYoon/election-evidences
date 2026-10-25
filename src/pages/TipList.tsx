@@ -15,7 +15,7 @@ import {
   hasContact,
   type TipForm,
 } from '../lib/tips';
-import { OPTIONAL_ITEMS, OPTIONAL_PURPOSE, REQUIRED_ITEMS, REQUIRED_PURPOSE, RETENTION, SUPABASE_PROCESSOR as SB } from '../lib/privacy';
+import { OPTIONAL_ITEMS, OPTIONAL_PURPOSE, REQUIRED_ITEMS, REQUIRED_PURPOSE, RETENTION } from '../lib/privacy';
 
 const sizeLabel = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)}MB` : `${Math.max(1, Math.round(n / 1024))}KB`);
 
@@ -143,23 +143,6 @@ export default function TipList() {
                 </dd>
               </dl>
               <p>동의를 거부할 수 있습니다. 거부하면 이 폼으로 제보할 수 없습니다.</p>
-            </details>
-          </fieldset>
-          <fieldset className="tip-consent">
-            <label className="tip-check">
-              <input type="checkbox" checked={f.overseasConsent} onChange={(e) => set('overseasConsent', e.target.checked)} />
-              <span>개인정보 국외 이전에 동의합니다 <span className="sub">(필수. 저장소가 {SB.country}의 {SB.name}에 있습니다)</span></span>
-            </label>
-            <details className="tip-detail">
-              <summary>자세히</summary>
-              <dl className="tip-terms">
-                <dt>이전받는 자</dt><dd>{SB.name} ({SB.contact})</dd>
-                <dt>이전 국가</dt><dd>{SB.country}</dd>
-                <dt>이전 항목</dt><dd>{SB.items}</dd>
-                <dt>시기와 방법</dt><dd>{SB.when}</dd>
-                <dt>목적과 기간</dt><dd>{SB.task}. 기간은 위 보유 기간과 같습니다.</dd>
-              </dl>
-              <p>동의를 거부할 수 있습니다. 거부하려면 체크하지 않으면 됩니다. 거부하면 이 폼으로 제보할 수 없습니다.</p>
             </details>
           </fieldset>
           {hasContact(f) && (

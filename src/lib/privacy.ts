@@ -1,7 +1,7 @@
 // 개인정보 보유 기간과 처리 위탁·국외 이전(0005 명세 1~3장). 제보 폼 동의와 처리방침이 같은 표를 쓴다.
-// Supabase 리전을 바꾸면 SUPABASE_PROCESSOR의 국가를 고친다.
+// Supabase는 서울 리전이라 국내 처리 위탁이다(0009). 리전을 바꾸면 country와 처리방침 5장을 함께 고친다.
 
-export const PRIVACY_EFFECTIVE_DATE = '2026-10-11';
+export const PRIVACY_EFFECTIVE_DATE = '2026-10-25';
 
 export const RETENTION: readonly (readonly [string, string])[] = [
   ['이름·연락처', '검수가 끝나면 즉시 파기. 검수 전이라도 접수 후 90일이 지나면 파기'],
@@ -28,7 +28,7 @@ export interface Processor {
 
 export const SUPABASE_PROCESSOR: Processor = {
   name: 'Supabase',
-  country: '호주(시드니)',
+  country: '대한민국(서울)',
   contact: 'privacy@supabase.com',
   task: '제보 저장과 처리(데이터베이스, 파일 저장소)',
   items: '제보 내용(장소, 시각, 내용, 링크), 첨부 파일, 접속 IP 변환값, 적은 경우 이름·연락처',
