@@ -275,7 +275,7 @@ export default function Admin() {
                       <div className="title">{e.claim || e.title}</div>
                       <div className="meta">
                         {e.occurred_at ?? '날짜 미상'} · {e.place || '장소 없음'} · {e.evidence_type}
-                        {e.withheld ? ` · 비공개 자료 ${e.withheld}` : ''}
+                        {` · ${mediaSummary(e)}`}
                       </div>
                     </div>
                     <div className="adm-seg" role="group" aria-label={`#${e.num} 상태`}>
@@ -319,7 +319,7 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   // 비공개 버킷: 미리보기는 서명 URL, 저장값(d.photos)은 원본 URL 유지
-  const signed = useSignedMap((d.photos ?? []).flatMap((p) => [p.thumb, p.view]));
+  const signed = useSignedMap([...(d.photos ?? []).flatMap((p) => [p.thumb, p.view]), ...(d.media_other ?? []).map((m) => m.url)]);
   const disp = (u?: string | null) => { const p = storagePath(u); return (p && signed.get(p)) || u || ''; };
   const set = (k: keyof EvidenceRow, v: unknown) => setD((p) => ({ ...p, [k]: v }));
   const setSource = (i: number, src: EvidenceSource) => set('sources', (d.sources ?? []).map((s, j) => (j === i ? src : s)));
@@ -431,10 +431,31 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
             </label>
           </div>
-          {(d.withheld ?? 0) > 0 && (
-            <p className="adm-help" style={{ marginTop: 6 }}>개인정보 때문에 공개하지 않은 원본 자료 {d.withheld}건은 여기 보이지 않습니다.</p>
-          )}
         </Field>
+
+        {/* 영상·음성(0014 명세 4장). 관리 화면에서 바로 재생한다. */}
+        <Field label={`영상·음성 ${d.media_other?.length ?? 0}개`}>
+          {(d.media_other ?? []).length === 0 && <p className="adm-help">영상·음성이 없습니다.</p>}
+          <div className="adm-media">
+            {(d.media_other ?? []).map((m, i) => (
+              <div key={i} className="adm-media-item">
+                {!m.url ? (
+                  <p className="adm-help">{m.kind === 'audio' ? '음성' : m.kind === 'doc' ? '문서' : '영상'} 원본이 없습니다(유실).</p>
+                ) : m.kind === 'video' ? (
+                  <video src={disp(m.url)} controls preload="metadata" />
+                ) : m.kind === 'audio' ? (
+                  <audio src={disp(m.url)} controls preload="metadata" />
+                ) : (
+                  <a href={disp(m.url)} target="_blank" rel="noreferrer">문서 열기</a>
+                )}
+                <button className="adm-btn danger" onClick={() => set('media_other', (d.media_other ?? []).filter((_, j) => j !== i))}>빼기</button>
+              </div>
+            ))}
+          </div>
+        </Field>
+        {(d.withheld ?? 0) > 0 && (
+          <p className="adm-help">개인정보 때문에 공개하지 않은 원본 자료 {d.withheld}건은 저장소에 올리지 않아 여기 보이지 않습니다.</p>
+        )}
 
         <div className="adm-foot">
           <button className="adm-btn" onClick={onClose}>취소</button>
@@ -467,6 +488,16 @@ function Login({ onErr, err }: { onErr: (s: string) => void; err: string }) {
       </div>
     </Center>
   );
+}
+
+// 목록 한 줄 요약: 사진·영상·음성 수와 비공개 원본 수.
+function mediaSummary(e: EvidenceRow): string {
+  const other = e.media_other ?? [];
+  const parts = [`사진 ${(e.photos ?? []).length}`, `영상 ${other.filter((m) => m.kind === 'video').length}`];
+  const audio = other.filter((m) => m.kind === 'audio').length;
+  if (audio) parts.push(`음성 ${audio}`);
+  if (e.withheld) parts.push(`비공개 원본 ${e.withheld}`);
+  return parts.join(' · ');
 }
 
 const Center = ({ children }: { children: React.ReactNode }) => <div className="desk adm-center">{children}</div>;
