@@ -5,7 +5,8 @@ import { EVIDENCE_TYPES } from '../types/evidence';
 import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, normalizeEvidenceStatus } from '../lib/status';
-import { normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
+import { confirmBlockers, normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
+import '../styles/admin.css';
 import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
 import { INQUIRY_KINDS } from '../lib/contact';
 
@@ -36,15 +37,13 @@ function TipFiles({ tipId }: { tipId: string }) {
     })();
     return () => { alive = false; };
   }, [tipId]);
-  if (!files) return <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>첨부 파일 확인 중…</div>;
-  if (!files.length) return <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>첨부 파일 없음</div>;
+  if (!files) return <div className="adm-help">첨부 파일을 확인하고 있습니다…</div>;
+  if (!files.length) return <div className="adm-help">첨부 파일이 없습니다.</div>;
   return (
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <div className="adm-files">
       {files.map((f) => (
-        <a key={f.path} href={f.url} target="_blank" rel="noreferrer noopener" style={{ fontSize: 13 }}>
-          {/\.(jpg|png|webp)$/.test(f.path)
-            ? <img src={f.url} alt={f.path} style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 6 }} />
-            : `첨부 ${f.path.split('/').pop()}`}
+        <a key={f.path} href={f.url} target="_blank" rel="noreferrer noopener">
+          {/\.(jpg|png|webp)$/.test(f.path) ? <img src={f.url} alt={f.path} /> : `첨부 ${f.path.split('/').pop()}`}
         </a>
       ))}
     </div>
@@ -56,7 +55,7 @@ const blank = (): Partial<EvidenceRow> => ({
   region_basic: null, place: '', place_raw: '', coordinates: null, located: false,
   occurred_raw: '', source: '', source_url: '', reporter: '익명 제보자',
   photos: [], media_other: [], withheld: 0, media_count: 0,
-  // 기록 필드. 새 카드는 비공개·주장 상태로 시작한다. 상태는 관리자만 올린다.
+  // 기록 필드. 새 카드는 제보 상태로 시작한다. 자료 확인은 관리자만 올린다.
   status: 'reported', claim: '', election: '2026 지방선거', occurred_at: null,
   sources: [], verification: {},
 });
@@ -69,6 +68,7 @@ export default function Admin() {
   const [err, setErr] = useState('');
   const [rebuild, setRebuild] = useState('');
   const [tab, setTab] = useState<'records' | 'tips' | 'inquiries'>('records');
+  const [statusFilter, setStatusFilter] = useState<EvidenceStatus | ''>('');
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [tips, setTips] = useState<TipRow[]>([]);
   // 채택 중인 제보. 기록 초안을 저장하면 검수를 마치고 연락처를 지운다.
@@ -125,7 +125,7 @@ export default function Admin() {
     const paths = await listTipFiles(tip.id);
     if (paths.length) {
       const { error } = await supabase!.storage.from(TIP_BUCKET).remove(paths);
-      if (error) { setErr(`첨부 파일을 지우지 못했다: ${error.message}`); return; }
+      if (error) { setErr(`첨부 파일을 지우지 못했습니다: ${error.message}`); return; }
     }
     finishTip(tip, 'rejected', null);
   };
@@ -134,129 +134,167 @@ export default function Admin() {
   const signed = useSignedMap(rows.flatMap((r) => (r.photos ?? []).flatMap((p) => [p.thumb, p.view])));
   const disp = (u?: string | null) => { const p = storagePath(u); return (p && signed.get(p)) || u || ''; };
 
-  if (!supabase) return <Center>Supabase가 설정되지 않았습니다. <code>.env</code>에 VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY를 넣어주세요.</Center>;
-  if (!ready) return <Center>불러오는 중…</Center>;
+  if (!supabase) return <Center>Supabase가 설정되지 않았습니다. <code>.env</code>에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 넣어 주세요.</Center>;
+  if (!ready) return <Center>불러오는 중입니다…</Center>;
   if (!session) return <Login onErr={setErr} err={err} />;
 
   const setPublished = async (e: EvidenceRow, v: boolean) => {
     if (e.published === v) return;
-    await supabase!.from('evidence').update({ published: v }).eq('id', e.id);
+    const { error } = await supabase!.from('evidence').update({ published: v }).eq('id', e.id);
+    if (error) setErr(error.message);
+    load();
+  };
+  // 목록에서 상태 바꾸기(0014 명세 1장). 자료 확인은 편집 창과 같은 조건을 검사한다.
+  const setStatus = async (e: EvidenceRow, s: EvidenceStatus) => {
+    if (normalizeEvidenceStatus(e.status) === s) return;
+    if (s === 'confirmed') {
+      const blockers = confirmBlockers(e);
+      if (blockers.length) { setErr(`#${e.num}: ${blockers.join(' ')}`); return; }
+    }
+    setErr('');
+    const { error } = await supabase!.from('evidence').update({ status: s }).eq('id', e.id);
+    if (error) setErr(error.message);
     load();
   };
   // 공개 HTML 갱신: 사전 렌더링 본문(검색·AI가 읽는 HTML)을 최신 DB로 다시 만든다.
   // 화면 자체는 하이드레이션 뒤 최신 데이터를 다시 읽으므로 버튼 전에도 반영된다.
   const requestRebuild = async () => {
-    setRebuild('요청 중…');
+    setRebuild('요청하고 있습니다…');
     const { data } = await supabase!.auth.getSession();
     const token = data.session?.access_token;
-    if (!token) { setRebuild('로그인이 필요하다'); return; }
+    if (!token) { setRebuild('로그인이 필요합니다.'); return; }
     try {
       const res = await fetch('/api/rebuild', { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
       const body = await res.json().catch(() => ({}));
-      setRebuild(res.ok ? '재빌드를 요청했다. 수 분 뒤 공개 HTML에 반영된다.' : `실패: ${body.error ?? res.status}`);
+      setRebuild(res.ok ? '다시 빌드하도록 요청했습니다. 몇 분 뒤 공개 HTML에 반영됩니다.' : `실패했습니다: ${body.error ?? res.status}`);
     } catch (e) {
-      setRebuild(`실패: ${(e as Error).message}`);
+      setRebuild(`실패했습니다: ${(e as Error).message}`);
     }
   };
   const remove = async (e: EvidenceRow) => {
-    if (!confirm(`"${e.title}" 삭제할까요?`)) return;
+    if (!confirm(`"${e.title}" 기록을 삭제할까요?`)) return;
     await supabase!.from('evidence').delete().eq('id', e.id);
     load();
   };
 
+  const confirmedCount = rows.filter((r) => normalizeEvidenceStatus(r.status) === 'confirmed').length;
+  const shown = statusFilter ? rows.filter((r) => normalizeEvidenceStatus(r.status) === statusFilter) : rows;
+
   return (
-    <div className="app" style={{ background: 'var(--bg)' }}>
-      <header className="appbar" style={{ justifyContent: 'space-between' }}>
-        <span className="brand">선진국 · 관리자</span>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button className="chip" onClick={() => setEditing(blank())}>+ 새 기록</button>
-          <button className="chip" onClick={requestRebuild} title="사전 렌더링 HTML을 최신 DB로 다시 만든다">공개 HTML 갱신</button>
-          <button className="chip" onClick={() => supabase!.auth.signOut()}>로그아웃</button>
+    <div className="desk adm">
+      <header className="adm-bar">
+        <span className="mark">선진국 · 관리자</span>
+        <div className="adm-actions">
+          <button className="adm-btn" onClick={() => setEditing(blank())}>+ 새 기록</button>
+          <button className="adm-btn" onClick={requestRebuild} title="사전 렌더링 HTML을 최신 DB로 다시 만듭니다">공개 HTML 갱신</button>
+          <button className="adm-btn" onClick={() => supabase!.auth.signOut()}>로그아웃</button>
         </div>
       </header>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
-        {err && <div className="note" style={{ marginBottom: 12 }}>⚠ {err}</div>}
-        {rebuild && <div className="note" style={{ marginBottom: 12 }}>{rebuild}</div>}
-        <div style={{ maxWidth: 1000, margin: '0 auto 12px', display: 'flex', gap: 8 }}>
-          <button className="chip" onClick={() => setTab('records')} style={tab === 'records' ? activeTab : undefined}>기록</button>
-          <button className="chip" onClick={() => setTab('tips')} style={tab === 'tips' ? activeTab : undefined}>제보 검수 ({tips.length})</button>
-          <button className="chip" onClick={() => setTab('inquiries')} style={tab === 'inquiries' ? activeTab : undefined}>문의 ({inquiries.filter((q) => !q.handled).length})</button>
+      <main className="adm-main">
+        {err && <div className="adm-note error">{err}</div>}
+        {rebuild && <div className="adm-note">{rebuild}</div>}
+        <div className="adm-tabs">
+          <button className="adm-btn" aria-pressed={tab === 'records'} onClick={() => setTab('records')}>기록</button>
+          <button className="adm-btn" aria-pressed={tab === 'tips'} onClick={() => setTab('tips')}>제보 검수 ({tips.length})</button>
+          <button className="adm-btn" aria-pressed={tab === 'inquiries'} onClick={() => setTab('inquiries')}>문의 ({inquiries.filter((q) => !q.handled).length})</button>
         </div>
+
         {tab === 'tips' && (
-          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-              새 제보 {tips.length}건. 채택하면 비공개 기록 초안이 열린다. 초안을 저장하거나 기각하면 이름·연락처가 지워진다. 기각하면 첨부 파일도 지워진다. 채택한 제보의 파일은 비식별화한 뒤 기록 사진으로 올린다.
-            </div>
-            {tips.length === 0 && <div style={rowStyle}>검수할 새 제보가 없다.</div>}
-            {tips.map((t) => (
-              <div key={t.id} style={{ ...rowStyle, alignItems: 'flex-start', flexDirection: 'column' }}>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {new Date(t.created_at).toLocaleString('ko-KR')} 접수 · {t.place_name}{t.occurred_text ? ` · ${t.occurred_text}` : ''}
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{t.tip_contacts?.body}</div>
-                {(t.links ?? []).map((l) => (
-                  <a key={l} href={l} target="_blank" rel="noreferrer noopener" style={{ fontSize: 13 }}>{l}</a>
-                ))}
-                <TipFiles tipId={t.id} />
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  연락처(비공개): {t.tip_contacts?.name || '이름 없음'} · {t.tip_contacts?.contact || '연락처 없음'}
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button className="chip" onClick={() => adopt(t)}>채택 → 기록 초안</button>
-                  <button className="chip" onClick={() => reject(t)} style={{ color: '#b4533a' }}>기각</button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            <p className="adm-help">
+              새 제보 {tips.length}건입니다. 채택하면 비공개 기록 초안이 열립니다. 초안을 저장하거나 기각하면 이름·연락처가 지워집니다. 기각하면 첨부 파일도
+              지워집니다. 채택한 제보의 파일은 비식별화한 뒤 기록 사진으로 올립니다.
+            </p>
+            <ul className="adm-list">
+              {tips.length === 0 && <li className="adm-row">검수할 새 제보가 없습니다.</li>}
+              {tips.map((t) => (
+                <li key={t.id} className="adm-row stack">
+                  <div className="meta">
+                    {new Date(t.created_at).toLocaleString('ko-KR')} 접수 · {t.place_name}{t.occurred_text ? ` · ${t.occurred_text}` : ''}
+                  </div>
+                  <div className="adm-body">{t.tip_contacts?.body}</div>
+                  {(t.links ?? []).map((l) => (
+                    <a key={l} href={l} target="_blank" rel="noreferrer noopener" className="meta">{l}</a>
+                  ))}
+                  <TipFiles tipId={t.id} />
+                  <div className="meta">
+                    연락처(비공개): {t.tip_contacts?.name || '이름 없음'} · {t.tip_contacts?.contact || '연락처 없음'}
+                  </div>
+                  <div className="adm-actions">
+                    <button className="adm-btn" onClick={() => adopt(t)}>채택 → 기록 초안</button>
+                    <button className="adm-btn danger" onClick={() => reject(t)}>기각</button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
+
         {tab === 'inquiries' && (
-          <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>
-              문의는 접수 후 1년이 지나면 자동으로 지워진다. 메일함의 사본도 같은 기간 뒤 지운다.
-            </div>
-            {inquiries.length === 0 && <div style={rowStyle}>문의가 없다.</div>}
-            {inquiries.map((q) => (
-              <div key={q.id} style={{ ...rowStyle, alignItems: 'flex-start', flexDirection: 'column', opacity: q.handled ? 0.6 : 1 }}>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {new Date(q.created_at).toLocaleString('ko-KR')} · {KIND_LABEL[q.kind] ?? q.kind}
-                  {q.reply_to ? ` · 회신 ${q.reply_to}` : ' · 회신 이메일 없음'}
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{q.body}</div>
-                <button className="chip" onClick={() => markHandled(q)}>{q.handled ? '처리 취소' : '처리 완료'}</button>
-              </div>
-            ))}
-          </div>
+          <>
+            <p className="adm-help">문의는 접수 후 1년이 지나면 자동으로 지워집니다. 메일함의 사본도 같은 기간 뒤 지워 주세요.</p>
+            <ul className="adm-list">
+              {inquiries.length === 0 && <li className="adm-row">문의가 없습니다.</li>}
+              {inquiries.map((q) => (
+                <li key={q.id} className={`adm-row stack${q.handled ? ' done' : ''}`}>
+                  <div className="meta">
+                    {new Date(q.created_at).toLocaleString('ko-KR')} · {KIND_LABEL[q.kind] ?? q.kind}
+                    {q.reply_to ? ` · 회신 ${q.reply_to}` : ' · 회신 이메일 없음'}
+                  </div>
+                  <div className="adm-body">{q.body}</div>
+                  <button className="adm-btn" onClick={() => markHandled(q)}>{q.handled ? '처리 취소' : '처리 완료'}</button>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
+
         {tab === 'records' && (
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ fontSize: 13, color: 'var(--ink-3)' }}>총 {rows.length}건 · 공개 {rows.filter((r) => r.published).length}건</div>
-          {rows.map((e, i) => (
-            <div key={e.id} style={{ ...rowStyle, cursor: 'pointer' }} onClick={() => setEditing({ ...e })} title="클릭하면 상세 보기">
-              <div style={{ width: 28, textAlign: 'center', color: 'var(--ink-3)', fontWeight: 700 }}>{i + 1}</div>
-              <div style={{ width: 48, height: 48, borderRadius: 8, overflow: 'hidden', flex: '0 0 auto',
-                background: 'var(--surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--ink-3)', fontSize: 20 }}>
-                {e.photos[0]?.thumb ? <img src={disp(e.photos[0].thumb)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : typeIcon(e.evidence_type)}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{e.claim || e.title}</div>
-                <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>
-                  {EVIDENCE_STATUS_LABEL[normalizeEvidenceStatus(e.status)]} · {e.occurred_at ?? '날짜 미상'} · {e.place} · {e.evidence_type}
-                  <span style={{ marginLeft: 6, opacity: 0.6 }}>#{e.num}{e.withheld ? ` · 비공개자료 ${e.withheld}` : ''}</span>
-                </div>
-              </div>
-              <div style={{ display: 'flex', border: '1px solid var(--line)', borderRadius: 8, overflow: 'hidden', flex: '0 0 auto' }} onClick={(ev) => ev.stopPropagation()}>
-                <button onClick={() => setPublished(e, true)}
-                  style={{ ...segStyle, background: e.published ? 'var(--teal-600)' : '#fff', color: e.published ? '#fff' : 'var(--ink-3)' }}>공개</button>
-                <button onClick={() => setPublished(e, false)}
-                  style={{ ...segStyle, borderLeft: '1px solid var(--line)', background: !e.published ? '#b4533a' : '#fff', color: !e.published ? '#fff' : 'var(--ink-3)' }}>비공개</button>
-              </div>
-              <button className="chip" onClick={(ev) => { ev.stopPropagation(); remove(e); }} style={{ color: '#b4533a' }}>삭제</button>
+          <>
+            <div className="adm-summary">
+              <span>총 {rows.length}건 · 공개 {rows.filter((r) => r.published).length}건 · 자료 확인 {confirmedCount}건</span>
+              <label>
+                상태{' '}
+                <select className="adm-input" style={{ width: 'auto', padding: '3px 6px', fontSize: 13 }} value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as EvidenceStatus | '')}>
+                  <option value="">전체</option>
+                  {EVIDENCE_STATUSES.map((s) => <option key={s} value={s}>{EVIDENCE_STATUS_LABEL[s]}</option>)}
+                </select>
+              </label>
             </div>
-          ))}
-        </div>
+            <ul className="adm-list">
+              {shown.map((e) => {
+                const status = normalizeEvidenceStatus(e.status);
+                return (
+                  <li key={e.id} className="adm-row">
+                    <div className="no">{e.num}</div>
+                    <div className="adm-thumb">
+                      {e.photos[0]?.thumb ? <img src={disp(e.photos[0].thumb)} alt="" /> : typeIcon(e.evidence_type)}
+                    </div>
+                    <div className="main" onClick={() => setEditing({ ...e })} title="누르면 편집합니다">
+                      <div className="title">{e.claim || e.title}</div>
+                      <div className="meta">
+                        {e.occurred_at ?? '날짜 미상'} · {e.place || '장소 없음'} · {e.evidence_type}
+                        {` · ${mediaSummary(e)}`}
+                      </div>
+                    </div>
+                    <div className="adm-seg" role="group" aria-label={`#${e.num} 상태`}>
+                      {EVIDENCE_STATUSES.map((s) => (
+                        <button key={s} aria-pressed={status === s} onClick={() => setStatus(e, s)}>{EVIDENCE_STATUS_LABEL[s]}</button>
+                      ))}
+                    </div>
+                    <div className="adm-seg" role="group" aria-label={`#${e.num} 공개`}>
+                      <button aria-pressed={e.published} onClick={() => setPublished(e, true)}>공개</button>
+                      <button className="danger" aria-pressed={!e.published} onClick={() => setPublished(e, false)}>비공개</button>
+                    </div>
+                    <button className="adm-btn danger" onClick={() => remove(e)}>삭제</button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
-      </div>
+      </main>
       {editing && (
         <EditModal
           draft={editing}
@@ -281,7 +319,7 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   // 비공개 버킷: 미리보기는 서명 URL, 저장값(d.photos)은 원본 URL 유지
-  const signed = useSignedMap((d.photos ?? []).flatMap((p) => [p.thumb, p.view]));
+  const signed = useSignedMap([...(d.photos ?? []).flatMap((p) => [p.thumb, p.view]), ...(d.media_other ?? []).map((m) => m.url)]);
   const disp = (u?: string | null) => { const p = storagePath(u); return (p && signed.get(p)) || u || ''; };
   const set = (k: keyof EvidenceRow, v: unknown) => setD((p) => ({ ...p, [k]: v }));
   const setSource = (i: number, src: EvidenceSource) => set('sources', (d.sources ?? []).map((s, j) => (j === i ? src : s)));
@@ -318,96 +356,110 @@ function EditModal({ draft, onClose, onSaved }: { draft: Partial<EvidenceRow>; o
   };
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={modal} onClick={(e) => e.stopPropagation()}>
-        <h3 style={{ margin: '0 0 12px' }}>{draft.title || draft.claim ? '기록 수정' : '새 기록'}</h3>
-        {msg && <div className="note" style={{ marginBottom: 10 }}>⚠ {msg}</div>}
-        <Field label="제목"><input style={inp} value={d.title ?? ''} onChange={(e) => set('title', e.target.value)} /></Field>
-        <Field label="설명(상세의 제보 내용)"><textarea style={{ ...inp, height: 80 }} value={d.description ?? ''} onChange={(e) => set('description', e.target.value)} /></Field>
-        <Field label="주장(상세 H1, 한 문장)"><textarea style={{ ...inp, height: 56 }} value={d.claim ?? ''} onChange={(e) => set('claim', e.target.value)} /></Field>
+    <div className="adm-overlay" onClick={onClose}>
+      <div className="adm-modal" onClick={(e) => e.stopPropagation()}>
+        <h3>{draft.title || draft.claim ? '기록 수정' : '새 기록'}</h3>
+        {msg && <div className="adm-note error">{msg}</div>}
+        <Field label="제목"><input className="adm-input" value={d.title ?? ''} onChange={(e) => set('title', e.target.value)} /></Field>
+        <Field label="설명(상세의 제보 내용)"><textarea className="adm-input" style={{ height: 80 }} value={d.description ?? ''} onChange={(e) => set('description', e.target.value)} /></Field>
+        <Field label="주장(상세 H1, 한 문장)"><textarea className="adm-input" style={{ height: 56 }} value={d.claim ?? ''} onChange={(e) => set('claim', e.target.value)} /></Field>
         <Row>
           <Field label="상태">
-            <select style={inp} value={normalizeEvidenceStatus(d.status)} onChange={(e) => set('status', e.target.value as EvidenceStatus)}>
+            <select className="adm-input" value={normalizeEvidenceStatus(d.status)} onChange={(e) => set('status', e.target.value as EvidenceStatus)}>
               {EVIDENCE_STATUSES.map((s) => <option key={s} value={s}>{EVIDENCE_STATUS_LABEL[s]}</option>)}
             </select>
           </Field>
-          <Field label="선거"><input style={inp} value={d.election ?? ''} onChange={(e) => set('election', e.target.value)} /></Field>
+          <Field label="선거"><input className="adm-input" value={d.election ?? ''} onChange={(e) => set('election', e.target.value)} /></Field>
         </Row>
-        <div style={{ fontSize: 12, color: 'var(--ink-3)', margin: '-4px 0 10px' }}>
+        <p className="adm-help">
           {EVIDENCE_STATUS_LEGEND[normalizeEvidenceStatus(d.status)]}
-          {normalizeEvidenceStatus(d.status) === 'confirmed' && ' 장소와 사진·영상·문서가 있어야 저장된다.'}
-        </div>
-        <Field label="발생 시각(2026-06-03 또는 2026-06-03T14:37:00+09:00)"><input style={inp} value={d.occurred_at ?? ''} onChange={(e) => set('occurred_at', e.target.value)} /></Field>
+          {normalizeEvidenceStatus(d.status) === 'confirmed' && ' 장소와 사진·영상·문서가 있어야 저장됩니다.'}
+        </p>
+        <Field label="발생 시각(2026-06-03 또는 2026-06-03T14:37:00+09:00)"><input className="adm-input" value={d.occurred_at ?? ''} onChange={(e) => set('occurred_at', e.target.value)} /></Field>
         <Field label="출처(이름, 주소)">
           {(d.sources ?? []).map((src, i) => (
-            <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-              <input style={inp} placeholder="이름" value={src.title} onChange={(e) => setSource(i, { ...src, title: e.target.value })} />
-              <input style={inp} placeholder="https://" value={src.url ?? ''} onChange={(e) => setSource(i, { ...src, url: e.target.value })} />
-              <button className="chip" onClick={() => set('sources', (d.sources ?? []).filter((_, j) => j !== i))}>삭제</button>
+            <div key={i} className="adm-pair" style={{ marginBottom: 6 }}>
+              <input className="adm-input" placeholder="이름" value={src.title} onChange={(e) => setSource(i, { ...src, title: e.target.value })} />
+              <input className="adm-input" placeholder="https://" value={src.url ?? ''} onChange={(e) => setSource(i, { ...src, url: e.target.value })} />
+              <button className="adm-btn danger" onClick={() => set('sources', (d.sources ?? []).filter((_, j) => j !== i))}>삭제</button>
             </div>
           ))}
-          <button className="chip" onClick={() => set('sources', [...(d.sources ?? []), { title: '', url: null }])}>+ 출처</button>
+          <button className="adm-btn" onClick={() => set('sources', [...(d.sources ?? []), { title: '', url: null }])}>+ 출처</button>
         </Field>
         <Row>
           <Field label="유형">
-            <select style={inp} value={d.evidence_type} onChange={(e) => set('evidence_type', e.target.value as EvidenceType)}>
+            <select className="adm-input" value={d.evidence_type} onChange={(e) => set('evidence_type', e.target.value as EvidenceType)}>
               {EVIDENCE_TYPES.map((t) => <option key={t}>{t}</option>)}
             </select>
           </Field>
           <Field label="공개">
-            <select style={inp} value={d.published ? '1' : '0'} onChange={(e) => set('published', e.target.value === '1')}>
+            <select className="adm-input" value={d.published ? '1' : '0'} onChange={(e) => set('published', e.target.value === '1')}>
               <option value="1">공개</option><option value="0">비공개</option>
             </select>
           </Field>
         </Row>
         <Row>
-          <Field label="광역 슬러그"><input style={inp} value={d.region_wide ?? ''} onChange={(e) => set('region_wide', e.target.value || null)} /></Field>
-          <Field label="광역명"><input style={inp} value={d.region_wide_label ?? ''} onChange={(e) => set('region_wide_label', e.target.value || null)} /></Field>
+          <Field label="광역 슬러그"><input className="adm-input" value={d.region_wide ?? ''} onChange={(e) => set('region_wide', e.target.value || null)} /></Field>
+          <Field label="광역명"><input className="adm-input" value={d.region_wide_label ?? ''} onChange={(e) => set('region_wide_label', e.target.value || null)} /></Field>
         </Row>
         <Row>
-          <Field label="기초 슬러그"><input style={inp} value={d.region_basic ?? ''} onChange={(e) => set('region_basic', e.target.value || null)} /></Field>
-          <Field label="장소"><input style={inp} value={d.place ?? ''} onChange={(e) => set('place', e.target.value)} /></Field>
+          <Field label="기초 슬러그"><input className="adm-input" value={d.region_basic ?? ''} onChange={(e) => set('region_basic', e.target.value || null)} /></Field>
+          <Field label="장소"><input className="adm-input" value={d.place ?? ''} onChange={(e) => set('place', e.target.value)} /></Field>
         </Row>
         <Row>
-          <Field label="경도(lng)"><input style={inp} value={lng} onChange={(e) => setCoord(0, e.target.value)} /></Field>
-          <Field label="위도(lat)"><input style={inp} value={lat} onChange={(e) => setCoord(1, e.target.value)} /></Field>
+          <Field label="경도(lng)"><input className="adm-input" value={lng} onChange={(e) => setCoord(0, e.target.value)} /></Field>
+          <Field label="위도(lat)"><input className="adm-input" value={lat} onChange={(e) => setCoord(1, e.target.value)} /></Field>
         </Row>
         <Row>
-          <Field label="수집경로"><input style={inp} value={d.source ?? ''} onChange={(e) => set('source', e.target.value)} /></Field>
-          <Field label="발생시각"><input style={inp} value={d.occurred_raw ?? ''} onChange={(e) => set('occurred_raw', e.target.value)} /></Field>
+          <Field label="수집 경로"><input className="adm-input" value={d.source ?? ''} onChange={(e) => set('source', e.target.value)} /></Field>
+          <Field label="발생 시각(원문)"><input className="adm-input" value={d.occurred_raw ?? ''} onChange={(e) => set('occurred_raw', e.target.value)} /></Field>
         </Row>
-        <Field label="원본 링크"><input style={inp} value={d.source_url ?? ''} onChange={(e) => set('source_url', e.target.value)} /></Field>
+        <Field label="원본 링크"><input className="adm-input" value={d.source_url ?? ''} onChange={(e) => set('source_url', e.target.value)} /></Field>
 
-        <Field label={`물증 사진 (${d.photos?.length ?? 0}) · 클릭 시 원본`}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Field label={`사진 ${d.photos?.length ?? 0}장 · 누르면 원본이 열립니다`}>
+          <div className="adm-photos">
             {(d.photos ?? []).map((p, i) => (
-              <div key={i} style={{ position: 'relative' }}>
+              <div key={i} className="adm-photo">
                 <a href={disp(p.view ?? p.thumb) || undefined} target="_blank" rel="noreferrer">
-                  <img src={disp(p.thumb)} style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--line)' }} />
+                  <img src={disp(p.thumb)} alt="" />
                 </a>
-                <button onClick={() => set('photos', (d.photos ?? []).filter((_, j) => j !== i))}
-                  title="사진 제거"
-                  style={{ position: 'absolute', top: -7, right: -7, border: 0, borderRadius: '50%', width: 20, height: 20, background: '#b4533a', color: '#fff', cursor: 'pointer' }}>×</button>
+                <button onClick={() => set('photos', (d.photos ?? []).filter((_, j) => j !== i))} title="사진 빼기" aria-label="사진 빼기">×</button>
               </div>
             ))}
-            <label className="chip" style={{ cursor: 'pointer', height: 100, width: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              + 업로드
+            <label className="adm-btn adm-upload">
+              + 올리기
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
             </label>
           </div>
-          {(d.withheld ?? 0) > 0 && (
-            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6 }}>
-              🔒 개인정보로 비공개된 원본 자료 {d.withheld}건은 여기 표시되지 않습니다.
-            </div>
-          )}
         </Field>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
-          <button className="chip" onClick={onClose}>취소</button>
-          <button className="chip" onClick={save} disabled={busy}
-            style={{ background: 'var(--navy-800)', color: '#fff', borderColor: 'var(--navy-800)' }}>
-            {busy ? '저장 중…' : '저장'}
-          </button>
+        {/* 영상·음성(0014 명세 4장). 관리 화면에서 바로 재생한다. */}
+        <Field label={`영상·음성 ${d.media_other?.length ?? 0}개`}>
+          {(d.media_other ?? []).length === 0 && <p className="adm-help">영상·음성이 없습니다.</p>}
+          <div className="adm-media">
+            {(d.media_other ?? []).map((m, i) => (
+              <div key={i} className="adm-media-item">
+                {!m.url ? (
+                  <p className="adm-help">{m.kind === 'audio' ? '음성' : m.kind === 'doc' ? '문서' : '영상'} 원본이 없습니다(유실).</p>
+                ) : m.kind === 'video' ? (
+                  <video src={disp(m.url)} controls preload="metadata" />
+                ) : m.kind === 'audio' ? (
+                  <audio src={disp(m.url)} controls preload="metadata" />
+                ) : (
+                  <a href={disp(m.url)} target="_blank" rel="noreferrer">문서 열기</a>
+                )}
+                <button className="adm-btn danger" onClick={() => set('media_other', (d.media_other ?? []).filter((_, j) => j !== i))}>빼기</button>
+              </div>
+            ))}
+          </div>
+        </Field>
+        {(d.withheld ?? 0) > 0 && (
+          <p className="adm-help">개인정보 때문에 공개하지 않은 원본 자료 {d.withheld}건은 저장소에 올리지 않아 여기 보이지 않습니다.</p>
+        )}
+
+        <div className="adm-foot">
+          <button className="adm-btn" onClick={onClose}>취소</button>
+          <button className="adm-btn primary" onClick={save} disabled={busy}>{busy ? '저장하고 있습니다…' : '저장'}</button>
         </div>
       </div>
     </div>
@@ -426,34 +478,30 @@ function Login({ onErr, err }: { onErr: (s: string) => void; err: string }) {
   };
   return (
     <Center>
-      <div style={{ width: 300, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--navy-800)', textAlign: 'center' }}>관리자 로그인</div>
-        <input style={inp} placeholder="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <input style={inp} type="password" placeholder="비밀번호" value={pw}
+      <div className="adm-login">
+        <h1>관리자 로그인</h1>
+        <input className="adm-input" placeholder="이메일" aria-label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="adm-input" type="password" placeholder="비밀번호" aria-label="비밀번호" value={pw}
           onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
-        {err && <div style={{ color: '#b4533a', fontSize: 13 }}>{err}</div>}
-        <button className="chip" onClick={submit} disabled={busy}
-          style={{ background: 'var(--navy-800)', color: '#fff', borderColor: 'var(--navy-800)', padding: '9px' }}>
-          {busy ? '로그인 중…' : '로그인'}
-        </button>
+        {err && <div className="adm-error">{err}</div>}
+        <button className="adm-btn primary" onClick={submit} disabled={busy}>{busy ? '로그인하고 있습니다…' : '로그인'}</button>
       </div>
     </Center>
   );
 }
 
-const Center = ({ children }: { children: React.ReactNode }) => (
-  <div className="loading" style={{ flexDirection: 'column', padding: 24, textAlign: 'center' }}>{children}</div>
-);
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-  <label style={{ display: 'block', marginBottom: 10, flex: 1 }}>
-    <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 4 }}>{label}</div>{children}
-  </label>
-);
-const Row = ({ children }: { children: React.ReactNode }) => <div style={{ display: 'flex', gap: 10 }}>{children}</div>;
+// 목록 한 줄 요약: 사진·영상·음성 수와 비공개 원본 수.
+function mediaSummary(e: EvidenceRow): string {
+  const other = e.media_other ?? [];
+  const parts = [`사진 ${(e.photos ?? []).length}`, `영상 ${other.filter((m) => m.kind === 'video').length}`];
+  const audio = other.filter((m) => m.kind === 'audio').length;
+  if (audio) parts.push(`음성 ${audio}`);
+  if (e.withheld) parts.push(`비공개 원본 ${e.withheld}`);
+  return parts.join(' · ');
+}
 
-const inp: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--line)', borderRadius: 8, fontSize: 14, fontFamily: 'inherit' };
-const rowStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 10, padding: '8px 12px' };
-const activeTab: React.CSSProperties = { background: 'var(--navy-800)', color: '#fff', borderColor: 'var(--navy-800)' };
-const segStyle: React.CSSProperties = { border: 0, padding: '6px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer' };
-const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(20,28,60,0.4)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 24, overflowY: 'auto', zIndex: 100 };
-const modal: React.CSSProperties = { background: '#fff', borderRadius: 14, padding: 20, width: 'min(560px, 100%)', boxShadow: 'var(--shadow-lg)' };
+const Center = ({ children }: { children: React.ReactNode }) => <div className="desk adm-center">{children}</div>;
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <label className="adm-field"><span>{label}</span>{children}</label>
+);
+const Row = ({ children }: { children: React.ReactNode }) => <div className="adm-pair">{children}</div>;

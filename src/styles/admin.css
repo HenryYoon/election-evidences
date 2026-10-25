@@ -1,0 +1,104 @@
+/* 관리 화면(0014 명세 2장). 공개 화면 .desk 토큰(배경·글자·구분선·상태 네 색)을 그대로 쓴다.
+   관리 화면 코드(Admin.tsx)만 불러온다. */
+.adm { min-height: 100vh; display: flex; flex-direction: column; }
+.adm-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 12px 20px; border-bottom: 1px solid var(--d-line);
+}
+.adm-bar .mark { font-weight: 900; letter-spacing: 0.12em; }
+.adm-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.adm-main { width: 100%; max-width: 1000px; margin: 0 auto; padding: 16px 20px 64px; }
+
+.adm-btn {
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--d-ink); background: transparent;
+  border: 1px solid var(--d-line); border-radius: 4px; padding: 5px 12px; cursor: pointer; white-space: nowrap;
+}
+.adm-btn:hover { border-color: var(--d-ink); }
+.adm-btn:disabled { opacity: 0.5; cursor: default; }
+.adm-btn.primary { background: var(--d-ink); color: var(--d-bg); border-color: var(--d-ink); }
+.adm-btn.danger { color: var(--d-status); }
+
+.adm-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; }
+.adm-tabs .adm-btn[aria-pressed='true'] { background: var(--d-ink); color: var(--d-bg); border-color: var(--d-ink); }
+
+.adm-note { margin: 0 0 12px; padding: 8px 12px; border: 1px solid var(--d-line); font-size: 13px; }
+.adm-note.error { border-color: var(--d-status); color: var(--d-status); font-weight: 600; }
+.adm-help { margin: 0 0 8px; font-size: 13px; }
+.adm-summary { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 0 0 8px; font-size: 13px; }
+
+.adm-list { list-style: none; margin: 0; padding: 0; }
+.adm-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 0;
+  border-top: 1px solid var(--d-line);
+}
+.adm-row:last-child { border-bottom: 1px solid var(--d-line); }
+.adm-row.stack { flex-direction: column; align-items: flex-start; }
+.adm-row.done { opacity: 0.6; }
+.adm-row .no { width: 28px; text-align: center; font-weight: 700; font-size: 13px; }
+.adm-row .main { flex: 1; min-width: 0; cursor: pointer; }
+.adm-row .title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-row .meta { font-size: 12px; }
+.adm-thumb {
+  width: 48px; height: 48px; flex: 0 0 auto; overflow: hidden; border: 1px solid var(--d-line);
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.adm-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.adm-body { white-space: pre-wrap; }
+.adm-files { display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+.adm-files img { width: 96px; height: 96px; object-fit: cover; border: 1px solid var(--d-line); }
+
+/* 두 칸 버튼: 공개·비공개, 자료 확인·제보 */
+.adm-seg { display: inline-flex; border: 1px solid var(--d-line); border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+.adm-seg button {
+  font: inherit; font-size: 12px; font-weight: 700; border: 0; padding: 5px 10px; cursor: pointer;
+  background: transparent; color: var(--d-ink);
+}
+.adm-seg button + button { border-left: 1px solid var(--d-line); }
+.adm-seg button[aria-pressed='true'] { background: var(--d-ink); color: var(--d-bg); }
+.adm-seg button.danger[aria-pressed='true'] { background: var(--d-status); color: var(--d-bg); }
+
+/* 편집 창 */
+.adm-overlay {
+  position: fixed; inset: 0; background: rgba(22, 24, 29, 0.4); z-index: 100;
+  display: flex; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto;
+}
+.adm-modal { background: var(--d-bg); border: 1px solid var(--d-ink); padding: 20px; width: min(560px, 100%); }
+.adm-modal h3 { margin: 0 0 12px; font-size: 17px; }
+.adm-field { display: block; margin-bottom: 10px; flex: 1; }
+.adm-field > span { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+.adm-pair { display: flex; gap: 10px; }
+.adm-input {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--d-line); border-radius: 4px;
+  font: inherit; font-size: 14px; background: #fff; color: var(--d-ink);
+}
+.adm-input:focus { outline: 2px solid var(--d-ink); outline-offset: -1px; }
+textarea.adm-input { resize: vertical; }
+.adm-photos { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.adm-photo { position: relative; }
+.adm-photo img { width: 100px; height: 100px; object-fit: cover; border: 1px solid var(--d-line); display: block; }
+.adm-photo button {
+  position: absolute; top: -7px; right: -7px; width: 20px; height: 20px; border: 0; border-radius: 50%;
+  background: var(--d-status); color: var(--d-bg); cursor: pointer; font-size: 13px; line-height: 20px; padding: 0;
+}
+.adm-upload { width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; }
+.adm-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* 로그인·안내 */
+.adm-center { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; gap: 10px; }
+.adm-login { width: 300px; display: flex; flex-direction: column; gap: 10px; }
+.adm-login h1 { font-size: 18px; }
+.adm-login .adm-btn { padding: 9px; }
+.adm-error { color: var(--d-status); font-size: 13px; font-weight: 600; }
+
+/* 좁은 화면: 버튼 묶음을 제목 아래 줄로 내린다 */
+@media (max-width: 640px) {
+  .adm-row { flex-wrap: wrap; }
+  .adm-row .main { flex-basis: calc(100% - 100px); }
+  .adm-pair { flex-direction: column; gap: 0; }
+}
+
+/* 영상·음성(0014 명세 4장) */
+.adm-media { display: flex; flex-direction: column; gap: 10px; }
+.adm-media-item { display: flex; gap: 8px; align-items: flex-start; }
+.adm-media-item video { width: 100%; max-height: 320px; background: #000; border: 1px solid var(--d-line); }
+.adm-media-item audio { width: 100%; }

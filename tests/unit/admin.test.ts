@@ -1,6 +1,6 @@
 // 0001 플랜 7단계: 관리자 기록 편집 검사와 재빌드 함수의 관리자 확인.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
+import { confirmBlockers, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
 // @ts-expect-error 서버 함수는 JS다.
 import handler from '../../api/rebuild.js';
 
@@ -27,6 +27,11 @@ describe('기록 편집 검사', () => {
     expect(errs).toContain('사진·영상·문서');
     const ok = { ...bare, place: '종로구 제1투표소', photos: [{ view: 'v.jpg', thumb: 't.jpg' }] as never };
     expect(validateLedgerDraft(ok)).toEqual([]);
+  });
+
+  it('목록의 자료 확인 버튼도 같은 조건을 쓴다(0014)', () => {
+    expect(confirmBlockers({ place: ' ', photos: [], media_other: [] })).toHaveLength(2);
+    expect(confirmBlockers({ place: '마포구민 체육관 개표소', photos: [], media_other: [{ url: 'v.mp4' }] as never })).toEqual([]);
   });
 
   it('옛 상태 값은 저장하지 않는다', () => {
