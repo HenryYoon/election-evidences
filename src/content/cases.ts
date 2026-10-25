@@ -8,7 +8,7 @@ export interface CaseItem {
   caption: string; // 2줄 이내(60자 이하)
 }
 
-export const CASES_STATE: 'draft' | 'published' = 'draft';
+export const CASES_STATE: 'draft' | 'published' = 'published';
 export const CASES_UPDATED = '2026-10-25';
 
 export const CASES: readonly CaseItem[] = [
