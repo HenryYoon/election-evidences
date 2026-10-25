@@ -38,7 +38,7 @@ set request.jwt.claim.sub = '00000000-0000-0000-0000-000000000002';
 select pg_temp.expect('비관리자는 tip_contacts를 못 본다', (select count(*) from public.tip_contacts), 0);
 select pg_temp.expect('비관리자는 비공개 기록을 못 본다', (select count(*) from public.evidence where not published), 0);
 do $$ begin
-  update public.evidence set status = 'document' where id = 'ev-pub';
+  update public.evidence set status = 'confirmed' where id = 'ev-pub';
   if found then raise exception 'RLS 실패: 비관리자가 상태를 바꿨다'; end if;
   raise notice 'ok: 비관리자는 기록 수정 불가';
 end $$;
@@ -56,7 +56,8 @@ reset role;
 
 -- 제약
 do $$ begin
-  update public.evidence set status = 'confirmed' where id = 'ev-pub';
+  -- 0011에서 없앤 옛 값은 저장되지 않는다.
+  update public.evidence set status = 'document' where id = 'ev-pub';
   raise exception '제약 실패: 정의되지 않은 상태가 저장됐다';
 exception when check_violation then raise notice 'ok: status check 제약';
 end $$;

@@ -20,11 +20,17 @@ describe('기록 편집 검사', () => {
     expect(validateLedgerDraft({ ...base, occurred_at: '6월 3일' })).toHaveLength(1);
   });
 
-  it('문서 확인·영상 확인은 검증 네 줄을 모두 채워야 한다', () => {
-    const partial = { ...base, status: 'video_confirmed' as const, verification: { seen: '봉인지', where: '', when: null, notClaimed: null } };
-    expect(validateLedgerDraft(partial).join()).toContain('장소, 시각, 주장하지 않는 것');
-    const full = { ...partial, verification: { seen: '봉인지', where: '종로구', when: '14:37', notClaimed: '조작 여부' } };
-    expect(validateLedgerDraft(full)).toEqual([]);
+  it('자료 확인은 장소와 매체가 있어야 하고 검증 네 줄은 선택이다(0011)', () => {
+    const bare = { ...base, status: 'confirmed' as const, place: '', photos: [], media_other: [] };
+    const errs = validateLedgerDraft(bare).join();
+    expect(errs).toContain('장소');
+    expect(errs).toContain('사진·영상·문서');
+    const ok = { ...bare, place: '종로구 제1투표소', photos: [{ view: 'v.jpg', thumb: 't.jpg' }] as never };
+    expect(validateLedgerDraft(ok)).toEqual([]);
+  });
+
+  it('옛 상태 값은 저장하지 않는다', () => {
+    expect(validateLedgerDraft({ ...base, status: 'video_confirmed' }).join()).toContain('알 수 없는 상태');
   });
 
   it('출처 주소는 http(s)만 받는다', () => {

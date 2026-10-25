@@ -54,7 +54,7 @@ try {
   if (await h.locator('.map-card').count()) failures.push('지도 카드가 처음부터 떠 있다');
   await h.locator('.svgmap circle').first().hover();
   const cardText = (await h.locator('.map-card').innerText().catch(() => '')).replace(/\s+/g, ' ');
-  if (!/상태|자료 접수|주장|문서 확인|영상 확인/.test(cardText) || cardText.length < 10) failures.push(`지도 카드 내용 부족: ${cardText}`);
+  if (!/자료 확인|제보/.test(cardText) || cardText.length < 10) failures.push(`지도 카드 내용 부족: ${cardText}`);
   await h.mouse.move(5, 5);
   await h.waitForTimeout(100);
   if (await h.locator('.map-card').count()) failures.push('마우스를 치워도 지도 카드가 남는다');

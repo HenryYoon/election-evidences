@@ -1,7 +1,7 @@
 // CLAUDE.md "Claude가 자주 틀리는 것"과 명세 4장의 규칙을 코드 수준에서 고정한다.
 import { describe, expect, it } from 'vitest';
 import { toEvidence, compareLedger, type EvidenceRow } from '../../src/types/evidence';
-import { defaultEvidenceStatus, EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND } from '../../src/lib/status';
+import { normalizeEvidenceStatus, EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND } from '../../src/lib/status';
 import { applyFilters, NO_FILTERS } from '../../src/lib/data';
 import { formatOccurred, leadSentence, pageMeta, prerenderPaths } from '../../src/lib/seo';
 import { snapshotScript } from '../../src/lib/snapshot';
@@ -11,24 +11,23 @@ const rows = fixture.evidence as unknown as EvidenceRow[];
 const row = (over: Partial<EvidenceRow> = {}): EvidenceRow => ({ ...rows[0], ...over });
 
 describe('상태', () => {
-  it('기본 상태는 자료 유무만 보고 reported나 allegation만 돌려준다', () => {
-    expect(defaultEvidenceStatus(true)).toBe('reported');
-    expect(defaultEvidenceStatus(false)).toBe('allegation');
+  it('상태는 자료 확인과 제보 두 가지다(0011)', () => {
+    expect([...EVIDENCE_STATUSES]).toEqual(['confirmed', 'reported']);
   });
 
-  it('상태가 비어 있는 행을 document나 video_confirmed로 올리지 않는다', () => {
+  it('상태가 비어 있으면 자료가 있어도 자료 확인으로 올리지 않는다', () => {
     for (const media_count of [0, 1, 50]) {
-      const ev = toEvidence(row({ status: null, media_count, photos: [], media_other: [] }));
-      expect(['reported', 'allegation']).toContain(ev.status);
+      expect(toEvidence(row({ status: null, media_count })).status).toBe('reported');
     }
   });
 
-  it('관리자가 수동으로 지정한 상태는 그대로 둔다', () => {
-    expect(toEvidence(row({ status: 'video_confirmed' })).status).toBe('video_confirmed');
+  it('운영자가 붙인 자료 확인과 옛 확인 상태는 자료 확인이다', () => {
+    for (const s of ['confirmed', 'document', 'video_confirmed']) expect(normalizeEvidenceStatus(s)).toBe('confirmed');
+    expect(toEvidence(row({ status: 'confirmed' })).status).toBe('confirmed');
   });
 
-  it('알 수 없는 상태 값은 기본 규칙으로 되돌린다', () => {
-    expect(toEvidence(row({ status: 'confirmed' as never, media_count: 0, photos: [] })).status).toBe('allegation');
+  it('옛 주장·자료 접수와 알 수 없는 값은 제보다', () => {
+    for (const s of ['allegation', 'reported', 'verified', '', undefined]) expect(normalizeEvidenceStatus(s)).toBe('reported');
   });
 
   it('모든 상태에 라벨과 범례 문구가 있다', () => {
@@ -76,7 +75,8 @@ describe('기록 매핑', () => {
   it('필터는 유형, 선거, 상태, 지역을 모두 적용한다', () => {
     const all = rows.map(toEvidence);
     expect(applyFilters(all, NO_FILTERS)).toHaveLength(3);
-    expect(applyFilters(all, { ...NO_FILTERS, status: 'allegation' }).map((e) => e.id)).toEqual(['ev-902']);
+    expect(applyFilters(all, { ...NO_FILTERS, status: 'confirmed' })).toEqual([]);
+    expect(applyFilters(all, { ...NO_FILTERS, status: 'reported' })).toHaveLength(3);
     expect(applyFilters(all, { ...NO_FILTERS, region: '서울', type: '사진' }).map((e) => e.id)).toEqual(['ev-901']);
   });
 });
@@ -86,7 +86,7 @@ describe('회수용 문장과 메타', () => {
     const s = leadSentence(toEvidence(rows[0]));
     expect(s).toContain('2026-06-03 14:37');
     expect(s).toContain('종로구 테스트 투표소');
-    expect(s).toContain('상태 자료 접수');
+    expect(s).toContain('상태 제보');
     expect(s).toContain('출처 카카오톡 제보');
   });
 

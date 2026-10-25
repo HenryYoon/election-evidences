@@ -4,31 +4,28 @@
 
 export const STATUS_DISCLAIMER = '상태는 조사 분류이며 법적 결론이 아니다.';
 
-// ── 기록 상태 ─────────────────────────────────────────────
-export const EVIDENCE_STATUSES = ['document', 'video_confirmed', 'reported', 'allegation'] as const;
+// ── 기록 상태(0011: 두 단계) ───────────────────────────────
+export const EVIDENCE_STATUSES = ['confirmed', 'reported'] as const;
 export type EvidenceStatus = (typeof EVIDENCE_STATUSES)[number];
 
 export const EVIDENCE_STATUS_LABEL: Record<EvidenceStatus, string> = {
-  document: '문서 확인',
-  video_confirmed: '영상 확인',
-  reported: '자료 접수',
-  allegation: '주장',
+  confirmed: '자료 확인',
+  reported: '제보',
 };
 
 export const EVIDENCE_STATUS_LEGEND: Record<EvidenceStatus, string> = {
-  document: '공문서나 공식 기록으로 내용을 확인했다.',
-  video_confirmed: '원본 영상에서 장소와 시각을 확인했다.',
-  reported: '사진이나 영상 자료가 있다. 장소와 시각은 아직 확인하지 않았다.',
-  allegation: '자료 없이 주장만 있다.',
+  confirmed: '운영진이 사진·영상·문서를 보고, 장소가 투표소·개표소 단위로 특정된 것을 확인했다. 자료의 진위나 위법 여부를 판단한 것은 아니다.',
+  reported: '자료가 없거나 장소가 특정되지 않은 제보다. 운영진이 아직 자료를 확인하지 않았다.',
 };
 
-// 관리자가 검증 네 줄을 채운 뒤 수동으로만 지정하는 상태. 코드는 이 상태로 올리지 않는다.
-export const MANUAL_ONLY_STATUSES: readonly EvidenceStatus[] = ['document', 'video_confirmed'];
+// 운영자가 승인한 뒤에만 붙이는 상태. 코드는 이 상태로 올리지 않는다.
+export const MANUAL_ONLY_STATUSES: readonly EvidenceStatus[] = ['confirmed'];
 
-// 상태가 비어 있는 기존 레코드의 기본값. 자료 유무만 본다.
-// `document`, `video_confirmed`는 돌려주지 않는다.
-export function defaultEvidenceStatus(hasMedia: boolean): EvidenceStatus {
-  return hasMedia ? 'reported' : 'allegation';
+// 옛 상태 값(0001)과 빈 값을 두 단계로 옮긴다. 문서 확인·영상 확인은 운영자가 붙였던 값이라 자료 확인으로 간다.
+// 그 밖의 값은 모두 제보다. 자료 유무로 자료 확인을 만들지 않는다.
+export function normalizeEvidenceStatus(raw: string | null | undefined): EvidenceStatus {
+  if (raw === 'confirmed' || raw === 'document' || raw === 'video_confirmed') return 'confirmed';
+  return 'reported';
 }
 
 // ── 제보 상태 ─────────────────────────────────────────────

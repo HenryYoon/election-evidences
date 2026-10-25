@@ -107,7 +107,7 @@ create policy media_admin_write on storage.objects
 
 -- 5) 기록 컬럼 ----------------------------------------------------------
 --    status는 기본값 없이 추가한다. 기존 행은 migrate_to_ledger.py가 채운다.
---    document, video_confirmed는 관리자가 수동으로만 지정한다.
+--    0011부터 상태는 confirmed(자료 확인), reported(제보) 둘이다. confirmed는 운영자만 붙인다.
 alter table public.evidence add column if not exists status text;
 alter table public.evidence add column if not exists claim text;          -- 한 문장 주장
 alter table public.evidence add column if not exists election text;
@@ -116,14 +116,14 @@ alter table public.evidence add column if not exists sources jsonb not null defa
                                                                           -- [{title,url,archiveUrl?}]
 alter table public.evidence add column if not exists verification jsonb not null default '{}'::jsonb;
                                                                           -- {seen,where,when,notClaimed}
+-- 상태 두 단계(0011). 옛 값을 옮긴 뒤 제약을 건다. 문서 확인·영상 확인은 운영자가 붙였던 값이라 자료 확인으로 간다.
 alter table public.evidence drop constraint if exists evidence_status_check;
-alter table public.evidence add constraint evidence_status_check
-  check (status is null or status in ('document', 'video_confirmed', 'reported', 'allegation'));
+update public.evidence set status = 'confirmed' where status in ('document', 'video_confirmed');
+update public.evidence set status = 'reported' where status is null or status not in ('confirmed', 'reported');
+alter table public.evidence alter column status set default 'reported';
+alter table public.evidence alter column status set not null;
+alter table public.evidence add constraint evidence_status_check check (status in ('confirmed', 'reported'));
 create index if not exists evidence_status_idx on public.evidence (status);
-
--- migrate_to_ledger.py --apply 로 모든 행에 status가 채워진 뒤 아래를 실행한다.
---   alter table public.evidence alter column status set default 'allegation';
---   alter table public.evidence alter column status set not null;
 
 -- 6) 피드 --------------------------------------------------------------
 create table if not exists public.feed_sources (

@@ -1,4 +1,4 @@
-// 홈(0008 명세 2장): 이름, 수집·검증 건수, 면책 한 줄, 지도, 최근 증거, 입구 링크 두 개.
+// 홈(0008 명세 2장): 이름, 수집·자료 확인 건수, 면책 한 줄, 지도, 최근 증거, 입구 링크 두 개.
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Dataset } from '../lib/data';
@@ -40,7 +40,7 @@ export default function Home({ ds, lang = 'ko' }: { ds: Dataset; lang?: Lang }) 
       },
     }));
 
-  // 검증 건수: 상태가 문서 확인 또는 영상 확인인 증거(0008 플랜). 0건이어도 그대로 보여 준다.
+  // 자료 확인 건수: 상태가 자료 확인인 증거(0011). 0건이어도 그대로 보여 준다.
   const verified = ledger.filter((e) => (MANUAL_ONLY_STATUSES as readonly string[]).includes(e.status)).length;
 
   return (

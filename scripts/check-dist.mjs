@@ -65,16 +65,23 @@ for (const f of pages) {
 
 const recordCount = pages.filter((p) => relative(DIST, p).startsWith('e/')).length;
 
-// 홈(0008 명세 2장): 수집 건수는 공개 증거 수와 같아야 한다. 다른 건수 표현은 두지 않는다.
+// 홈(0008 명세 2장, 0011): 수집 건수는 공개 증거 수, 자료 확인 건수는 스냅샷의 자료 확인 수와 같아야 한다. 다른 건수 표현은 두지 않는다.
 const home = readFileSync(join(DIST, 'index.html'), 'utf-8');
 const homeText = home.slice(home.indexOf('<div id="root">')).replace(/<script[\s\S]*?<\/script>/g, ' ').replace(/<[^>]+>/g, ' ');
-const counts = [...homeText.matchAll(/(수집|검증|조건에 맞는 증거)?\s*(\d+)\s*건/g)];
+const counts = [...homeText.matchAll(/(수집|자료 확인|조건에 맞는 증거)?\s*(\d+)\s*건/g)];
 const collected = counts.find((m) => m[1] === '수집');
 if (!collected) fail('index.html', '홈에 "수집 N건"이 없다');
 else if (Number(collected[2]) !== recordCount) fail('index.html', `수집 건수 ${collected[2]}가 공개 증거 수 ${recordCount}와 다르다`);
-if (!counts.some((m) => m[1] === '검증')) fail('index.html', '홈에 "검증 N건"이 없다');
+const checked = counts.find((m) => m[1] === '자료 확인');
+// 스냅샷의 옛 값(document, video_confirmed)도 자료 확인으로 센다(src/lib/status.ts normalizeEvidenceStatus).
+const snapFile = home.match(/\/snapshot\/[0-9a-f]+\.json/)?.[0];
+const snapRows = snapFile ? JSON.parse(readFileSync(join(DIST, snapFile), 'utf-8')).evidence : [];
+const checkedCount = snapRows.filter((r) => ['confirmed', 'document', 'video_confirmed'].includes(r.status)).length;
+if (!checked) fail('index.html', '홈에 "자료 확인 N건"이 없다');
+else if (snapFile && Number(checked[2]) !== checkedCount) fail('index.html', `자료 확인 건수 ${checked[2]}가 스냅샷의 자료 확인 수 ${checkedCount}와 다르다`);
+if (/검증 \d+건/.test(homeText)) fail('index.html', '홈에 옛 "검증 N건" 표현이 남아 있다(0011)');
 for (const m of counts) if (!m[1]) fail('index.html', `홈 본문에 허용하지 않은 건수 표현: ${m[0]}`);
-for (const [a, b] of [['수집', '세 단계'], ['검증', '모은다']]) if (homeText.includes(b)) fail('index.html', `홈에 뺀 문구가 남아 있다: ${b} (${a} 옆)`);
+for (const [a, b] of [['수집', '세 단계'], ['자료 확인', '모은다']]) if (homeText.includes(b)) fail('index.html', `홈에 뺀 문구가 남아 있다: ${b} (${a} 옆)`);
 for (const layer of ['/records', '/tips', '/about', '/privacy', '/contact']) {
   if (!home.includes(`href="${layer}"`)) fail('index.html', `${layer} 입구 링크 없음`);
 }

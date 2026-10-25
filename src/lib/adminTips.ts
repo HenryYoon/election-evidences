@@ -39,7 +39,7 @@ export function tipToEvidenceDraft(tip: TipRow, id: string): Partial<EvidenceRow
     withheld: 0,
     media_count: 0,
     // 자료(사진·영상)가 저장소에 없으므로 주장 상태로 시작한다. 상태는 관리자만 올린다.
-    status: 'allegation',
+    status: 'reported',
     claim: '',
     election: '2026 지방선거',
     occurred_at: null,

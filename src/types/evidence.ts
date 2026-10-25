@@ -3,7 +3,7 @@
 // - Evidence, Tip: 층별 공개 레코드(camelCase). 새 페이지가 쓴다.
 // 상태 값과 라벨은 `src/lib/status.ts`에 있다.
 import type { EvidenceStatus, TipStatus } from '../lib/status';
-import { defaultEvidenceStatus, EVIDENCE_STATUSES } from '../lib/status';
+import { normalizeEvidenceStatus } from '../lib/status';
 
 export type EvidenceType = '사진' | '영상' | '음성' | '문서';
 
@@ -55,7 +55,7 @@ export interface EvidenceRow {
   withheld: number;   // 개인정보로 비공개된 자료 수
   media_count: number;
   // 기록 컬럼. 마이그레이션 전 행과 정적 JSON에는 없다.
-  status?: EvidenceStatus | null;
+  status?: string | null; // 마이그레이션 전 옛 값이 올 수 있다. toEvidence가 두 단계로 옮긴다
   claim?: string | null;
   election?: string | null;
   occurred_at?: string | null; // ISO 8601. 시각을 모르면 날짜만(YYYY-MM-DD)
@@ -124,8 +124,7 @@ export function toEvidence(row: EvidenceRow): Evidence {
   const coords = row.coordinates;
   const legacySource: EvidenceSource[] =
     row.source || row.source_url ? [{ title: row.source || row.source_url, url: row.source_url || null }] : [];
-  const status =
-    row.status && EVIDENCE_STATUSES.includes(row.status) ? row.status : defaultEvidenceStatus(hasMedia(row));
+  const status = normalizeEvidenceStatus(row.status);
   return {
     id: row.id,
     layer: 'ledger',
@@ -157,6 +156,3 @@ function legacyClaim(row: EvidenceRow): string {
   return d.length > t.length && d.startsWith(t) ? d : t;
 }
 
-function hasMedia(row: EvidenceRow): boolean {
-  return (row.media_count ?? 0) > 0 || (row.photos?.length ?? 0) > 0 || (row.media_other?.length ?? 0) > 0;
-}
