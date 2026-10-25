@@ -6,9 +6,9 @@ export const KIND_LABEL = { question: '문의', suggestion: '건의', correction
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export async function sendInquiryMail(id, env, fetchImpl = fetch) {
-  if (typeof id !== 'string' || !UUID.test(id)) return { status: 400, error: 'id 형식이 맞지 않는다' };
+  if (typeof id !== 'string' || !UUID.test(id)) return { status: 400, error: 'id 형식이 맞지 않습니다' };
   const { VITE_SUPABASE_URL: url, VITE_SUPABASE_ANON_KEY: anon, RESEND_API_KEY: key, CONTACT_TO: to } = env;
-  if (!url || !anon || !key || !to) return { status: 503, error: '메일 설정이 없다' };
+  if (!url || !anon || !key || !to) return { status: 503, error: '메일 설정이 없습니다' };
 
   const claim = await fetchImpl(`${url.replace(/\/$/, '')}/rest/v1/rpc/claim_inquiry_mail`, {
     method: 'POST',
@@ -19,7 +19,7 @@ export async function sendInquiryMail(id, env, fetchImpl = fetch) {
   const rows = await claim.json();
   const row = Array.isArray(rows) ? rows[0] : null;
   // 없는 id, 이미 보낸 문의, 10분 지난 문의는 같은 응답을 준다.
-  if (!row) return { status: 404, error: '보낼 문의가 없다' };
+  if (!row) return { status: 404, error: '보낼 문의가 없습니다' };
 
   const label = KIND_LABEL[row.kind] ?? row.kind;
   const mail = {
@@ -41,7 +41,7 @@ export async function sendInquiryMail(id, env, fetchImpl = fetch) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'POST만 받는다' });
+    return res.status(405).json({ error: 'POST만 받습니다' });
   }
   const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {};
   const r = await sendInquiryMail(body.id, process.env);

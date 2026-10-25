@@ -5,17 +5,17 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'POST만 받는다' });
+    return res.status(405).json({ error: 'POST만 받습니다' });
   }
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
   const hook = process.env.DEPLOY_HOOK_URL;
-  if (!supabaseUrl || !anonKey) return res.status(500).json({ error: 'Supabase 환경변수가 없다' });
-  if (!hook) return res.status(503).json({ error: 'DEPLOY_HOOK_URL이 설정되지 않았다' });
+  if (!supabaseUrl || !anonKey) return res.status(500).json({ error: 'Supabase 환경변수가 없습니다' });
+  if (!hook) return res.status(503).json({ error: 'DEPLOY_HOOK_URL이 설정되지 않았습니다' });
 
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ error: '로그인 토큰이 없다' });
+  if (!token) return res.status(401).json({ error: '로그인 토큰이 없습니다' });
 
   // 토큰 주인으로 is_admin()을 부른다. 위조 토큰은 Supabase가 401로 거절한다.
   const check = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/is_admin`, {
@@ -23,10 +23,10 @@ export default async function handler(req, res) {
     headers: { apikey: anonKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: '{}',
   });
-  if (!check.ok) return res.status(401).json({ error: '토큰을 확인하지 못했다' });
-  if ((await check.json()) !== true) return res.status(403).json({ error: '관리자가 아니다' });
+  if (!check.ok) return res.status(401).json({ error: '토큰을 확인하지 못했습니다' });
+  if ((await check.json()) !== true) return res.status(403).json({ error: '관리자가 아닙니다' });
 
   const deploy = await fetch(hook, { method: 'POST' });
-  if (!deploy.ok) return res.status(502).json({ error: `Deploy Hook 실패 ${deploy.status}` });
+  if (!deploy.ok) return res.status(502).json({ error: `Deploy Hook이 실패했습니다(${deploy.status})` });
   return res.status(202).json({ ok: true });
 }

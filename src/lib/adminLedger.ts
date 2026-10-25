@@ -7,20 +7,24 @@ const OCCURRED_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?([+-]\d{2}:\d{2}|Z)
 
 export function validateLedgerDraft(d: Partial<EvidenceRow>): string[] {
   const errs: string[] = [];
-  if (!(d.claim ?? '').trim()) errs.push('주장을 한 문장으로 적어야 한다.');
-  if (d.status && !EVIDENCE_STATUSES.includes(d.status as EvidenceStatus)) errs.push(`알 수 없는 상태: ${d.status}`);
+  if (!(d.claim ?? '').trim()) errs.push('주장을 한 문장으로 적어야 합니다.');
+  if (d.status && !EVIDENCE_STATUSES.includes(d.status as EvidenceStatus)) errs.push(`알 수 없는 상태입니다: ${d.status}`);
   const occurred = (d.occurred_at ?? '').trim();
-  if (occurred && !OCCURRED_RE.test(occurred)) errs.push('발생 시각은 2026-06-03 또는 2026-06-03T14:37:00+09:00 형식이어야 한다.');
+  if (occurred && !OCCURRED_RE.test(occurred)) errs.push('발생 시각은 2026-06-03 또는 2026-06-03T14:37:00+09:00 형식이어야 합니다.');
   for (const [i, s] of (d.sources ?? []).entries()) {
     if (!s.title.trim() && !(s.url ?? '').trim()) continue; // 빈 줄은 저장 때 버린다
-    if (!s.title.trim()) errs.push(`출처 ${i + 1}: 이름이 없다.`);
-    if (s.url && !/^https?:\/\//.test(s.url.trim())) errs.push(`출처 ${i + 1}: 주소는 http(s)로 시작해야 한다.`);
+    if (!s.title.trim()) errs.push(`출처 ${i + 1}: 이름이 없습니다.`);
+    if (s.url && !/^https?:\/\//.test(s.url.trim())) errs.push(`출처 ${i + 1}: 주소는 http(s)로 시작해야 합니다.`);
   }
-  // 자료 확인은 장소와 매체가 있어야 고를 수 있다(0011 명세 3장). 검증 네 줄은 선택이다.
-  if (d.status === 'confirmed') {
-    if (!(d.place ?? '').trim()) errs.push('자료 확인은 장소가 있어야 한다.');
-    if (!(d.photos?.length ?? 0) && !(d.media_other?.length ?? 0)) errs.push('자료 확인은 사진·영상·문서가 하나 이상 있어야 한다.');
-  }
+  if (d.status === 'confirmed') errs.push(...confirmBlockers(d));
+  return errs;
+}
+
+// 자료 확인을 막는 이유(0011 명세 3장). 편집 창 저장과 목록의 상태 버튼(0014)이 같이 쓴다.
+export function confirmBlockers(d: Pick<Partial<EvidenceRow>, 'place' | 'photos' | 'media_other'>): string[] {
+  const errs: string[] = [];
+  if (!(d.place ?? '').trim()) errs.push('자료 확인은 장소가 있어야 합니다.');
+  if (!(d.photos?.length ?? 0) && !(d.media_other?.length ?? 0)) errs.push('자료 확인은 사진·영상·문서가 하나 이상 있어야 합니다.');
   return errs;
 }
 
