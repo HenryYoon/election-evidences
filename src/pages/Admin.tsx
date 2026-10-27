@@ -572,11 +572,12 @@ export function AdminJoin() {
   if (!supabase) return <Center>Supabase가 설정되지 않았습니다.</Center>;
   const submit = async () => {
     setBusy(true); setErr('');
-    const { data, error } = await supabase!.auth.signUp({ email, password: pw });
+    // 가입 확인 메일의 링크는 /admin으로 돌아온다. Supabase URL Configuration의 Redirect URLs에 있어야 한다(0015 명세 6장).
+    const { data, error } = await supabase!.auth.signUp({ email, password: pw, options: { emailRedirectTo: `${location.origin}/admin` } });
     if (error) { setBusy(false); setErr(error.message); return; }
     if (!data.session) {
       setBusy(false);
-      setDone('가입 확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 /admin에 로그인해 초대 코드를 다시 적어 주세요.');
+      setDone('가입 확인 메일을 보냈습니다. 메일의 링크를 누르면 관리 화면이 열립니다. 그 화면에서 이름과 초대 코드를 한 번 더 적어 신청해 주세요.');
       return;
     }
     const { error: reqErr } = await supabase!.rpc('request_admin', { p_code: code, p_name: name });
@@ -595,7 +596,7 @@ export function AdminJoin() {
           </>
         ) : (
           <>
-            <p className="adm-help">운영자에게 받은 초대 코드가 있어야 신청할 수 있습니다. 운영자가 승인해야 권한이 생깁니다.</p>
+            <p className="adm-help">운영자에게 받은 초대 코드가 있어야 신청할 수 있습니다. 가입하면 확인 메일이 갑니다. 메일의 링크를 누른 뒤 열리는 화면에서 초대 코드를 한 번 더 적어 주세요. 운영자가 승인해야 권한이 생깁니다.</p>
             <input className="adm-input" placeholder="이름(운영자가 알아볼 이름)" aria-label="이름" value={name} onChange={(e) => setName(e.target.value)} />
             <input className="adm-input" placeholder="이메일" aria-label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
             <input className="adm-input" type="password" placeholder="비밀번호(12자 이상, 대·소문자·숫자·기호)" aria-label="비밀번호" value={pw} onChange={(e) => setPw(e.target.value)} />
