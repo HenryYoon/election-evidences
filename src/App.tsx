@@ -15,6 +15,7 @@ import Cases from './pages/Cases';
 import { casesVisible } from './lib/cases';
 // 관리자 화면(Supabase 클라이언트 포함)은 공개 페이지 번들에서 뺀다. /admin은 사전 렌더링하지 않는다.
 const Admin = lazy(() => import('./pages/Admin'));
+const AdminJoin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminJoin })));
 
 // 클라이언트 내비게이션 때 head를 경로에 맞춘다. 첫 HTML의 head는 사전 렌더링이 쓴다.
 function useHead(ds: Dataset) {
@@ -65,6 +66,8 @@ export default function App() {
       <Routes>
         {/* 관리자만 자체 로그인 게이트. 공개 앱은 로그인 없음(비식별화로 보호) */}
         <Route path="/admin" element={<Suspense fallback={null}><Admin /></Suspense>} />
+        {/* 관리자 신청(0015). 승인 전에는 권한이 없다. */}
+        <Route path="/admin/join" element={<Suspense fallback={null}><AdminJoin /></Suspense>} />
         <Route path="/*" element={<PublicApp />} />
       </Routes>
       <Analytics />

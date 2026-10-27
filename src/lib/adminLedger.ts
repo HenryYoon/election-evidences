@@ -46,3 +46,12 @@ export function normalizeLedgerDraft(d: Partial<EvidenceRow>): Partial<EvidenceR
     media_count: (d.photos?.length ?? 0) + (d.media_other?.length ?? 0),
   };
 }
+
+// 초대 코드: 헷갈리는 글자(0, O, 1, I, L)를 뺀 12자. 브라우저가 무작위로 만든다.
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export function newInviteCode(rand: (n: number) => Uint8Array = (n) => crypto.getRandomValues(new Uint8Array(n))): string {
+  const b = rand(12);
+  const s = Array.from(b, (x) => CODE_CHARS[x % CODE_CHARS.length]).join('');
+  return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}`;
+}
+
