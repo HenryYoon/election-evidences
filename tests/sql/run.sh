@@ -19,7 +19,7 @@ run() {
 }
 
 fresh desk_schema
-run desk_schema tests/sql/supabase_stub.sql scripts/supabase_schema.sql scripts/supabase_schema.sql tests/sql/rls_test.sql tests/sql/tip_test.sql tests/sql/security_test.sql tests/sql/upload_test.sql tests/sql/retention_test.sql tests/sql/inquiry_test.sql
+run desk_schema tests/sql/supabase_stub.sql scripts/supabase_schema.sql scripts/supabase_schema.sql tests/sql/rls_test.sql tests/sql/tip_test.sql tests/sql/security_test.sql tests/sql/upload_test.sql tests/sql/retention_test.sql tests/sql/inquiry_test.sql tests/sql/admin_roles_test.sql
 
 fresh desk_migrate
 run desk_migrate tests/sql/supabase_stub.sql tests/sql/prod_baseline.sql tests/sql/backfill_seed.sql \
@@ -36,5 +36,5 @@ run desk_migrate tests/sql/supabase_stub.sql tests/sql/prod_baseline.sql tests/s
 fresh desk_supa
 run desk_supa tests/sql/supabase_stub.sql $(ls supabase/migrations/*.sql | sort) \
   tests/sql/rls_test.sql tests/sql/tip_test.sql tests/sql/security_test.sql tests/sql/upload_test.sql \
-  tests/sql/retention_test.sql tests/sql/inquiry_test.sql
+  tests/sql/retention_test.sql tests/sql/inquiry_test.sql tests/sql/admin_roles_test.sql
 echo "SQL 검사 통과"

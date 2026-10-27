@@ -1,6 +1,6 @@
 // 0001 플랜 7단계: 관리자 기록 편집 검사와 재빌드 함수의 관리자 확인.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmBlockers, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
+import { confirmBlockers, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
 // @ts-expect-error 서버 함수는 JS다.
 import handler from '../../api/rebuild.js';
 
@@ -114,5 +114,18 @@ describe('재빌드 함수', () => {
   it('GET은 405다', async () => {
     setup(true);
     expect((await call({}, 'GET')).code).toBe(405);
+  });
+});
+
+describe('관리자 초대 코드(0015)', () => {
+  it('헷갈리는 글자 없이 4-4-4 형식 12자다', () => {
+    const code = newInviteCode();
+    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
+    expect(code).not.toMatch(/[01ILO]/);
+  });
+  it('서버 최소 길이(10자) 이상이고 매번 다르다', () => {
+    const a = newInviteCode();
+    expect(a.replace(/-/g, '').length).toBeGreaterThanOrEqual(10);
+    expect(newInviteCode()).not.toBe(a);
   });
 });

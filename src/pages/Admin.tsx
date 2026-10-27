@@ -5,10 +5,15 @@ import { EVIDENCE_TYPES } from '../types/evidence';
 import { typeIcon } from '../lib/evidenceType';
 import { storagePath, useSignedMap } from '../lib/media';
 import { EVIDENCE_STATUSES, EVIDENCE_STATUS_LABEL, EVIDENCE_STATUS_LEGEND, normalizeEvidenceStatus } from '../lib/status';
-import { confirmBlockers, normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
+import { confirmBlockers, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../lib/adminLedger';
 import '../styles/admin.css';
 import { tipToEvidenceDraft, type TipRow } from '../lib/adminTips';
 import { INQUIRY_KINDS } from '../lib/contact';
+
+// 관리자 역할(0015). null은 권한 없음, pending은 승인 대기.
+type AdminStatus = 'owner' | 'reviewer' | 'pending' | null;
+interface AdminRequestRow { user_id: string; email: string; name: string; created_at: string }
+interface AdminRow { user_id: string; email: string; role: 'owner' | 'reviewer'; created_at: string }
 
 interface InquiryRow { id: string; kind: string; body: string; reply_to: string | null; handled: boolean; created_at: string }
 const KIND_LABEL: Record<string, string> = Object.fromEntries(INQUIRY_KINDS);
@@ -67,7 +72,8 @@ export default function Admin() {
   const [editing, setEditing] = useState<Partial<EvidenceRow> | null>(null);
   const [err, setErr] = useState('');
   const [rebuild, setRebuild] = useState('');
-  const [tab, setTab] = useState<'records' | 'tips' | 'inquiries'>('records');
+  const [tab, setTab] = useState<'records' | 'tips' | 'inquiries' | 'admins'>('records');
+  const [role, setRole] = useState<AdminStatus | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<EvidenceStatus | ''>('');
   const [inquiries, setInquiries] = useState<InquiryRow[]>([]);
   const [tips, setTips] = useState<TipRow[]>([]);
@@ -108,7 +114,17 @@ export default function Admin() {
     if (error) setErr(error.message);
     loadInquiries();
   };
-  useEffect(() => { if (session) { load(); loadTips(); loadInquiries(); } }, [session]);
+  const loadStatus = async () => {
+    const { data, error } = await supabase!.rpc('my_admin_status');
+    if (error) { setErr(error.message); setRole(null); return; }
+    setRole((data as AdminStatus) ?? null);
+  };
+  useEffect(() => { if (session) loadStatus(); else setRole(undefined); }, [session]);
+  // 검수자는 기록만 읽는다. 제보·문의는 운영자만 읽는다(0015 명세 1장).
+  useEffect(() => {
+    if (role === 'owner' || role === 'reviewer') load();
+    if (role === 'owner') { loadTips(); loadInquiries(); }
+  }, [role]);
 
   const finishTip = async (tip: TipRow, review: 'accepted' | 'rejected', evidenceId: string | null) => {
     const { error } = await supabase!.rpc('finish_tip_review', { p_tip: tip.id, p_review: review, p_evidence: evidenceId });
@@ -137,6 +153,9 @@ export default function Admin() {
   if (!supabase) return <Center>Supabase가 설정되지 않았습니다. <code>.env</code>에 VITE_SUPABASE_URL과 VITE_SUPABASE_ANON_KEY를 넣어 주세요.</Center>;
   if (!ready) return <Center>불러오는 중입니다…</Center>;
   if (!session) return <Login onErr={setErr} err={err} />;
+  if (role === undefined) return <Center>권한을 확인하고 있습니다…</Center>;
+  if (role === null || role === 'pending') return <NoRole status={role} onDone={loadStatus} />;
+  const owner = role === 'owner';
 
   const setPublished = async (e: EvidenceRow, v: boolean) => {
     if (e.published === v) return;
@@ -195,11 +214,19 @@ export default function Admin() {
         {rebuild && <div className="adm-note">{rebuild}</div>}
         <div className="adm-tabs">
           <button className="adm-btn" aria-pressed={tab === 'records'} onClick={() => setTab('records')}>기록</button>
-          <button className="adm-btn" aria-pressed={tab === 'tips'} onClick={() => setTab('tips')}>제보 검수 ({tips.length})</button>
-          <button className="adm-btn" aria-pressed={tab === 'inquiries'} onClick={() => setTab('inquiries')}>문의 ({inquiries.filter((q) => !q.handled).length})</button>
+          {owner && (
+            <>
+              <button className="adm-btn" aria-pressed={tab === 'tips'} onClick={() => setTab('tips')}>제보 검수 ({tips.length})</button>
+              <button className="adm-btn" aria-pressed={tab === 'inquiries'} onClick={() => setTab('inquiries')}>문의 ({inquiries.filter((q) => !q.handled).length})</button>
+              <button className="adm-btn" aria-pressed={tab === 'admins'} onClick={() => setTab('admins')}>관리자</button>
+            </>
+          )}
+          <span className="adm-help" style={{ margin: 0, alignSelf: 'center' }}>{owner ? '운영자' : '검수자'}로 로그인했습니다.</span>
         </div>
 
-        {tab === 'tips' && (
+        {owner && tab === 'admins' && <AdminsPanel onError={setErr} />}
+
+        {owner && tab === 'tips' && (
           <>
             <p className="adm-help">
               새 제보 {tips.length}건입니다. 채택하면 비공개 기록 초안이 열립니다. 초안을 저장하거나 기각하면 이름·연락처가 지워집니다. 기각하면 첨부 파일도
@@ -230,7 +257,7 @@ export default function Admin() {
           </>
         )}
 
-        {tab === 'inquiries' && (
+        {owner && tab === 'inquiries' && (
           <>
             <p className="adm-help">문의는 접수 후 1년이 지나면 자동으로 지워집니다. 메일함의 사본도 같은 기간 뒤 지워 주세요.</p>
             <ul className="adm-list">
@@ -287,7 +314,7 @@ export default function Admin() {
                       <button aria-pressed={e.published} onClick={() => setPublished(e, true)}>공개</button>
                       <button className="danger" aria-pressed={!e.published} onClick={() => setPublished(e, false)}>비공개</button>
                     </div>
-                    <button className="adm-btn danger" onClick={() => remove(e)}>삭제</button>
+                    {owner && <button className="adm-btn danger" onClick={() => remove(e)}>삭제</button>}
                   </li>
                 );
               })}
@@ -485,8 +512,188 @@ function Login({ onErr, err }: { onErr: (s: string) => void; err: string }) {
           onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
         {err && <div className="adm-error">{err}</div>}
         <button className="adm-btn primary" onClick={submit} disabled={busy}>{busy ? '로그인하고 있습니다…' : '로그인'}</button>
+        <a href="/admin/join" className="adm-help">초대 코드를 받았다면 관리자 신청</a>
       </div>
     </Center>
+  );
+}
+
+// 신청 칸(0015 명세 2장): 로그인한 사람이 초대 코드와 이름을 낸다. 가입 화면과 승인 대기 화면이 같이 쓴다.
+function RequestFields({ onDone, onErr }: { onDone: () => void; onErr: (s: string) => void }) {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    setBusy(true); onErr('');
+    const { error } = await supabase!.rpc('request_admin', { p_code: code, p_name: name });
+    setBusy(false);
+    if (error) onErr(error.message); else onDone();
+  };
+  return (
+    <>
+      <input className="adm-input" placeholder="이름(운영자가 알아볼 이름)" aria-label="이름" value={name} onChange={(e) => setName(e.target.value)} />
+      <input className="adm-input" placeholder="초대 코드" aria-label="초대 코드" value={code} onChange={(e) => setCode(e.target.value)} />
+      <button className="adm-btn primary" onClick={submit} disabled={busy || !code.trim() || !name.trim()}>{busy ? '신청하고 있습니다…' : '관리자 신청'}</button>
+    </>
+  );
+}
+
+// 로그인했지만 권한이 없거나 승인 대기인 화면
+function NoRole({ status, onDone }: { status: AdminStatus; onDone: () => void }) {
+  const [err, setErr] = useState('');
+  return (
+    <Center>
+      <div className="adm-login">
+        <h1>{status === 'pending' ? '승인을 기다리고 있습니다' : '관리자 권한이 없습니다'}</h1>
+        {status === 'pending' ? (
+          <p className="adm-help">운영자가 승인하면 이 화면을 새로 고쳐 들어올 수 있습니다.</p>
+        ) : (
+          <>
+            <p className="adm-help">초대 코드를 받았다면 아래에 적어 신청해 주세요.</p>
+            <RequestFields onDone={onDone} onErr={setErr} />
+          </>
+        )}
+        {err && <div className="adm-error">{err}</div>}
+        <button className="adm-btn" onClick={() => supabase!.auth.signOut()}>로그아웃</button>
+      </div>
+    </Center>
+  );
+}
+
+// 관리자 신청 화면(/admin/join). 가입한 뒤 바로 신청한다. 가입 확인 메일이 켜져 있으면 확인 뒤 /admin에서 신청한다.
+export function AdminJoin() {
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [done, setDone] = useState('');
+  if (!supabase) return <Center>Supabase가 설정되지 않았습니다.</Center>;
+  const submit = async () => {
+    setBusy(true); setErr('');
+    const { data, error } = await supabase!.auth.signUp({ email, password: pw });
+    if (error) { setBusy(false); setErr(error.message); return; }
+    if (!data.session) {
+      setBusy(false);
+      setDone('가입 확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 /admin에 로그인해 초대 코드를 다시 적어 주세요.');
+      return;
+    }
+    const { error: reqErr } = await supabase!.rpc('request_admin', { p_code: code, p_name: name });
+    setBusy(false);
+    if (reqErr) { setErr(`가입은 됐지만 신청이 들어가지 않았습니다: ${reqErr.message} /admin에 로그인해 다시 신청해 주세요.`); return; }
+    setDone('신청했습니다. 운영자가 승인하면 /admin에 로그인할 수 있습니다.');
+  };
+  return (
+    <Center>
+      <div className="adm-login">
+        <h1>관리자 신청</h1>
+        {done ? (
+          <>
+            <p>{done}</p>
+            <a href="/admin" className="adm-help">관리자 로그인으로</a>
+          </>
+        ) : (
+          <>
+            <p className="adm-help">운영자에게 받은 초대 코드가 있어야 신청할 수 있습니다. 운영자가 승인해야 권한이 생깁니다.</p>
+            <input className="adm-input" placeholder="이름(운영자가 알아볼 이름)" aria-label="이름" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="adm-input" placeholder="이메일" aria-label="이메일" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="adm-input" type="password" placeholder="비밀번호(12자 이상, 대·소문자·숫자·기호)" aria-label="비밀번호" value={pw} onChange={(e) => setPw(e.target.value)} />
+            <input className="adm-input" placeholder="초대 코드" aria-label="초대 코드" value={code} onChange={(e) => setCode(e.target.value)} />
+            {err && <div className="adm-error">{err}</div>}
+            <button className="adm-btn primary" onClick={submit} disabled={busy || !email.trim() || !pw || !name.trim() || !code.trim()}>
+              {busy ? '신청하고 있습니다…' : '가입하고 신청하기'}
+            </button>
+          </>
+        )}
+      </div>
+    </Center>
+  );
+}
+
+// 관리자 탭(운영자만): 초대 코드, 신청 승인, 관리자 목록
+function AdminsPanel({ onError }: { onError: (s: string) => void }) {
+  const [requests, setRequests] = useState<AdminRequestRow[]>([]);
+  const [admins, setAdmins] = useState<AdminRow[]>([]);
+  const [inviteOn, setInviteOn] = useState(false);
+  const [newCode, setNewCode] = useState('');
+  const call = async (fn: string, args?: Record<string, unknown>) => {
+    const { data, error } = await supabase!.rpc(fn, args);
+    if (error) { onError(error.message); return null; }
+    return data;
+  };
+  const reload = async () => {
+    setRequests(((await call('list_admin_requests')) as AdminRequestRow[]) ?? []);
+    setAdmins(((await call('list_admins')) as AdminRow[]) ?? []);
+    setInviteOn(Boolean(await call('admin_invite_active')));
+  };
+  useEffect(() => { reload(); }, []);
+  const makeCode = async () => {
+    if (inviteOn && !confirm('새 코드를 만들면 지금 코드는 더 이상 쓸 수 없습니다. 계속할까요?')) return;
+    const code = newInviteCode();
+    const { error } = await supabase!.rpc('set_admin_invite', { p_code: code });
+    if (error) onError(error.message); else setNewCode(code);
+    reload();
+  };
+  const stopCode = async () => { await call('clear_admin_invite'); setNewCode(''); reload(); };
+  const act = async (fn: string, args: Record<string, unknown>, ask?: string) => {
+    if (ask && !confirm(ask)) return;
+    onError('');
+    await call(fn, args);
+    reload();
+  };
+  const joinUrl = `${location.origin}/admin/join`;
+  return (
+    <>
+      <h2 style={{ fontSize: 15, margin: '8px 0' }}>초대 코드</h2>
+      <p className="adm-help">
+        {inviteOn ? '초대 코드가 켜져 있습니다. 코드를 아는 사람은 신청할 수 있습니다. 승인해야 권한이 생깁니다.' : '초대 코드가 꺼져 있습니다. 새 신청을 받지 않습니다.'}
+      </p>
+      {newCode && (
+        <div className="adm-note">
+          <div>가입 링크: <b>{joinUrl}</b></div>
+          <div>초대 코드: <b style={{ letterSpacing: '0.08em' }}>{newCode}</b></div>
+          <div className="adm-help" style={{ margin: '4px 0 0' }}>이 코드는 지금만 보입니다. 저장소에는 해시값만 남습니다.</div>
+        </div>
+      )}
+      <div className="adm-actions" style={{ marginBottom: 16 }}>
+        <button className="adm-btn" onClick={makeCode}>{inviteOn ? '새 초대 코드 만들기' : '초대 코드 만들기'}</button>
+        {inviteOn && <button className="adm-btn danger" onClick={stopCode}>초대 끄기</button>}
+      </div>
+
+      <h2 style={{ fontSize: 15, margin: '8px 0' }}>신청 {requests.length}건</h2>
+      <ul className="adm-list" style={{ marginBottom: 16 }}>
+        {requests.length === 0 && <li className="adm-row">승인을 기다리는 신청이 없습니다.</li>}
+        {requests.map((r) => (
+          <li key={r.user_id} className="adm-row">
+            <div className="main" style={{ cursor: 'default' }}>
+              <div className="title">{r.name}</div>
+              <div className="meta">{r.email} · {new Date(r.created_at).toLocaleString('ko-KR')} 신청</div>
+            </div>
+            <button className="adm-btn" onClick={() => act('approve_admin', { p_user: r.user_id }, `${r.name}(${r.email})을 검수자로 승인할까요?`)}>승인</button>
+            <button className="adm-btn danger" onClick={() => act('reject_admin', { p_user: r.user_id })}>거절</button>
+          </li>
+        ))}
+      </ul>
+
+      <h2 style={{ fontSize: 15, margin: '8px 0' }}>관리자 {admins.length}명</h2>
+      <p className="adm-help">검수자는 기록 편집과 상태 변경만 합니다. 제보·문의·삭제·관리자 승인은 운영자만 합니다.</p>
+      <ul className="adm-list">
+        {admins.map((a) => (
+          <li key={a.user_id} className="adm-row">
+            <div className="main" style={{ cursor: 'default' }}>
+              <div className="title">{a.email}</div>
+              <div className="meta">{new Date(a.created_at).toLocaleDateString('ko-KR')}부터</div>
+            </div>
+            <div className="adm-seg" role="group" aria-label={`${a.email} 역할`}>
+              <button aria-pressed={a.role === 'owner'} onClick={() => a.role !== 'owner' && act('set_admin_role', { p_user: a.user_id, p_role: 'owner' }, `${a.email}을 운영자로 올릴까요? 제보자 연락처를 볼 수 있게 됩니다.`)}>운영자</button>
+              <button aria-pressed={a.role === 'reviewer'} onClick={() => a.role !== 'reviewer' && act('set_admin_role', { p_user: a.user_id, p_role: 'reviewer' })}>검수자</button>
+            </div>
+            <button className="adm-btn danger" onClick={() => act('revoke_admin', { p_user: a.user_id }, `${a.email}의 관리자 권한을 해제할까요?`)}>해제</button>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
