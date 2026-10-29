@@ -55,3 +55,7 @@ export function newInviteCode(rand: (n: number) => Uint8Array = (n) => crypto.ge
   return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}`;
 }
 
+
+// 방에 올릴 안내 한 덩어리
+export const inviteMessage = (joinUrl: string, code: string) =>
+  `선진국 관리자 신청\n링크: ${joinUrl}\n초대 코드: ${code}\n신청한 뒤 방에 이름을 남겨 주세요.`;

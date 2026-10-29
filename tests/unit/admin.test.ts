@@ -1,6 +1,6 @@
 // 0001 플랜 7단계: 관리자 기록 편집 검사와 재빌드 함수의 관리자 확인.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { confirmBlockers, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
+import { confirmBlockers, inviteMessage, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
 // @ts-expect-error 서버 함수는 JS다.
 import handler from '../../api/rebuild.js';
 
@@ -127,5 +127,13 @@ describe('관리자 초대 코드(0015)', () => {
     const a = newInviteCode();
     expect(a.replace(/-/g, '').length).toBeGreaterThanOrEqual(10);
     expect(newInviteCode()).not.toBe(a);
+  });
+});
+
+describe('초대 안내 문구(0015 명세 7장)', () => {
+  it('방에 올릴 안내에 링크와 코드가 들어간다', () => {
+    const m = inviteMessage('https://x.example/admin/join', 'ABCD-EFGH-JKMN');
+    expect(m).toContain('https://x.example/admin/join');
+    expect(m).toContain('ABCD-EFGH-JKMN');
   });
 });
