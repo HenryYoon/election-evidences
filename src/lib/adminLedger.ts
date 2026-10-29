@@ -55,3 +55,27 @@ export function newInviteCode(rand: (n: number) => Uint8Array = (n) => crypto.ge
   return `${s.slice(0, 4)}-${s.slice(4, 8)}-${s.slice(8, 12)}`;
 }
 
+
+// 관리자 아이디(0015 명세 7장). Supabase 인증은 이메일 형식이 필요해 아이디를 가짜 주소로 바꿔 넣는다.
+// 이 주소로는 메일이 가지 않는다. Supabase가 도메인을 거부하면 이 상수만 바꾼다.
+export const ADMIN_ID_DOMAIN = 'election-evidences.vercel.app';
+export const ADMIN_ID_RE = /^[a-z0-9_]{4,20}$/;
+
+export function adminIdError(id: string): string | null {
+  return ADMIN_ID_RE.test(id) ? null : '아이디는 영문 소문자·숫자·밑줄로 4~20자여야 합니다.';
+}
+
+export const adminIdToEmail = (id: string) => `${id.trim().toLowerCase()}@${ADMIN_ID_DOMAIN}`;
+
+// 로그인 칸: @가 있으면 이메일(기존 운영자 계정), 없으면 아이디
+export const loginToEmail = (input: string) => (input.includes('@') ? input.trim() : adminIdToEmail(input));
+
+// 목록 표시: 아이디 계정은 아이디만, 이메일 계정은 이메일 그대로
+export function emailToAdminId(email: string): string {
+  const suffix = `@${ADMIN_ID_DOMAIN}`;
+  return email.endsWith(suffix) ? email.slice(0, -suffix.length) : email;
+}
+
+// 방에 올릴 안내 한 덩어리
+export const inviteMessage = (joinUrl: string, code: string) =>
+  `선진국 관리자 신청\n링크: ${joinUrl}\n초대 코드: ${code}\n신청한 뒤 방에 이름을 남겨 주세요.`;

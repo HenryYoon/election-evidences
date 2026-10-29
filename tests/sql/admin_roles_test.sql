@@ -84,7 +84,7 @@ select pg_temp.expect('운영자는 제보 원문·연락처를 본다', (select
 select pg_temp.expect('운영자는 문의를 본다', (select count(*) from public.inquiries where id = 'q-role'), 1);
 select public.approve_admin('00000000-0000-0000-0000-0000000000f3');
 select pg_temp.expect('승인하면 신청이 사라진다', (select count(*) from public.list_admin_requests()), 0);
-select pg_temp.expect('승인된 사람은 reviewer', (select count(*) from public.list_admins() where email = 'p@example.com' and role = 'reviewer'), 1);
+select pg_temp.expect('승인된 사람은 reviewer이고 신청 이름이 옮겨진다', (select count(*) from public.list_admins() where email = 'p@example.com' and role = 'reviewer' and name = '신청자'), 1);
 -- 앞선 검사 파일이 만든 운영자를 치워 f1을 마지막 운영자로 만든다
 reset role;
 delete from public.admins where role = 'owner' and user_id <> '00000000-0000-0000-0000-0000000000f1';
