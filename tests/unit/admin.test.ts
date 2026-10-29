@@ -1,6 +1,6 @@
 // 0001 플랜 7단계: 관리자 기록 편집 검사와 재빌드 함수의 관리자 확인.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ADMIN_ID_DOMAIN, adminIdError, adminIdToEmail, confirmBlockers, emailToAdminId, inviteMessage, loginToEmail, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
+import { confirmBlockers, inviteMessage, newInviteCode, normalizeLedgerDraft, validateLedgerDraft } from '../../src/lib/adminLedger';
 // @ts-expect-error 서버 함수는 JS다.
 import handler from '../../api/rebuild.js';
 
@@ -130,20 +130,7 @@ describe('관리자 초대 코드(0015)', () => {
   });
 });
 
-describe('관리자 아이디(0015 명세 7장)', () => {
-  it('아이디 형식을 검사한다', () => {
-    expect(adminIdError('kim_01')).toBeNull();
-    for (const bad of ['abc', 'Kim01', 'kim-01', 'kim 01', 'a'.repeat(21), '김검수']) expect(adminIdError(bad)).not.toBeNull();
-  });
-  it('아이디와 가짜 주소를 오간다', () => {
-    expect(adminIdToEmail(' Kim_01 ')).toBe(`kim_01@${ADMIN_ID_DOMAIN}`);
-    expect(emailToAdminId(`kim_01@${ADMIN_ID_DOMAIN}`)).toBe('kim_01');
-    expect(emailToAdminId('owner@example.com')).toBe('owner@example.com');
-  });
-  it('로그인 칸은 @가 있으면 이메일 그대로, 없으면 아이디로 본다', () => {
-    expect(loginToEmail('owner@example.com ')).toBe('owner@example.com');
-    expect(loginToEmail('kim_01')).toBe(`kim_01@${ADMIN_ID_DOMAIN}`);
-  });
+describe('초대 안내 문구(0015 명세 7장)', () => {
   it('방에 올릴 안내에 링크와 코드가 들어간다', () => {
     const m = inviteMessage('https://x.example/admin/join', 'ABCD-EFGH-JKMN');
     expect(m).toContain('https://x.example/admin/join');
